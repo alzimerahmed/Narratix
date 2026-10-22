@@ -189,6 +189,11 @@ struct LibraryRootView: View {
       Button("import_duplicates_import_anyway") {
         resolveDuplicateImport(pending, action: .importAnyway)
       }
+      /// Neutral out: without it the warning could only be answered by a
+      /// resolution — or silently, which would strand the pending batch
+      Button("cancel_button", role: .cancel) {
+        resolveDuplicateImport(pending, action: .cancel)
+      }
     } message: { pending in
       Text(duplicateMessage(for: pending))
     }
@@ -488,9 +493,21 @@ struct LibraryRootView: View {
   ) {
     /// Imports whose delete failed stay in the batch — filtering them out
     /// anyway would strand records the delete never removed
+    /// Cancel resolves to the batch's delete + a list reload, with none of
+    /// the import tail (`finishImport`) running
+    guard action != .cancel else {
+      do {
+        try libraryService.delete(pending.items, mode: .deep)
+      } catch {
+        loadingState.error = error
+      }
+      listState.reloadAll()
+      return
+    }
+
     var skipDeleted = false
     switch action {
-    case .importAnyway:
+    case .importAnyway, .cancel:
       break
     case .skip:
       /// Nothing of the imports uploaded yet: a plain delete drops the new

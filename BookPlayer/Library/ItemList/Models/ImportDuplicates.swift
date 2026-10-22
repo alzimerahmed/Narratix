@@ -27,7 +27,7 @@ struct PendingDuplicateImport: Equatable, Identifiable {
   let suggestedFolderName: String?
 }
 
-/// The duplicate warning's three resolutions
+/// The duplicate warning's resolutions
 enum DuplicateImportAction {
   /// Delete the new records + files, keep the library's
   case skip
@@ -35,6 +35,9 @@ enum DuplicateImportAction {
   case importAnyway
   /// Delete the library's records + files (+ cloud copies), keep the imports
   case replace
+  /// Back out of the whole batch: every imported record + file goes, nothing
+  /// uploads or places — the same cleanup `.skip` runs, over all `items`
+  case cancel
 }
 
 /// Title + duration matching between what an import just created and what's
