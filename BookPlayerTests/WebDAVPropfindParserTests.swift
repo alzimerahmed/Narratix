@@ -107,3 +107,38 @@ final class WebDAVPropfindParserTests: XCTestCase {
     XCTAssertTrue(parse("<multistatus></multistatus>").isEmpty)
   }
 }
+
+/// `WebDAVClient.normalizeURL` — what the user typed becomes the connection's
+/// base URL. Credentials pasted into the address must be stripped (they live
+/// in the username/password fields instead), bare hosts default to https, and
+/// non-http(s) schemes are refused.
+final class WebDAVNormalizeURLTests: XCTestCase {
+  func testBareHostDefaultsToHttps() {
+    XCTAssertEqual(
+      WebDAVClient.normalizeURL("nas.local/dav")?.absoluteString,
+      "https://nas.local/dav"
+    )
+  }
+
+  func testSchemeAndPortArePreserved() {
+    XCTAssertEqual(
+      WebDAVClient.normalizeURL("http://192.168.1.10:5005/dav/")?.absoluteString,
+      "http://192.168.1.10:5005/dav/"
+    )
+  }
+
+  /// A `user:pass@` pasted into the URL must not end up stored — the Keychain
+  /// fields carry credentials, not the connection URL
+  func testEmbeddedCredentialsAreStripped() {
+    let url = WebDAVClient.normalizeURL("https://alice:s3cret@nas.local/dav")
+    XCTAssertEqual(url?.absoluteString, "https://nas.local/dav")
+    XCTAssertNil(url?.user)
+    XCTAssertNil(url?.password)
+  }
+
+  func testNonHTTPSchemesAndGarbageAreRefused() {
+    XCTAssertNil(WebDAVClient.normalizeURL("ftp://nas.local/dav"))
+    XCTAssertNil(WebDAVClient.normalizeURL("   "))
+    XCTAssertNil(WebDAVClient.normalizeURL("https://"))
+  }
+}

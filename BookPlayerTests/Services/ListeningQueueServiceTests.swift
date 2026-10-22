@@ -133,6 +133,13 @@ final class ListeningQueueServiceTests: XCTestCase {
     XCTAssertEqual(queuedPaths(), [b.relativePath])
   }
 
+  /// An empty queue drains to nil — the player's `playNextItem` relies on
+  /// that to fall through to the folder sibling chain
+  func testDequeueNextOnEmptyQueueReturnsNil() {
+    XCTAssertNil(sut.dequeueNext())
+    XCTAssertEqual(sut.count(), 0)
+  }
+
   func testDequeueNextSkipsStaleEntry() {
     let a = addBook("a-book")
     let b = addBook("b-book")

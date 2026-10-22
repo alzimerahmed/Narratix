@@ -79,6 +79,12 @@ final class LibraryBackupServiceTests: XCTestCase {
 
   func testRestoreAppliesProgressNotesAndCollections() async throws {
     let book = addBook(title: "Dune", duration: 3600)
+    /// The backup's `details` only fills an EMPTY field (restore never clobbers
+    /// richer local metadata) — StubFactory's default author is blanked so the
+    /// write path is exercised here; the preserve branch is pinned in
+    /// `testRestoreNeverRegressesFlagsOrMetadata`
+    book.details = ""
+    libraryService.dataManager.saveContext()
 
     let backup = LibraryBackup(
       formatVersion: 1,
@@ -164,7 +170,9 @@ final class LibraryBackupServiceTests: XCTestCase {
         items: [
           .init(
             uuid: book.uuid, relativePath: book.relativePath, type: "book",
-            title: "Dune", details: "", originalFileName: "", duration: 3600,
+            /// A non-empty backup `details` must not overwrite the local one —
+            /// the same terminal-forward rule as the flags
+            title: "Dune", details: "Different Author", originalFileName: "", duration: 3600,
             currentTime: 0, percentCompleted: 0, isFinished: false,
             didNotFinish: false, note: nil, seriesName: nil, seriesOrder: nil,
             speed: 1, lastPlayDate: nil, orderRank: 0
@@ -182,6 +190,9 @@ final class LibraryBackupServiceTests: XCTestCase {
     XCTAssertEqual(restored.note, "keep me")
     XCTAssertEqual(restored.seriesName, "Dune Saga")
     XCTAssertEqual(restored.seriesOrder, 2)
+    /// StubFactory's "test-author" survives: a backup author line never
+    /// downgrades a populated field
+    XCTAssertEqual(restored.details, "test-author")
   }
 
   /// A backup that knows about a book the library doesn't must skip it, and a

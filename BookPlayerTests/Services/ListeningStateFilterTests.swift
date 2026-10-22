@@ -141,6 +141,19 @@ final class ListeningStateFilterTests: XCTestCase {
     XCTAssertEqual(filterPaths(for: .finished), [book.relativePath])
   }
 
+  /// Finished and abandoned are exclusive the other way too: an explicit
+  /// "finished" clears the DNF flag, so an item can't sit in both groups
+  func testMarkAsFinishedClearsDidNotFinish() {
+    let book = addBook("book", currentTime: 50, didNotFinish: true)
+    dataManager.saveContext()
+
+    sut.markAsFinished(flag: true, relativePath: book.relativePath)
+    dataManager.saveContext()
+
+    XCTAssertEqual(filterPaths(for: .finished), [book.relativePath])
+    XCTAssertEqual(filterPaths(for: .didNotFinish), [])
+  }
+
   func testUpdateNotePersists() {
     let book = addBook("book")
     dataManager.saveContext()

@@ -338,6 +338,27 @@ final class SyncTasksRepositoryTests: XCTestCase {
     XCTAssertTrue(tasks.isEmpty)
   }
 
+  private func appendDeleteTask(relativePath: String) async throws {
+    try await repository.storeTask(parameters: [
+      "id": UUID().uuidString,
+      "uuid": UUID().uuidString,
+      "jobType": SyncJobType.delete.rawValue,
+      "queueKey": TaskQueueKey.sync,
+      "relativePath": relativePath,
+    ])
+  }
+
+  private func appendUploadFileTask(uuid: String, relativePath: String) async throws {
+    try await repository.storeTask(parameters: [
+      "id": UUID().uuidString,
+      "uuid": uuid,
+      "jobType": SyncJobType.uploadFile.rawValue,
+      "queueKey": TaskQueueKey.uploadFile,
+      "relativePath": relativePath,
+      "filePath": "file:///tmp/\(uuid).mp3",
+    ])
+  }
+
   private func appendUploadTask(uuid: String, relativePath: String) async throws {
     let parameters: [String: Any] = [
       "id": UUID().uuidString,
@@ -356,5 +377,52 @@ final class SyncTasksRepositoryTests: XCTestCase {
       "queueKey": TaskQueueKey.sync
     ]
     try await repository.storeTask(parameters: parameters)
+  }
+}
+
+// MARK: - Offload eligibility (hasUploadTask(matchingPrefix:))
+
+extension SyncTasksRepositoryTests {
+  /// The storage screen and the watch both gate a file delete on this: an
+  /// upload in flight for anything under a folder means the local copy is the
+  /// ONLY one — offloading it strands the queued upload. Prefix matching must
+  /// be segment-aware: "Folder2" must never match "Folder".
+  func testHasUploadTask_matchingPrefix_matchesExactAndDescendant() async throws {
+    try await appendUploadTask(uuid: "upload-uuid", relativePath: "Folder/Book.mp3")
+
+    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
+    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder"))
+  }
+
+  /// "Folder2/x" shares the "Folder" character prefix but no path segment —
+  /// a naive `hasPrefix` check would hold the wrong files hostage
+  func testHasUploadTask_matchingPrefix_rejectsSiblingPrefix() async throws {
+    try await appendUploadTask(uuid: "upload-uuid", relativePath: "Folder2/Book.mp3")
+
+    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
+    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
+    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder2"))
+  }
+
+  /// Non-upload references at the same path don't count — a queued delete or
+  /// metadata update doesn't need the local bytes to survive
+  func testHasUploadTask_matchingPrefix_ignoresNonUploadJobTypes() async throws {
+    try await appendDeleteTask(relativePath: "Folder/Book.mp3")
+
+    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
+    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
+  }
+
+  /// The `uploadFile` lane carries the actual bytes — a pending file upload
+  /// (e.g. from the missing-items pass) must hold the offload too
+  func testHasUploadTask_matchingPrefix_matchesUploadFileLane() async throws {
+    try await appendUploadFileTask(uuid: "file-uuid", relativePath: "Folder/Streamed.mp3")
+
+    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder"))
+    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder/Streamed.mp3"))
+  }
+
+  func testHasUploadTask_matchingPrefix_emptyStoreIsFalse() async {
+    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
   }
 }
