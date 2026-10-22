@@ -112,6 +112,11 @@ public protocol SyncServiceProtocol {
 
   func getDownloadState(for item: SimpleLibraryItem) -> DownloadState
 
+  /// Whether the item's local file(s) may be removed — a remote copy exists
+  /// to download them back from: its own cloud `remoteURL` or media-server
+  /// stream link, and for a folder or bound book every leaf under it
+  func canOffload(_ item: SimpleLibraryItem) -> Bool
+
   /// Check if there's an upload task queued for the item
   func hasUploadTask(for relativePath: String) async -> Bool
   /// Check if there's an upload task queued for the item or any of its
@@ -1389,6 +1394,40 @@ extension SyncService {
 
       return libraryService.getMaxItemsCount(at: item.relativePath) == enumerator.allObjects.count
         ? .downloaded : .notDownloaded
+    }
+  }
+
+  /// The offload rule shared by the storage screen, the library's context
+  /// menu and the watch's offload requests: a local file may only go when a
+  /// copy remains to come back to. Sync being active proves nothing — an
+  /// item can be synced yet never uploaded, so the evidence is per-item:
+  /// its `remoteURL`, or a media-server stream link it downloads through.
+  /// For a container EVERY descendant book needs the evidence too — the
+  /// container's own `remoteURL` is sync metadata, not proof its children
+  /// ever reached the server.
+  public func canOffload(_ item: SimpleLibraryItem) -> Bool {
+    /// A stream link IS the remote copy — the item (and a bound volume's
+    /// books, which download through it) comes back on demand
+    guard item.externalResources?.streamingResource == nil else { return true }
+
+    switch item.type {
+    case .book:
+      return item.remoteURL != nil
+    case .folder, .bound:
+      guard let nested = libraryService.getAllNestedItems(inside: item.relativePath) else {
+        return false
+      }
+      /// Volumes inside that stream: every book under them is covered —
+      /// their files come back through the volume's link
+      let streamedRoots = nested
+        .filter { $0.type != .book && $0.mediaServerProviderName != nil }
+        .map(\.relativePath)
+      return nested.allSatisfy { child in
+        /// Containers hold no file of their own — only books lose bytes
+        guard child.type == .book else { return true }
+        if child.remoteURL != nil || child.mediaServerProviderName != nil { return true }
+        return streamedRoots.contains { child.relativePath.hasPrefix($0 + "/") }
+      }
     }
   }
 }

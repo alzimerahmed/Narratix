@@ -2332,6 +2332,26 @@ class SyncServiceProtocolMock: SyncServiceProtocol {
         cancelDownloadOfReceivedInvocations.append(item)
         try cancelDownloadOfClosure?(item)
     }
+    //MARK: - canOffload
+
+    var canOffloadCallsCount = 0
+    var canOffloadCalled: Bool {
+        return canOffloadCallsCount > 0
+    }
+    var canOffloadReceivedItem: SimpleLibraryItem?
+    var canOffloadReceivedInvocations: [SimpleLibraryItem] = []
+    var canOffloadReturnValue: Bool!
+    var canOffloadClosure: ((SimpleLibraryItem) -> Bool)?
+    func canOffload(_ item: SimpleLibraryItem) -> Bool {
+        canOffloadCallsCount += 1
+        canOffloadReceivedItem = item
+        canOffloadReceivedInvocations.append(item)
+        if let canOffloadClosure = canOffloadClosure {
+            return canOffloadClosure(item)
+        } else {
+            return canOffloadReturnValue
+        }
+    }
     //MARK: - getDownloadState
 
     var getDownloadStateForCallsCount = 0

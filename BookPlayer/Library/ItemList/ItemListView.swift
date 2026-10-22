@@ -1101,23 +1101,28 @@ extension ItemListView {
         .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
         .disabled(!isSingle)
       case .downloaded:
-        Button {
-          select(items)
-          Task {
-            /// Prefix match: a folder/bound item's uploads carry the child
-            /// paths, so an exact path check would offload over a running
-            /// child upload
-            if await syncService.hasUploadTask(matchingPrefix: item.relativePath) {
-              activeAlert = .warningOffload(item)
-            } else {
-              model.handleOffloading(of: item)
+        /// `.downloaded` only proves the file is local — `canOffload`'s
+        /// remote-copy evidence decides whether removing it is safe, so a
+        /// synced-but-never-uploaded item offers no offload
+        if syncService.canOffload(item) {
+          Button {
+            select(items)
+            Task {
+              /// Prefix match: a folder/bound item's uploads carry the child
+              /// paths, so an exact path check would offload over a running
+              /// child upload
+              if await syncService.hasUploadTask(matchingPrefix: item.relativePath) {
+                activeAlert = .warningOffload(item)
+              } else {
+                model.handleOffloading(of: item)
+              }
             }
+          } label: {
+            Label("remove_downloaded_file_title", systemImage: "icloud.slash")
           }
-        } label: {
-          Label("remove_downloaded_file_title", systemImage: "icloud.slash")
+          .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
+          .disabled(!isSingle)
         }
-        .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
-        .disabled(!isSingle)
       }
     }
   }

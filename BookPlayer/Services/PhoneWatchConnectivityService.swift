@@ -365,7 +365,9 @@ extension PhoneWatchConnectivityService {
         stateString = "downloading"
       case .downloaded:
         stateString = "downloaded"
-        canOffload = offloadAllowed(for: item, streamsFromServer: streamsFromServer)
+        /// The shared rule (`SyncService.canOffload`): remote-copy evidence
+        /// per leaf under a container, not the container's own metadata
+        canOffload = syncService?.canOffload(item) ?? false
       }
     }
 
@@ -380,14 +382,6 @@ extension PhoneWatchConnectivityService {
       downloadState: stateString,
       canOffload: canOffload
     )
-  }
-
-  /// The storage screen's rule, shared by the row flag and the remove request:
-  /// the local file may only go when a copy remains to come back to — a cloud
-  /// `remoteURL` or a media-server stream link. `remoteBacked` alone isn't
-  /// enough: sync can be on while this item was never uploaded
-  private func offloadAllowed(for item: SimpleLibraryItem, streamsFromServer: Bool) -> Bool {
-    item.remoteURL != nil || streamsFromServer
   }
 
   /// Ask the phone to fetch the item's file from the cloud or its media
@@ -468,10 +462,13 @@ extension PhoneWatchConnectivityService {
 
       /// Verify offloading here too — the watch only offers the action for
       /// rows the phone flagged `canOffload`, but a file is never deleted on
-      /// another device's say-so without the remote-copy evidence holding up
+      /// another device's say-so without the remote-copy evidence holding up.
+      /// For a folder or bound book `canOffload` walks the leaves: every
+      /// descendant file needs its own copy — the container's `remoteURL` is
+      /// sync metadata, not proof its children ever uploaded
       let streamsFromServer = item.externalResources?.streamingResource != nil
       let remoteBacked = syncService.isActive || streamsFromServer
-      guard remoteBacked, offloadAllowed(for: item, streamsFromServer: streamsFromServer) else {
+      guard remoteBacked, syncService.canOffload(item) else {
         self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
         return
       }
