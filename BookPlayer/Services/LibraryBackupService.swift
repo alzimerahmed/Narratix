@@ -347,7 +347,6 @@ final class LibraryBackupService: BPLogger {
   }
 
   private static func bookmarkTypeName(_ type: BookmarkType) -> String {
-  private static func bookmarkTypeName(_ type: BookmarkType) -> String {
     switch type {
     case .user: return "user"
     case .play: return "play"
