@@ -3144,6 +3144,10 @@ extension LibraryService {
       #keyPath(LibraryItem.uuid): folder.uuid,
     ])
 
+    /// Children save through the book path — a folder with none still needs
+    /// its own flag persisted
+    self.dataManager.saveContext()
+
     guard let itemIdentifiers = getItemIdentifiers(in: folder.relativePath) else { return }
 
     itemIdentifiers.forEach({ self.markAsDidNotFinish(flag: flag, relativePath: $0) })
