@@ -2372,6 +2372,26 @@ class SyncServiceProtocolMock: SyncServiceProtocol {
             return hasUploadTaskForReturnValue
         }
     }
+    //MARK: - hasUploadTask
+
+    var hasUploadTaskMatchingPrefixCallsCount = 0
+    var hasUploadTaskMatchingPrefixCalled: Bool {
+        return hasUploadTaskMatchingPrefixCallsCount > 0
+    }
+    var hasUploadTaskMatchingPrefixReceivedPathPrefix: String?
+    var hasUploadTaskMatchingPrefixReceivedInvocations: [String] = []
+    var hasUploadTaskMatchingPrefixReturnValue: Bool!
+    var hasUploadTaskMatchingPrefixClosure: ((String) async -> Bool)?
+    func hasUploadTask(matchingPrefix pathPrefix: String) async -> Bool {
+        hasUploadTaskMatchingPrefixCallsCount += 1
+        hasUploadTaskMatchingPrefixReceivedPathPrefix = pathPrefix
+        hasUploadTaskMatchingPrefixReceivedInvocations.append(pathPrefix)
+        if let hasUploadTaskMatchingPrefixClosure = hasUploadTaskMatchingPrefixClosure {
+            return await hasUploadTaskMatchingPrefixClosure(pathPrefix)
+        } else {
+            return hasUploadTaskMatchingPrefixReturnValue
+        }
+    }
     //MARK: - setLibraryLastBook
 
     var setLibraryLastBookWithCallsCount = 0

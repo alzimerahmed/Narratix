@@ -432,8 +432,10 @@ extension PhoneWatchConnectivityService {
 
     Task { @MainActor in
       /// An upload in flight means the remote copy isn't real yet — same
-      /// guard the storage screen applies before offloading
-      if await syncService.hasUploadTask(for: relativePath) {
+      /// guard the storage screen applies before offloading. The prefix match
+      /// also catches a child's queued upload under a folder or bound book,
+      /// whose own path is only the container's
+      if await syncService.hasUploadTask(matchingPrefix: relativePath) {
         self.reply(response: WatchActionResponse(ok: false, error: "uploadInProgress"), to: replyHandler)
         return
       }

@@ -45,6 +45,12 @@ public protocol SyncQueueRepositoryProtocol: ModelActor {
 
   func hasUploadTask(for relativePath: String) -> Bool
 
+  /// Whether an upload task is queued for the item or any of its descendants:
+  /// a folder or bound book's uploads carry the CHILD paths ("Folder/ch1.mp3"),
+  /// so an exact match on the container path misses them — and offloading the
+  /// container would delete a file mid-upload
+  func hasUploadTask(matchingPrefix pathPrefix: String) -> Bool
+
   /// Stores each upload-lane task unless its book already has an upload queued in either
   /// lane, parked ones included. Returns how many were stored.
   func storeFileUploadsIfAbsent(_ parameterList: [[String: Any]]) async throws -> Int
@@ -657,6 +663,28 @@ public actor SyncQueueRepository: SyncQueueRepositoryProtocol, BPLogger {
 
     } catch {
       return false
+    }
+  }
+
+  /// Check if there's an upload task queued for the item or anything under it.
+  /// Matches the task references (not the `.upload` payloads like `hasUploadTask(for:)`)
+  /// so a queued or running `uploadFile` task counts too — missing-items uploads read
+  /// the Processed file itself, and a `.upload`'s follow-up file job is the lane where
+  /// the bytes actually move. Job types mirror `getUploadCandidates`: the tasks that
+  /// can lead to a book file upload.
+  public func hasUploadTask(matchingPrefix pathPrefix: String) -> Bool {
+    let descendantPrefix = pathPrefix + "/"
+    let references = (try? modelContext.fetch(FetchDescriptor<QueuedTaskReferenceModel>())) ?? []
+
+    return references.contains { reference in
+      guard
+        reference.jobType == .upload
+          || reference.jobType == .uploadFile
+          || reference.jobType == .externalResourceToDownload
+      else { return false }
+
+      return reference.relativePath == pathPrefix
+        || reference.relativePath.hasPrefix(descendantPrefix)
     }
   }
 

@@ -114,6 +114,9 @@ public protocol SyncServiceProtocol {
 
   /// Check if there's an upload task queued for the item
   func hasUploadTask(for relativePath: String) async -> Bool
+  /// Check if there's an upload task queued for the item or any of its
+  /// descendants (a folder or bound book's uploads carry the child paths)
+  func hasUploadTask(matchingPrefix pathPrefix: String) async -> Bool
   /// Set the last played book (on the background context)
   func setLibraryLastBook(with relativePath: String?) async
 }
@@ -880,6 +883,11 @@ extension SyncService {
   /// Check if there's an upload task queued for the item
   public func hasUploadTask(for relativePath: String) async -> Bool {
     return await jobManager.hasUploadTask(for: relativePath)
+  }
+
+  /// Check if there's an upload task queued for the item or anything under it
+  public func hasUploadTask(matchingPrefix pathPrefix: String) async -> Bool {
+    return await jobManager.hasUploadTask(matchingPrefix: pathPrefix)
   }
 }
 

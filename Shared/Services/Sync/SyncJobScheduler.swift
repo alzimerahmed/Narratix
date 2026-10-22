@@ -41,6 +41,9 @@ public protocol JobSchedulerProtocol {
   func resetAllJobs() async
   /// Check if there's an upload task queued for the item
   func hasUploadTask(for relativePath: String) async -> Bool
+  /// Check if there's an upload task queued for the item or any of its
+  /// descendants (a folder's uploads carry the child paths)
+  func hasUploadTask(matchingPrefix pathPrefix: String) async -> Bool
 
   func scheduleExternalResourceUpload(for externalResource: SyncableExternalResource, itemOrigin: LibraryItemRef) async
   /// Delete an external resource on the server
@@ -342,5 +345,10 @@ public class SyncJobScheduler: JobSchedulerProtocol, BPLogger {
   /// Check if there's an upload task queued for the item
   public func hasUploadTask(for relativePath: String) async -> Bool {
     return await tasksRepository.hasUploadTask(for: relativePath)
+  }
+
+  /// Check if there's an upload task queued for the item or anything under it
+  public func hasUploadTask(matchingPrefix pathPrefix: String) async -> Bool {
+    return await tasksRepository.hasUploadTask(matchingPrefix: pathPrefix)
   }
 }

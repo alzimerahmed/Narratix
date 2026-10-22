@@ -1104,7 +1104,10 @@ extension ItemListView {
         Button {
           select(items)
           Task {
-            if await syncService.hasUploadTask(for: item.relativePath) {
+            /// Prefix match: a folder/bound item's uploads carry the child
+            /// paths, so an exact path check would offload over a running
+            /// child upload
+            if await syncService.hasUploadTask(matchingPrefix: item.relativePath) {
               activeAlert = .warningOffload(item)
             } else {
               model.handleOffloading(of: item)
