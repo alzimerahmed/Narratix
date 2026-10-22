@@ -232,8 +232,6 @@ final class ListeningQueueService {
     return try? context.fetch(fetch).first
   }
 
-  /// `BookPlayerKit.` qualification is load-bearing: the SDK's
-  /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
   /// Contiguous 0…n-1 in the stored order — the only invariants a move or an
   /// insert has to keep
   private func renumber(context: NSManagedObjectContext) {

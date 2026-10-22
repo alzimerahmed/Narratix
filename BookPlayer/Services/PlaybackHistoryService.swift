@@ -304,7 +304,4 @@ final class PlaybackHistoryService {
     dataManager.saveContext()
     updates.send()
   }
-
-  /// `BookPlayerKit.` qualification is load-bearing: the SDK's
-  /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
 }
