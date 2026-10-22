@@ -309,7 +309,13 @@ extension PhoneWatchConnectivityService {
   ) {
     switch command {
     case WatchLibraryCommand.requestLibrary:
-      replyHandler(buildLibraryPage(from: message))
+      /// The page build reads the viewContext and walks per-folder contents
+      /// for download state — main-actor work, not the serial delegate queue
+      /// (a 50-row folder listing would otherwise stall every other watch
+      /// message behind it). `replyHandler` runs fine from any thread.
+      Task { @MainActor in
+        replyHandler(self.buildLibraryPage(from: message))
+      }
     case WatchLibraryCommand.downloadItem:
       guard let relativePath = message["identifier"] as? String else {
         reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
@@ -330,7 +336,7 @@ extension PhoneWatchConnectivityService {
   private func buildLibraryPage(from message: [String: Any]) -> Data {
     let path = (message["path"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let offset = max((message["offset"] as? Int) ?? 0, 0)
-    let limit = min((message["limit"] as? Int) ?? Self.libraryPageLimit, Self.libraryPageLimit)
+    let limit = min(max((message["limit"] as? Int) ?? Self.libraryPageLimit, 1), Self.libraryPageLimit)
 
     let items = libraryService.fetchContents(at: path, limit: limit, offset: offset) ?? []
     let page = WatchLibraryPage(
@@ -395,22 +401,25 @@ extension PhoneWatchConnectivityService {
     relativePath: String,
     replyHandler: @escaping (Data) -> Void
   ) {
-    guard
-      let item = libraryService.getSimpleItem(with: relativePath),
-      let syncService
-    else {
-      reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
-      return
-    }
-
-    guard syncService.isActive || item.externalResources?.streamingResource != nil else {
-      reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
-      return
-    }
-
-    reply(response: WatchActionResponse(ok: true), to: replyHandler)
-
+    /// The item lookup reads the main-confined viewContext and the download
+    /// state lives on the main actor — everything runs inside the hop, and
+    /// `replyHandler` is safe to call from there
     Task { @MainActor in
+      guard
+        let item = libraryService.getSimpleItem(with: relativePath),
+        let syncService
+      else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+
+      guard syncService.isActive || item.externalResources?.streamingResource != nil else {
+        self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
+        return
+      }
+
+      self.reply(response: WatchActionResponse(ok: true), to: replyHandler)
+
       try? await syncService.downloadRemoteFiles(for: item)
     }
   }
@@ -422,15 +431,17 @@ extension PhoneWatchConnectivityService {
     relativePath: String,
     replyHandler: @escaping (Data) -> Void
   ) {
-    guard
-      let item = libraryService.getSimpleItem(with: relativePath),
-      let syncService
-    else {
-      reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
-      return
-    }
-
+    /// Same main-actor hop as the download request: `getSimpleItem` reads the
+    /// viewContext, the offload check reads main-confined download state
     Task { @MainActor in
+      guard
+        let item = libraryService.getSimpleItem(with: relativePath),
+        let syncService
+      else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+
       /// An upload in flight means the remote copy isn't real yet — same
       /// guard the storage screen applies before offloading. The prefix match
       /// also catches a child's queued upload under a folder or bound book,
