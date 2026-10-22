@@ -84,13 +84,22 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
       ["http", "https"].contains(scheme),
       url.host != nil
     else { return nil }
+    /// Credentials pasted into the address (user:pass@host) don't belong in
+    /// the stored URL — the username/password fields carry them instead
+    if url.user != nil || url.password != nil {
+      var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+      components?.user = nil
+      components?.password = nil
+      return components?.url
+    }
     return url
   }
 
   // MARK: - Requests
 
   /// Authorization header for the connection's own server. Never attaches to
-  /// anything else — the check compares against the connection URL's host
+  /// anything else — the check compares scheme, host AND effective port, so
+  /// an http or odd-port URL on the same host gets no credentials
   private func authorizedRequest(url: URL, method: String, depth: String? = nil, body: Data? = nil) -> URLRequest {
     var request = URLRequest(url: url)
     request.httpMethod = method
@@ -103,13 +112,25 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
     }
     guard
       !connection.username.isEmpty,
-      connection.url.host == url.host
+      connection.url.scheme?.lowercased() == url.scheme?.lowercased(),
+      connection.url.host?.lowercased() == url.host?.lowercased(),
+      Self.effectivePort(of: connection.url) == Self.effectivePort(of: url)
     else { return request }
     let credentials = "\(connection.username):\(connection.password)"
     if let data = credentials.data(using: .utf8) {
       request.setValue("Basic \(data.base64EncodedString())", forHTTPHeaderField: "Authorization")
     }
     return request
+  }
+
+  /// The port the URL answers on — explicit, or the scheme's default
+  private static func effectivePort(of url: URL) -> Int? {
+    if let port = url.port { return port }
+    switch url.scheme?.lowercased() {
+    case "https": return 443
+    case "http": return 80
+    default: return nil
+    }
   }
 
   private static let propfindBody = """
