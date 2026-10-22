@@ -24,6 +24,9 @@
 "settings_skip_rewind_title" = "Rewind";
 "settings_skip_forward_title" = "Forward";
 "settings_skip_description" = "Adjust the amount skipped when using the buttons in the Player or Control Center.";
+"settings_skip_custom_button" = "Custom…";
+"settings_skip_custom_title" = "Custom skip intervals";
+"settings_skip_custom_description" = "Seconds to skip, between 1 and 3600. Leave a field blank to keep its current value.";
 "settings_support_title" = "SUPPORT";
 "settings_shortcuts_title" = "SHORTCUTS";
 "settings_support_project_title" = "View project on Github";
