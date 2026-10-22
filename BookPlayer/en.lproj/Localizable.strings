@@ -737,3 +737,39 @@
 "backup_error_empty" = "There's nothing in the library to back up yet.";
 "backup_error_version" = "This backup was made by a newer app version (format %d) and can't be read.";
 "backup_error_unreadable" = "That file isn't a readable library backup.";
+
+/* Phase 3f: Listening stats */
+"stats_title" = "Listening stats";
+"stats_open_hint" = "Opens your listening stats";
+"stats_empty_title" = "No listening yet";
+"stats_empty_description" = "Your streaks, goals and stats appear here after your first listening session.";
+"stats_today_header" = "Today";
+"stats_today_title" = "Listened";
+"stats_today_progress" = "%1$@ of %2$@";
+"stats_streak_header" = "Streaks";
+"stats_current_streak" = "Current streak";
+"stats_longest_streak" = "Longest streak";
+"stats_days_count" = "%d days";
+"stats_month_header" = "Last 30 days";
+"stats_goal_header" = "Goal";
+"stats_daily_goal_title" = "Daily goal";
+"stats_daily_goal_hint" = "Sets how many minutes you want to listen per day";
+"stats_goal_off" = "Off";
+"stats_per_book_header" = "Time per book";
+"stats_per_book_footer" = "Per-book time is counted from the sessions recorded on this device.";
+"stats_chart_accessibility" = "Bar chart of minutes listened per day for the last 30 days";
+
+/* Phase 3f: Watch library browse */
+"watchapp_browse_library_title" = "Browse library";
+"watchapp_browse_empty_title" = "Nothing here";
+"watchapp_browse_empty_description" = "This folder has no books.";
+"watchapp_browse_unavailable_title" = "Can't reach your phone";
+"watchapp_browse_unavailable_description" = "Keep the app open on your phone and try again.";
+"watchapp_browse_retry_button" = "Try again";
+"watchapp_browse_load_more_title" = "Show more";
+"watchapp_download_started_title" = "Download started on your phone";
+"watchapp_download_failed_title" = "The download couldn't be started";
+"watchapp_browse_no_remote_copy" = "There's no online copy of this book to download from.";
+"watchapp_browse_upload_in_progress" = "This book is still uploading to your cloud storage — its download can't be removed yet.";
+"watchapp_remove_download_confirm_title" = "Remove download?";
+"watchapp_remove_download_confirm_description" = "The file leaves this phone. The book stays in your library and downloads again when you need it.";

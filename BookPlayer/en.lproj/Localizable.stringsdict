@@ -132,5 +132,23 @@
         <string>and %d more</string>
       </dict>
     </dict>
+    <key>stats_days_count</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@format@</string>
+      <key>format</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>d</string>
+        <key>zero</key>
+        <string>No days</string>
+        <key>one</key>
+        <string>1 day</string>
+        <key>other</key>
+        <string>%d days</string>
+      </dict>
+    </dict>
   </dict>
 </plist>

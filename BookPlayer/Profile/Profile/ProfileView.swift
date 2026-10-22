@@ -14,6 +14,8 @@ struct ProfileView: View {
   @State private var showLogin = false
   @Environment(\.accountService) private var accountService
   @Environment(\.playerState) private var playerState
+  @Environment(\.listeningStatsService) private var listeningStatsService
+  @Environment(\.playbackHistoryService) private var playbackHistoryService
   @EnvironmentObject private var theme: ThemeViewModel
   
   var body: some View {
@@ -22,7 +24,9 @@ struct ProfileView: View {
         Form {
           ProfileCardSectionView(action: showLoginOrAccount)
             .listSectionSpacing(Spacing.S1)
-          ProfileListenedSectionView()
+          ProfileListenedSectionView {
+            path.append(ProfileScreen.stats)
+          }
         }
 
         Spacer()
@@ -46,6 +50,14 @@ struct ProfileView: View {
         case .queueTasks:
           QueuedTasksView()
             .miniPlayerSafeAreaInset()
+        case .stats:
+          ListeningStatsView {
+            ListeningStatsViewModel(
+              statsService: listeningStatsService,
+              playbackHistoryService: playbackHistoryService
+            )
+          }
+          .miniPlayerSafeAreaInset()
         }
       }
       .sheet(isPresented: $showLogin) {

@@ -14,17 +14,22 @@ struct ProfileListenedSectionView: View {
 
   @EnvironmentObject private var theme: ThemeViewModel
   @Environment(\.libraryService) private var libraryService
+  /// Tapping the section opens the listening-stats screen
+  var action: (() -> Void)?
+
   var body: some View {
     Section {
-      VStack {
-        Text(formattedListeningTime)
-          .bpFont(.title)
-        Text("total_listening_title".localized)
-          .bpFont(.subheadline)
-          .foregroundStyle(theme.secondaryColor)
+      if let action {
+        Button(action: action) {
+          listenedBlock
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(theme.primaryColor)
+        .accessibilityHint("stats_open_hint".localized)
+      } else {
+        listenedBlock
+          .accessibilityElement(children: .combine)
       }
-      .accessibilityElement(children: .combine)
-      .frame(maxWidth: .infinity)
     }
     .listRowBackground(Color.clear)
     .onReceive(NotificationCenter.default.publisher(for: .bookPaused)) { _ in
@@ -33,6 +38,19 @@ struct ProfileListenedSectionView: View {
     .onAppear {
       reloadListeningTime()
     }
+  }
+
+  /// The big total over the caption — shared by the plain and tappable
+  /// variants so they read identically
+  private var listenedBlock: some View {
+    VStack {
+      Text(formattedListeningTime)
+        .bpFont(.title)
+      Text("total_listening_title".localized)
+        .bpFont(.subheadline)
+        .foregroundStyle(theme.secondaryColor)
+    }
+    .frame(maxWidth: .infinity)
   }
 
   func reloadListeningTime() {
