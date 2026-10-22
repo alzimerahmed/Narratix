@@ -187,9 +187,12 @@ enum AudioEQSettings {
   }
 
   /// The full chain to render: preset bands followed by the voice-boost pair.
-  /// Empty when nothing should color the audio — callers must treat that as
-  /// "attach no mix at all", which is what keeps the off path zero-overhead.
+  /// `.off` means no EQ at all — a persisted voice boost stays inert rather
+  /// than forming a chain of its own. Empty when nothing should color the
+  /// audio — callers must treat that as "attach no mix at all", which is what
+  /// keeps the off path zero-overhead.
   static var effectiveBands: [EQBandSpec] {
+    guard preset != .off else { return [] }
     var bands = preset.bands
     if voiceBoostEnabled {
       bands += voiceBoostBands

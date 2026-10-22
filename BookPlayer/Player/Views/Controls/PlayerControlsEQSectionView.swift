@@ -39,6 +39,9 @@ struct PlayerControlsEQSectionView: View {
         .bold()
         .foregroundStyle(theme.primaryColor)
         .tint(theme.linkColor)
+        /// Voice boost stacks on a preset chain — `.off` renders nothing, so
+        /// the toggle is disabled there rather than implying it acts alone
+        .disabled(selectedPreset == .off)
         .accessibilityHint("settings_voiceboost_description")
 
       Text("settings_voiceboost_description")

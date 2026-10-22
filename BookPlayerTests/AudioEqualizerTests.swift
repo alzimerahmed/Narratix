@@ -46,6 +46,10 @@ class AudioEqualizerTests: XCTestCase {
       AudioEQSettings.effectiveBands.count,
       AudioEQSettings.voiceBoostBands.count
     )
+
+    /// `.off` wins over a persisted voice boost — no chain, no mix
+    AudioEQSettings.preset = .off
+    XCTAssertTrue(AudioEQSettings.effectiveBands.isEmpty)
   }
 
   func testEffectiveBandsCappedAtMax() {
