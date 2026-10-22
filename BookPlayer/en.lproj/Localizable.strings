@@ -188,6 +188,7 @@
 "voiceover_dismiss_player_title" = "Dismiss Player";
 "sort_most_recent_button" = "Most Recent";
 "sort_reversed_button" = "Reverse Order";
+"sort_subtitle_format" = "Sorted by %@";
 "voiceover_continue_playback_title" = "Continue Playback";
 "voiceover_chapter_jump_hint" = "Plays from the start of this chapter";
 "coredata_error_diskfull_description" = "The library couldn't be loaded, the device is out of disk space.";

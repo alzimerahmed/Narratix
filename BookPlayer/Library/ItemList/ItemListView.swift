@@ -98,8 +98,35 @@ struct ItemListView: View {
     )
   }
 
+  /// The active sort, under the nav title — the options sheet shows it while open, but a
+  /// folder keeps whatever it was sorted by after the sheet closes
+  private var sortIndicator: String? {
+    switch currentLocation {
+    case .unresolved:
+      return nil
+    case .libraryRoot, .folder:
+      let sortName: String
+      switch preferencesService.effectiveSort(forLocation: currentLocation) {
+      case .automatic(.metadataTitle): sortName = "title_button".localized
+      case .automatic(.fileName): sortName = "sort_filename_button".localized
+      case .automatic(.mostRecent): sortName = "sort_most_recent_button".localized
+      case .custom: sortName = "sleeptimer_option_custom".localized
+      }
+      return String(format: "sort_subtitle_format".localized, sortName)
+    }
+  }
+
   var body: some View {
-    contentView
+    Group {
+      if let sortIndicator {
+        contentView
+          .navigationTitle(model.navigationTitle)
+          .navigationSubtitle(sortIndicator)
+      } else {
+        contentView
+          .navigationTitle(model.navigationTitle)
+      }
+    }
       .accessibilityFocused($focus, equals: .primary)
       .toolbar {
         mainToolbar()
@@ -107,7 +134,6 @@ struct ItemListView: View {
       .miniPlayerSafeAreaInset()
       .listStyle(.plain)
       .applyListStyle(with: theme, background: theme.systemBackgroundColor)
-      .navigationTitle(model.navigationTitle)
       .sheet(item: $activeSheet) { sheet in
         sheetContent(for: sheet)
       }
