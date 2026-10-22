@@ -173,6 +173,17 @@ struct WebDAVBrowserView: View {
   private func entryRow(_ entry: WebDAVEntry) -> some View {
     HStack(spacing: Spacing.S1) {
       if entry.isCollection {
+        /// Two affordances: the leading checkmark selects the folder (its
+        /// contents download recursively), the row + chevron open it
+        Button {
+          viewModel.toggle(entry)
+        } label: {
+          Image(systemName: viewModel.selection.contains(entry.url) ? "checkmark.circle.fill" : "circle")
+            .foregroundStyle(viewModel.selection.contains(entry.url) ? theme.linkColor : theme.secondaryColor)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityHint("webdav_select_folder_hint")
+
         Button {
           viewModel.navigate(to: entry)
         } label: {
@@ -183,6 +194,9 @@ struct WebDAVBrowserView: View {
               .foregroundStyle(theme.primaryColor)
               .lineLimit(1)
             Spacer()
+            Image(systemName: "chevron.right")
+              .bpFont(.caption)
+              .foregroundStyle(theme.secondaryColor)
           }
         }
         .accessibilityHint("webdav_open_folder_hint")
