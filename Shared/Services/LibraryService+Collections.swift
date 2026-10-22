@@ -167,17 +167,18 @@ extension LibraryService {
       .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
   }
 
-  /// Books and volumes grouped by author (`details`) — folders excluded, theirs
-  /// is a generated contents summary. Both levels sorted alphabetically.
+  /// Books grouped by author (`details`) — folders AND bound volumes are
+  /// excluded, theirs is a generated contents summary ("N files"), not an
+  /// author. Both levels sorted alphabetically.
   public func fetchAuthorGroups() -> [SimpleItemGroup] {
     let context = dataManager.getContext()
     let fetchRequest: NSFetchRequest<NSDictionary> = NSFetchRequest<NSDictionary>(entityName: "LibraryItem")
     fetchRequest.propertiesToFetch = SimpleLibraryItem.fetchRequestProperties
     fetchRequest.resultType = .dictionaryResultType
     fetchRequest.predicate = NSPredicate(
-      format: "%K != %d AND %K != nil AND %K != ''",
+      format: "%K == %d AND %K != nil AND %K != ''",
       #keyPath(LibraryItem.type),
-      SimpleItemType.folder.rawValue,
+      SimpleItemType.book.rawValue,
       #keyPath(LibraryItem.details),
       #keyPath(LibraryItem.details)
     )

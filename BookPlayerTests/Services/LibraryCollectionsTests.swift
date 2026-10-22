@@ -199,10 +199,18 @@ final class LibraryCollectionsTests: XCTestCase {
 
   // MARK: - Author groups
 
-  func testAuthorGroups() {
+  func testAuthorGroups() throws {
     let book = addBook("book-1", author: "Andy Weir")
     _ = addBook("book-2", author: "Andy Weir")
     _ = addBook("book-3", author: "Ursula K. Le Guin")
+
+    /// A bound volume's `details` is a generated contents summary
+    /// ("N files"), not an author — it must never leak into the groups
+    let bound = try StubFactory.folder(dataManager: dataManager, title: "collected-works")
+    bound.type = .bound
+    bound.details = "5 files"
+    libraryService.getLibraryReference().addToItems(bound)
+    dataManager.saveContext()
 
     let groups = libraryService.fetchAuthorGroups()
     XCTAssertEqual(groups.map(\.name), ["Andy Weir", "Ursula K. Le Guin"])
