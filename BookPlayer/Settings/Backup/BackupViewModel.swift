@@ -58,24 +58,26 @@ final class BackupViewModel: ObservableObject, BPLogger {
   }
 
   func prepareExport() {
-    do {
-      let backup = try service.export()
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-      encoder.dateEncodingStrategy = .iso8601
-      exportDocument = LibraryBackupDocument(data: try encoder.encode(backup))
-      exporting = true
-    } catch {
-      self.error = error
+    /// The heavy bookmark scan runs on the store's background context inside
+    /// `export()`; the await keeps a big library's build off the button tap
+    Task {
+      do {
+        let backup = try await service.export()
+        exportDocument = LibraryBackupDocument(data: try LibraryBackupService.encode(backup))
+        exporting = true
+      } catch {
+        self.error = error
+      }
     }
   }
 
   /// The copy the app keeps for itself in its backup folder — runs after the
-  /// export sheet finishes so a canceled save still leaves one on device
+  /// export sheet finishes so a canceled save still leaves one on device.
+  /// Writes the exported document's bytes, not a second export.
   func recordLocalCopy() {
-    guard exportDocument != nil else { return }
+    guard let document = exportDocument else { return }
     do {
-      _ = try service.exportFile()
+      _ = try service.writeLocalCopy(data: document.data)
     } catch {
       Self.logger.error("Local backup copy failed: \(error.localizedDescription)")
     }

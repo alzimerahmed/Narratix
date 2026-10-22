@@ -3071,19 +3071,33 @@ extension LibraryService {
   }
 
   public func markAsFinished(flag: Bool, relativePath: String) {
+    markAsFinished(flag: flag, relativePath: relativePath, persist: true)
+  }
+
+  /// The multi-select path: each item keeps its own semantics — books flag,
+  /// folders cascade — and each still emits its own events, but the writes
+  /// land in ONE save instead of one per item
+  public func markAsFinished(flag: Bool, relativePaths: [String]) {
+    for path in relativePaths {
+      markAsFinished(flag: flag, relativePath: path, persist: false)
+    }
+    self.dataManager.saveContext()
+  }
+
+  private func markAsFinished(flag: Bool, relativePath: String, persist: Bool) {
     guard let item = self.getItem(with: relativePath) else { return }
 
     switch item {
     case let folder as Folder:
-      self.markAsFinished(flag: flag, folder: folder)
+      self.markAsFinished(flag: flag, folder: folder, persist: persist)
     case let book as Book:
-      self.markAsFinished(flag: flag, book: book)
+      self.markAsFinished(flag: flag, book: book, persist: persist)
     default:
       break
     }
   }
 
-  func markAsFinished(flag: Bool, book: Book) {
+  func markAsFinished(flag: Bool, book: Book, persist: Bool = true) {
     var metadataUpdates: [String: Any] = [
       #keyPath(LibraryItem.relativePath): book.relativePath!,
       #keyPath(LibraryItem.isFinished): flag,
@@ -3107,10 +3121,12 @@ extension LibraryService {
 
     metadataPassthroughPublisher.send(metadataUpdates)
 
-    self.dataManager.saveContext()
+    if persist {
+      self.dataManager.saveContext()
+    }
   }
 
-  func markAsFinished(flag: Bool, folder: Folder) {
+  func markAsFinished(flag: Bool, folder: Folder, persist: Bool = true) {
     folder.isFinished = flag
     /// Finished and abandoned are exclusive: an explicit "finished" clears DNF
     if flag {
@@ -3123,59 +3139,139 @@ extension LibraryService {
       #keyPath(LibraryItem.isFinished): flag,
     ])
 
-    guard let itemIdentifiers = getItemIdentifiers(in: folder.relativePath) else { return }
+    /// One fetch + one save for the whole cascade instead of re-entering the
+    /// single path per child (N fetches + N saves). The events still go out
+    /// per item — `isFinished` is real server state each leaf needs to push.
+    guard let folderPath = folder.relativePath else {
+      if persist {
+        self.dataManager.saveContext()
+      }
+      return
+    }
+    let context = dataManager.getContext()
+    let fetchRequest: NSFetchRequest<LibraryItem> = LibraryItem.fetchRequest()
+    fetchRequest.predicate = NSPredicate(
+      format: "%K BEGINSWITH %@",
+      #keyPath(LibraryItem.folder.relativePath), folderPath
+    )
+    guard let descendants = try? context.fetch(fetchRequest) else {
+      if persist {
+        self.dataManager.saveContext()
+      }
+      return
+    }
 
-    itemIdentifiers.forEach({ self.markAsFinished(flag: flag, relativePath: $0) })
+    for item in descendants {
+      switch item {
+      case let nested as Folder:
+        nested.isFinished = flag
+        if flag {
+          nested.didNotFinish = false
+        }
+        metadataPassthroughPublisher.send([
+          #keyPath(LibraryItem.uuid): nested.uuid,
+          #keyPath(LibraryItem.relativePath): nested.relativePath!,
+          #keyPath(LibraryItem.isFinished): flag,
+        ])
+      case let book as Book:
+        var metadataUpdates: [String: Any] = [
+          #keyPath(LibraryItem.relativePath): book.relativePath!,
+          #keyPath(LibraryItem.isFinished): flag,
+          #keyPath(LibraryItem.uuid): book.uuid,
+        ]
+        book.isFinished = flag
+        if flag {
+          book.didNotFinish = false
+        }
+        // Same side-effect guard as the single path: un-finishing a book that
+        // sits at its end resets the playhead so it doesn't look done
+        if !flag,
+          book.currentTime.rounded(.up) == book.duration.rounded(.up)
+        {
+          book.currentTime = 0.0
+          book.percentCompleted = 0.0
+          metadataUpdates[#keyPath(LibraryItem.currentTime)] = Double(0)
+          metadataUpdates[#keyPath(LibraryItem.percentCompleted)] = Double(0)
+        }
+        metadataPassthroughPublisher.send(metadataUpdates)
+      default:
+        break
+      }
+    }
+
+    if persist {
+      self.dataManager.saveContext()
+    }
   }
 
   /// User-marked "did not finish" — triage for abandoned items, kept apart from
   /// `isFinished` so the upstream binary state and its sync payloads stay untouched.
   /// Concrete-type API like the listening-state `filterContents` overload.
   public func markAsDidNotFinish(flag: Bool, relativePath: String) {
+    markAsDidNotFinish(flag: flag, relativePath: relativePath, persist: true)
+  }
+
+  /// The multi-select path — same semantics per item, ONE save at the end
+  public func markAsDidNotFinish(flag: Bool, relativePaths: [String]) {
+    for path in relativePaths {
+      markAsDidNotFinish(flag: flag, relativePath: path, persist: false)
+    }
+    self.dataManager.saveContext()
+  }
+
+  private func markAsDidNotFinish(flag: Bool, relativePath: String, persist: Bool) {
     guard let item = self.getItem(with: relativePath) else { return }
 
     switch item {
     case let folder as Folder:
-      self.markAsDidNotFinish(flag: flag, folder: folder)
+      self.markAsDidNotFinish(flag: flag, folder: folder, persist: persist)
     case let book as Book:
-      self.markAsDidNotFinish(flag: flag, book: book)
+      self.markAsDidNotFinish(flag: flag, book: book, persist: persist)
     default:
       break
     }
   }
 
-  func markAsDidNotFinish(flag: Bool, book: Book) {
+  func markAsDidNotFinish(flag: Bool, book: Book, persist: Bool = true) {
     /// `isFinished` is NOT cleared: the upstream binary state stays as the user
     /// left it — the DNF flag wins over it at `ListeningState` derivation
     book.didNotFinish = flag
 
-    metadataPassthroughPublisher.send([
-      #keyPath(LibraryItem.relativePath): book.relativePath!,
-      #keyPath(LibraryItem.isFinished): book.isFinished,
-      #keyPath(LibraryItem.didNotFinish): book.didNotFinish,
-      #keyPath(LibraryItem.uuid): book.uuid,
-    ])
-
-    self.dataManager.saveContext()
+    /// No passthrough: `didNotFinish` is local triage the server has no field
+    /// for — `scheduleMetadataUpdate` strips it, so every emit only ever
+    /// produced a no-op `.update` job (the `isFinished` it also carried is
+    /// unchanged by this flag)
+    if persist {
+      self.dataManager.saveContext()
+    }
   }
 
-  func markAsDidNotFinish(flag: Bool, folder: Folder) {
+  func markAsDidNotFinish(flag: Bool, folder: Folder, persist: Bool = true) {
     folder.didNotFinish = flag
 
-    metadataPassthroughPublisher.send([
-      #keyPath(LibraryItem.relativePath): folder.relativePath!,
-      #keyPath(LibraryItem.isFinished): folder.isFinished,
-      #keyPath(LibraryItem.didNotFinish): folder.didNotFinish,
-      #keyPath(LibraryItem.uuid): folder.uuid,
-    ])
+    /// One fetch + one save for the whole cascade — and no per-child emit,
+    /// for the same stripped-field reason as the book path
+    guard let folderPath = folder.relativePath else {
+      if persist {
+        self.dataManager.saveContext()
+      }
+      return
+    }
+    let context = dataManager.getContext()
+    let fetchRequest: NSFetchRequest<LibraryItem> = LibraryItem.fetchRequest()
+    fetchRequest.predicate = NSPredicate(
+      format: "%K BEGINSWITH %@",
+      #keyPath(LibraryItem.folder.relativePath), folderPath
+    )
+    if let descendants = try? context.fetch(fetchRequest) {
+      for item in descendants {
+        item.didNotFinish = flag
+      }
+    }
 
-    /// Children save through the book path — a folder with none still needs
-    /// its own flag persisted
-    self.dataManager.saveContext()
-
-    guard let itemIdentifiers = getItemIdentifiers(in: folder.relativePath) else { return }
-
-    itemIdentifiers.forEach({ self.markAsDidNotFinish(flag: flag, relativePath: $0) })
+    if persist {
+      self.dataManager.saveContext()
+    }
   }
 
   /// The item's free-form note (book-level memo; `nil` clears it)

@@ -133,27 +133,31 @@ final class LibraryBackupService: BPLogger {
 
   // MARK: - Export
 
-  func export() throws -> LibraryBackup {
+  func export() async throws -> LibraryBackup {
     let items = libraryService.filterContents(
       at: nil, query: nil, scope: nil, limit: nil, offset: nil
     ) ?? []
 
     guard !items.isEmpty else { throw LibraryBackupError.emptyLibrary }
 
+    /// One grouped fetch for all bookmark types — four fetches per item was
+    /// the export's dominant cost on big libraries, and it ran on the caller's
+    /// actor; the grouped read happens on the store's background context
+    let bookmarkedPaths = items.filter { $0.type != .folder }.map(\.relativePath)
+    let bookmarksByItem = await libraryService.getBookmarks(forItemsAt: bookmarkedPaths)
+
     var bookmarks = [LibraryBackup.Bookmark]()
     for item in items where item.type != .folder {
-      for type in [BookmarkType.user, .play, .skip, .sleep] {
-        for bookmark in libraryService.getBookmarks(of: type, relativePath: item.relativePath) ?? [] {
-          bookmarks.append(
-            .init(
-              time: bookmark.time,
-              type: Self.bookmarkTypeName(type),
-              note: bookmark.note,
-              itemUuid: item.uuid,
-              itemPath: item.relativePath
-            )
+      for bookmark in bookmarksByItem[item.relativePath] ?? [] {
+        bookmarks.append(
+          .init(
+            time: bookmark.time,
+            type: Self.bookmarkTypeName(bookmark.type),
+            note: bookmark.note,
+            itemUuid: item.uuid,
+            itemPath: item.relativePath
           )
-        }
+        )
       }
     }
 
@@ -186,19 +190,30 @@ final class LibraryBackupService: BPLogger {
   /// The backup file: JSON in the app's library-backup folder (Application
   /// Support — Documents/BPBackup belongs to the sync-deleted flow), timestamped
   /// so repeated exports keep a history and a share-sheet send has a real file
-  func exportFile() throws -> URL {
-    let backup = try export()
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-    encoder.dateEncodingStrategy = .iso8601
-    let data = try encoder.encode(backup)
+  func exportFile() async throws -> URL {
+    let backup = try await export()
+    return try writeLocalCopy(data: try Self.encode(backup))
+  }
 
+  /// Writes already-encoded backup JSON into the library-backup folder —
+  /// `recordLocalCopy` reuses the exported document's bytes instead of
+  /// re-running the export
+  func writeLocalCopy(data: Data) throws -> URL {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd-HHmmss"
     let folder = DataManager.getLibraryBackupFolderURL()
     let url = folder.appendingPathComponent("Narratix-Backup-\(formatter.string(from: Date())).json")
     try data.write(to: url)
     return url
+  }
+
+  /// The encoder settings the share sheet and the local copy share — one
+  /// byte shape regardless of which path wrote it
+  static func encode(_ backup: LibraryBackup) throws -> Data {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    encoder.dateEncodingStrategy = .iso8601
+    return try encoder.encode(backup)
   }
 
   private static func itemRecord(_ item: SimpleLibraryItem) -> LibraryBackup.Item {
@@ -225,10 +240,18 @@ final class LibraryBackupService: BPLogger {
 
   // MARK: - Restore
 
+  /// A real library backup is JSON of at most a few MB — a picked file could
+  /// be anything, so the read caps out before the bytes land in memory
+  private static let maxBackupFileSize = 64 * 1024 * 1024
+
   /// Read a backup file (or the share sheet's copy of one) into the document
   func loadBackup(from url: URL) throws -> LibraryBackup {
     let accessing = url.startAccessingSecurityScopedResource()
     defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+    let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+    guard fileSize <= Self.maxBackupFileSize else {
+      throw LibraryBackupError.unreadableFile
+    }
     guard let data = try? Data(contentsOf: url) else {
       throw LibraryBackupError.unreadableFile
     }
@@ -257,87 +280,68 @@ final class LibraryBackupService: BPLogger {
 
     for record in backup.library.items {
       /// The writes go through the viewContext — a big library's restore is a
-      /// long run of saves; yield so the UI keeps breathing between records
+      /// long run; yield so the UI keeps breathing between records
       await Task.yield()
-      guard let item = resolveItem(uuid: record.uuid, path: record.relativePath) else {
-        skipped.append(record.title)
-        continue
-      }
 
-      let path = item.relativePath
-      /// Only owned progress fields move — the restore never "advances" a book
-      /// the user is further into on this device
-      if record.currentTime > item.currentTime {
-        libraryService.updatePlaybackTime(
-          relativePath: path, time: record.currentTime, date: record.lastPlayDate ?? Date(), scheduleSave: false
+      /// One fetch + direct field writes per record, inside
+      /// `applyRestoredState`: the batch emits no sync events (a restore is
+      /// local state replay, not new intent for the server) and saves once —
+      /// the per-field path cost a save and an `.update` job per field
+      if libraryService.applyRestoredState(
+        uuid: record.uuid,
+        relativePath: record.relativePath,
+        state: .init(
+          currentTime: record.currentTime,
+          lastPlayDate: record.lastPlayDate,
+          isFinished: record.isFinished,
+          didNotFinish: record.didNotFinish,
+          note: record.note,
+          seriesName: record.seriesName,
+          seriesOrder: record.seriesOrder,
+          speed: record.speed,
+          details: record.details
         )
+      ) {
+        updated += 1
+      } else {
+        skipped.append(record.title)
       }
-      /// Finished/DNF are terminal: a true moves forward, a false never
-      /// clears what this device already marked — folder records cascade the
-      /// flag into every descendant, so a false would un-finish whole folders
-      if record.isFinished {
-        libraryService.markAsFinished(flag: true, relativePath: path)
-      }
-      if record.didNotFinish {
-        libraryService.markAsDidNotFinish(flag: true, relativePath: path)
-      }
-      /// A backup field only overwrites when it carries something — nil can
-      /// mean "no note" or "the field didn't exist in that format version"
-      if let note = record.note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        libraryService.updateNote(note, at: path)
-      }
-      if let seriesName = record.seriesName,
-        !seriesName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        libraryService.updateSeriesInfo(name: seriesName, order: record.seriesOrder, at: path)
-      }
-      libraryService.updateBookSpeed(at: path, speed: Float(record.speed))
-      if item.details.isEmpty, !record.details.isEmpty {
-        libraryService.updateDetails(at: path, details: record.details)
-      }
-      updated += 1
     }
 
     for record in backup.library.bookmarks {
-      guard let item = resolveItem(uuid: record.itemUuid, path: record.itemPath),
-        let type = Self.bookmarkType(named: record.type)
-      else {
+      await Task.yield()
+      guard let type = Self.bookmarkType(named: record.type) else {
         skipped.append(record.itemPath)
         continue
       }
-      if let existing = libraryService.getBookmark(
-        at: record.time, relativePath: item.relativePath, type: type
+      if libraryService.applyRestoredBookmark(
+        at: record.time,
+        type: type,
+        note: record.note,
+        uuid: record.itemUuid,
+        relativePath: record.itemPath
       ) {
-        if let note = record.note, existing.note != note {
-          libraryService.addNote(note, bookmark: existing)
-        }
-        continue
-      }
-      if let created = libraryService.createBookmark(
-        at: record.time, relativePath: item.relativePath, uuid: UUID().uuidString, type: type
-      ) {
-        if let note = record.note {
-          libraryService.addNote(note, bookmark: created)
-        }
         bookmarksCreated += 1
       }
     }
 
     for record in backup.library.collections {
-      let paths = zip(record.itemUuids, record.itemPaths).compactMap { uuid, path in
-        resolveItem(uuid: uuid, path: path)?.relativePath
+      await Task.yield()
+      /// Membership resolves to live paths — a member the library doesn't
+      /// have just doesn't attach
+      let memberPaths = zip(record.itemUuids, record.itemPaths).compactMap { uuid, path in
+        resolvePath(uuid: uuid, path: path)
       }
-      guard !paths.isEmpty else {
+      guard !memberPaths.isEmpty else {
         skipped.append(record.title)
         continue
       }
-      /// Same-titled collection → merge into it; a bare uuid match counts too —
-      /// creating twice would scatter membership
-      let target =
-        libraryService.fetchCollections().first(where: {
-          $0.uuid == record.uuid || $0.title.localizedCaseInsensitiveCompare(record.title) == .orderedSame
-        }) ?? libraryService.createCollection(title: record.title)
-      if let target {
-        libraryService.addToCollection(uuid: target.uuid, items: paths)
+      /// Same-titled/uuid collection → merge, never duplicate
+      if libraryService.applyRestoredCollection(
+        uuid: record.uuid,
+        title: record.title,
+        memberPaths: memberPaths
+      ) != nil {
         collectionsRestored += 1
       }
     }
@@ -346,6 +350,8 @@ final class LibraryBackupService: BPLogger {
       libraryService.getSimpleItem(with: lastPath) != nil {
       libraryService.setLibraryLastBook(with: lastPath)
     }
+    /// The whole batch's one save — every write above left the context dirty
+    libraryService.saveRestoreBatch()
 
     return LibraryRestoreReport(
       itemsUpdated: updated,
@@ -384,9 +390,12 @@ final class LibraryBackupService: BPLogger {
     }
   }
 
-  /// Match an item by uuid first (survives renames), path second (survives
-  /// re-import on a fresh install)
-  private func resolveItem(uuid: String, path: String) -> SimpleLibraryItem? {
-    libraryService.getSimpleItem(for: uuid) ?? libraryService.getSimpleItem(with: path)
+  /// Match an item's live path by uuid first (survives renames), path second
+  /// (survives re-import on a fresh install)
+  private func resolvePath(uuid: String, path: String) -> String? {
+    if let byUuid = libraryService.getSimpleItem(for: uuid) {
+      return byUuid.relativePath
+    }
+    return libraryService.getSimpleItem(with: path) != nil ? path : nil
   }
 }

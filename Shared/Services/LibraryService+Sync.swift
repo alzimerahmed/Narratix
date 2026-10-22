@@ -229,6 +229,39 @@ extension LibraryService: LibrarySyncProtocol {
     }
   }
 
+  /// Every bookmark for the paths, grouped by item — `getUserBookmarks`'s
+  /// pattern with no type filter, for the backup export's single pass over
+  /// the table (four fetches per item was its dominant cost)
+  public func getBookmarks(forItemsAt relativePaths: [String]) async -> [String: [SimpleBookmark]] {
+    guard !relativePaths.isEmpty else { return [:] }
+    return await withCheckedContinuation { continuation in
+      let context = dataManager.getBackgroundContext()
+      context.perform { [unowned self, context] in
+        var bookmarks = [String: [SimpleBookmark]]()
+        for start in stride(from: 0, to: relativePaths.count, by: 500) {
+          let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "Bookmark")
+          fetchRequest.propertiesToFetch = SimpleBookmark.fetchRequestProperties
+          fetchRequest.resultType = .dictionaryResultType
+          fetchRequest.predicate = NSPredicate(
+            format: "%K IN %@",
+            #keyPath(Bookmark.item.relativePath),
+            Array(relativePaths[start..<min(start + 500, relativePaths.count)])
+          )
+          fetchRequest.sortDescriptors = [NSSortDescriptor(key: #keyPath(Bookmark.time), ascending: true)]
+          do {
+            let results = try context.fetch(fetchRequest) as? [[String: Any]]
+            for bookmark in parseFetchedBookmarks(from: results) ?? [] {
+              bookmarks[bookmark.relativePath, default: []].append(bookmark)
+            }
+          } catch {
+            Self.logger.error("Failed to read bookmarks for export: \(error)")
+          }
+        }
+        continuation.resume(returning: bookmarks)
+      }
+    }
+  }
+
   public func getItemDuration(at relativePath: String) async -> Double? {
     return await withCheckedContinuation { continuation in
       let context = dataManager.getBackgroundContext()

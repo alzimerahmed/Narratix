@@ -451,9 +451,11 @@ extension ItemListViewModel {
   }
 
   func handleMarkAsFinished(flag: Bool) {
-    selectedItems.forEach {
-      libraryService.markAsFinished(flag: flag, relativePath: $0.relativePath)
-    }
+    /// Bulk path: same per-item semantics and events, one context save
+    libraryService.markAsFinished(
+      flag: flag,
+      relativePaths: selectedItems.map(\.relativePath)
+    )
 
     if let parentFolder = libraryNode.folderRelativePath {
       libraryService.recursiveFolderProgressUpdate(from: parentFolder)
@@ -466,9 +468,11 @@ extension ItemListViewModel {
   /// Marks the selection "did not finish" (or clears it) — triage state separate
   /// from `isFinished`; an abandoned book keeps its progress for resume
   func handleMarkAsDidNotFinish(flag: Bool) {
-    selectedItems.forEach {
-      libraryService.markAsDidNotFinish(flag: flag, relativePath: $0.relativePath)
-    }
+    /// Bulk path: same per-item semantics, one context save
+    libraryService.markAsDidNotFinish(
+      flag: flag,
+      relativePaths: selectedItems.map(\.relativePath)
+    )
 
     listState.reloadAll()
     editMode = .inactive

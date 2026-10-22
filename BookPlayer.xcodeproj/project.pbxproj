@@ -1074,6 +1074,8 @@
 		B4FBEF430CFA46BBBE10F5CC /* SimpleCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9DAD68C5DED493098AAD598 /* SimpleCollection.swift */; };
 		FB75B3241C6843E9AE36C26C /* LibraryService+Collections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9D4733E0294274931EED18 /* LibraryService+Collections.swift */; };
 		B3C46D9A45B64BA38C62E917 /* LibraryService+Collections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9D4733E0294274931EED18 /* LibraryService+Collections.swift */; };
+		CEC380849FF249AA9B1725CD /* LibraryService+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0EFF9600094342B5504D16 /* LibraryService+Restore.swift */; };
+		24F4BFA396D64922B6067161 /* LibraryService+Restore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0EFF9600094342B5504D16 /* LibraryService+Restore.swift */; };
 		CABB02E67CAC4B24853889FF /* CollectionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61EC2130EA474527A54D38ED /* CollectionListView.swift */; };
 		1E91B653EE284A89837D14B3 /* CollectionListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03FD0910695B406AB168FD59 /* CollectionListViewModel.swift */; };
 		5C7C1C1E1FE54CDA8313F5FB /* CollectionItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD32B0334C046F79E011863 /* CollectionItemRow.swift */; };
@@ -2162,6 +2164,7 @@
 		2D45931C25004B0E80D4F2AB /* ItemCollection+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemCollection+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		D9DAD68C5DED493098AAD598 /* SimpleCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleCollection.swift; sourceTree = "<group>"; };
 		6D9D4733E0294274931EED18 /* LibraryService+Collections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryService+Collections.swift"; sourceTree = "<group>"; };
+		3F0EFF9600094342B5504D16 /* LibraryService+Restore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryService+Restore.swift"; sourceTree = "<group>"; };
 		61EC2130EA474527A54D38ED /* CollectionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionListView.swift; sourceTree = "<group>"; };
 		03FD0910695B406AB168FD59 /* CollectionListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionListViewModel.swift; sourceTree = "<group>"; };
 		0CD32B0334C046F79E011863 /* CollectionItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionItemRow.swift; sourceTree = "<group>"; };
@@ -3094,6 +3097,7 @@
 				62AAE22B274AA3EB001EB9FF /* LibraryService.swift */,
 				9FDDD2E0289BFCE20020C428 /* LibraryService+Sync.swift */,
 				6D9D4733E0294274931EED18 /* LibraryService+Collections.swift */,
+				3F0EFF9600094342B5504D16 /* LibraryService+Restore.swift */,
 				41EB071A2752FA6B00EFEE13 /* PlaybackService.swift */,
 				63344C012EA7097D00B90DF7 /* DatabaseBackupService.swift */,
 				63125D102C36D96800D35533 /* Events */,
@@ -5031,6 +5035,7 @@
 				B46919FBD9734CAD91B3D72A /* ItemCollection+CoreDataProperties.swift in Sources */,
 				E62E7DCE74E149F98662B8BA /* SimpleCollection.swift in Sources */,
 				FB75B3241C6843E9AE36C26C /* LibraryService+Collections.swift in Sources */,
+				CEC380849FF249AA9B1725CD /* LibraryService+Restore.swift in Sources */,
 				CBDA8E7AF8A64F2A84CFAB60 /* PlaybackSession+CoreDataClass.swift in Sources */,
 				8A98AD6B78ED4E8183A48C88 /* PlaybackSession+CoreDataProperties.swift in Sources */,
 				4DBE3A297251493F9D1A0E8B /* ListeningState.swift in Sources */,
@@ -5759,6 +5764,7 @@
 				EC8A7C7ACA604728B6801937 /* ItemCollection+CoreDataProperties.swift in Sources */,
 				B4FBEF430CFA46BBBE10F5CC /* SimpleCollection.swift in Sources */,
 				B3C46D9A45B64BA38C62E917 /* LibraryService+Collections.swift in Sources */,
+				24F4BFA396D64922B6067161 /* LibraryService+Restore.swift in Sources */,
 				C410049433784F50B23B15A0 /* PlaybackSession+CoreDataClass.swift in Sources */,
 				A0D99F3085C340C8BFEB68D0 /* PlaybackSession+CoreDataProperties.swift in Sources */,
 				F6DC58CDDA77453BBDDA8378 /* ListeningState.swift in Sources */,

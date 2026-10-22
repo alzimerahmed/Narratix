@@ -123,7 +123,9 @@ extension LibraryService {
     dataManager.saveContext()
   }
 
-  private func collectionReference(for uuid: String, context: NSManagedObjectContext? = nil) -> ItemCollection? {
+  /// Internal (not `private`) so `LibraryService+Restore` can reuse it for
+  /// the restore batch's find-or-create
+  func collectionReference(for uuid: String, context: NSManagedObjectContext? = nil) -> ItemCollection? {
     let context = context ?? dataManager.getContext()
     let fetch = ItemCollection.fetchRequest()
     fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(ItemCollection.uuid), uuid)
