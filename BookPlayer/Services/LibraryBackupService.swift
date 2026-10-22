@@ -125,6 +125,10 @@ struct LibraryRestoreReport {
 /// future version adds is ignored, a field v1 lacks decodes to nil/default —
 /// and restore is idempotent: running it twice converges to the same state.
 final class LibraryBackupService: BPLogger {
+  /// The name stamped into the backup's `app` field and its filenames —
+  /// one literal for both surfaces
+  static let appName = "Narratix"
+
   let libraryService: LibraryService
 
   init(libraryService: LibraryService) {
@@ -176,7 +180,7 @@ final class LibraryBackupService: BPLogger {
     return LibraryBackup(
       formatVersion: LibraryBackup.currentFormatVersion,
       createdAt: Date(),
-      app: "Narratix",
+      app: Self.appName,
       appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
       library: .init(
         lastPlayedPath: libraryService.getLibraryLastItem()?.relativePath,
@@ -195,14 +199,20 @@ final class LibraryBackupService: BPLogger {
     return try writeLocalCopy(data: try Self.encode(backup))
   }
 
+  /// One timestamped-name format for the on-device copy and the share
+  /// sheet's default filename — both produce "Narratix-Backup-…"
+  static func backupFileName(for date: Date = Date()) -> String {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd-HHmmss"
+    return "\(appName)-Backup-\(formatter.string(from: date))"
+  }
+
   /// Writes already-encoded backup JSON into the library-backup folder —
   /// `recordLocalCopy` reuses the exported document's bytes instead of
   /// re-running the export
   func writeLocalCopy(data: Data) throws -> URL {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd-HHmmss"
     let folder = DataManager.getLibraryBackupFolderURL()
-    let url = folder.appendingPathComponent("Narratix-Backup-\(formatter.string(from: Date())).json")
+    let url = folder.appendingPathComponent(Self.backupFileName() + ".json")
     try data.write(to: url)
     return url
   }

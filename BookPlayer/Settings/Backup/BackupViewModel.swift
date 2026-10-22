@@ -116,8 +116,6 @@ final class BackupViewModel: ObservableObject, BPLogger {
   }
 
   var defaultFilename: String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd-HHmmss"
-    return "Narratix-Backup-\(formatter.string(from: Date()))"
+    LibraryBackupService.backupFileName()
   }
 }
