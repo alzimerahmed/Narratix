@@ -19,6 +19,9 @@ struct ListeningQueueView: View {
 
   /// Reordering needs the list's edit mode; swipe-to-remove works without it
   @State private var editMode: EditMode = .inactive
+  /// Load failures from the model land here — the player surfaces have no
+  /// shared alert modifier, so the view carries its own
+  @Environment(\.loadingState) private var loadingState
 
   /// Called after a queued item is picked, e.g. to close the sheet the list is in
   private let onSelect: () -> Void
@@ -46,6 +49,7 @@ struct ListeningQueueView: View {
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("queue_title")
     .navigationBarTitleDisplayMode(.inline)
+    .errorAlert(error: $loadingState.error)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         EditButton()

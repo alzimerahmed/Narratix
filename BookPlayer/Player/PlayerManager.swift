@@ -1789,11 +1789,11 @@ extension PlayerManager {
 
     /// An explicitly queued item always wins over the folder's next sibling —
     /// the listening queue is user ordering, folder chaining is implicit.
-    /// `dequeueNext` consumes the entry: an item that fails to resolve is
-    /// dropped and the next head is tried.
-    while let queued = dequeueNextQueuedItem(),
-      let queuedBook = try? playbackService.getPlayableItem(from: queued)
-    {
+    /// `dequeueNext` consumes the entry: an item that fails to resolve (e.g. a
+    /// queued folder) is dropped and the next head is tried.
+    while let queued = dequeueNextQueuedItem() {
+      guard let queuedBook = try? playbackService.getPlayableItem(from: queued) else { continue }
+
       load(queuedBook, autoplay: shouldAutoplay)
       libraryService.setLibraryLastBook(with: queuedBook.relativePath)
       return

@@ -30,6 +30,10 @@ final class PlaybackHistoryService {
   private var dataManager: DataManager?
   private var disposeBag = Set<AnyCancellable>()
 
+  /// Fires after every session write so an open history view can refresh
+  /// (a session ends and mid-play refreshes while the list is on screen)
+  let updates = PassthroughSubject<Void, Never>()
+
   /// Session in flight: the item that started it and when. The `PlayableItem`
   /// reference stays live through pauses and item swaps — its `currentTime` is
   /// the position worth persisting.
@@ -144,6 +148,7 @@ final class PlaybackHistoryService {
       duration: duration
     )
     pruneSessions(for: item.relativePath)
+    updates.send()
   }
 
   /// Refreshes the active session's row so it reflects the latest position
@@ -226,6 +231,7 @@ final class PlaybackHistoryService {
       (try? context.fetch(fetch))?.forEach { context.delete($0) }
     }
     dataManager.saveContext()
+    updates.send()
   }
 
   // MARK: - Internals
@@ -263,6 +269,8 @@ final class PlaybackHistoryService {
       session.duration = duration
     }
     dataManager.saveContext()
+    /// The throttled tick shouldn't churn subscribers — only session ENDS and
+    /// deletes matter to a list (row contents barely move mid-session)
   }
 
   /// Keeps the most recent `sessionsPerItem` rows per item
@@ -292,6 +300,7 @@ final class PlaybackHistoryService {
       }
     }
     dataManager.saveContext()
+    updates.send()
   }
 
   private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> LibraryItem? {

@@ -19,6 +19,7 @@ final class PlaybackHistoryViewModel: PlaybackHistoryView.Model {
   private let playerManager: PlayerManagerProtocol
   private let playerLoaderService: PlayerLoaderService
   private let loadingState: LoadingOverlayState
+  private var disposeBag = Set<AnyCancellable>()
 
   init(
     historyService: PlaybackHistoryService,
@@ -32,6 +33,17 @@ final class PlaybackHistoryViewModel: PlaybackHistoryView.Model {
     self.loadingState = loadingState
 
     super.init(sessions: historyService.fetchSessions())
+
+    /// A session ends while the list is on screen (the panel beside the player
+    /// runs alongside live playback) — refresh instead of going stale
+    historyService.updates
+      .receive(on: DispatchQueue.main)
+      .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+      .sink { [weak self] in
+        guard let self else { return }
+        self.sessions = self.historyService.fetchSessions()
+      }
+      .store(in: &disposeBag)
   }
 
   override func reload() {

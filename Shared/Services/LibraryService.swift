@@ -3120,12 +3120,9 @@ extension LibraryService {
   }
 
   func markAsDidNotFinish(flag: Bool, book: Book) {
+    /// `isFinished` is NOT cleared: the upstream binary state stays as the user
+    /// left it — the DNF flag wins over it at `ListeningState` derivation
     book.didNotFinish = flag
-    /// DNF and finished are exclusive from the DNF side too: abandoning a book
-    /// previously marked finished takes it out of the finished group
-    if flag {
-      book.isFinished = false
-    }
 
     metadataPassthroughPublisher.send([
       #keyPath(LibraryItem.relativePath): book.relativePath!,
@@ -3139,9 +3136,6 @@ extension LibraryService {
 
   func markAsDidNotFinish(flag: Bool, folder: Folder) {
     folder.didNotFinish = flag
-    if flag {
-      folder.isFinished = false
-    }
 
     metadataPassthroughPublisher.send([
       #keyPath(LibraryItem.relativePath): folder.relativePath!,

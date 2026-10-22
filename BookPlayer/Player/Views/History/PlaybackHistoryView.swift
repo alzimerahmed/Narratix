@@ -20,6 +20,9 @@ struct PlaybackHistoryView: View {
 
   /// Called after a session is picked, e.g. to close the sheet the list is in
   private let onSelect: () -> Void
+  /// Load failures from the model land here — the player surfaces have no
+  /// shared alert modifier, so the view carries its own
+  @Environment(\.loadingState) private var loadingState
 
   init(onSelect: @escaping () -> Void = {}, initModel: @escaping () -> Self.Model) {
     self.onSelect = onSelect
@@ -40,6 +43,7 @@ struct PlaybackHistoryView: View {
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("history_title")
     .navigationBarTitleDisplayMode(.inline)
+    .errorAlert(error: $loadingState.error)
     .task {
       model.reload()
     }
