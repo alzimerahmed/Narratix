@@ -51,7 +51,9 @@ final class PlaybackHistoryService {
   /// Most recent sessions kept per item — bounds storage
   private static let sessionsPerItem = 30
 
-  init() {}
+  /// `nonisolated` so the type stays usable as an `@Entry` default value —
+  /// the placeholder does no actor-bound work; `setup` is the real start
+  nonisolated init() {}
 
   func setup(dataManager: DataManager) {
     self.dataManager = dataManager
@@ -303,9 +305,11 @@ final class PlaybackHistoryService {
     updates.send()
   }
 
-  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> LibraryItem? {
-    let fetch = LibraryItem.fetchRequest()
-    fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(LibraryItem.relativePath), relativePath)
+  /// `BookPlayerKit.` qualification is load-bearing: the SDK's
+  /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
+  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> BookPlayerKit.LibraryItem? {
+    let fetch = BookPlayerKit.LibraryItem.fetchRequest()
+    fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(BookPlayerKit.LibraryItem.relativePath), relativePath)
     fetch.fetchLimit = 1
     return try? context.fetch(fetch).first
   }

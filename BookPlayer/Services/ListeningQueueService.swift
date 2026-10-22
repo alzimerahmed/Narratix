@@ -218,9 +218,11 @@ final class ListeningQueueService {
     return try? context.fetch(fetch).first
   }
 
-  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> LibraryItem? {
-    let fetch = LibraryItem.fetchRequest()
-    fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(LibraryItem.relativePath), relativePath)
+  /// `BookPlayerKit.` qualification is load-bearing: the SDK's
+  /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
+  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> BookPlayerKit.LibraryItem? {
+    let fetch = BookPlayerKit.LibraryItem.fetchRequest()
+    fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(BookPlayerKit.LibraryItem.relativePath), relativePath)
     fetch.fetchLimit = 1
     return try? context.fetch(fetch).first
   }
