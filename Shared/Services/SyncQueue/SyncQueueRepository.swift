@@ -685,7 +685,8 @@ public actor SyncQueueRepository: SyncQueueRepositoryProtocol, BPLogger {
             || reference.relativePath.starts(with: descendantPrefix))
       }
     )
-    return ((try? modelContext.fetch(descriptor)) ?? []).isEmpty == false
+    guard let references = try? modelContext.fetch(descriptor) else { return false }
+    return !references.isEmpty
   }
 
   /// Rewrites task reference and task model uuids for each conflict returned by `matchUuid`.
