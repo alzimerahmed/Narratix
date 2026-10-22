@@ -30,6 +30,9 @@ final class CoverSearchViewModel: ObservableObject, BPLogger {
 
   private let service: CoverSearchService
   private var searchTask: Task<Void, Never>?
+  /// Stale-answer guard: a slower earlier request can't overwrite a newer
+  /// query's results
+  private var searchGeneration = 0
 
   init(query: String, service: CoverSearchService = CoverSearchService()) {
     self.query = query
@@ -60,17 +63,24 @@ final class CoverSearchViewModel: ObservableObject, BPLogger {
       return
     }
 
+    searchGeneration += 1
+    let generation = searchGeneration
     isLoading = true
-    defer { isLoading = false }
     didSearch = true
 
     do {
-      results = try await service.search(query: query)
+      let found = try await service.search(query: query)
+      /// A newer search owns the field — discard this stale answer (and leave
+      /// `isLoading` for it to clear)
+      guard generation == searchGeneration else { return }
+      results = found
+      isLoading = false
     } catch is CancellationError {
       /// A newer search owns the field now
     } catch {
       self.error = error
       results = []
+      isLoading = false
     }
   }
 
