@@ -765,6 +765,8 @@
 "stats_per_book_header" = "Time per book";
 "stats_per_book_footer" = "Per-book time is counted from the sessions recorded on this device.";
 "stats_chart_accessibility" = "Bar chart of minutes listened per day for the last 30 days";
+/* used in: listening stats chart; VoiceOver x-axis name in the chart descriptor */
+"stats_chart_day_axis" = "Day";
 
 /* Phase 3f: Watch library browse */
 "watchapp_browse_library_title" = "Browse library";

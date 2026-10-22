@@ -45,9 +45,55 @@ struct ListeningStatsChartView: View {
       }
     }
     .frame(height: 160)
-    /// A chart of numbers is opaque to VoiceOver — announce the summary
-    /// instead and hide the glyph-level detail
-    .accessibilityElement()
-    .accessibilityLabel("stats_chart_accessibility")
+    /// A chart of numbers is opaque to VoiceOver — the descriptor turns it
+    /// into a real chart element: summary first, then each day's bar as a
+    /// data point the chart rotor can visit
+    .accessibilityElement(children: .ignore)
+    .accessibilityChartDescriptor(StatsChartDescriptor(records: records))
+  }
+}
+
+/// VoiceOver's read on the chart: axes, and one data point per day — the
+/// same numbers the bars draw, no fabricated points for zero-listening days
+private struct StatsChartDescriptor: AXChartDescriptorRepresentable {
+  let records: [SimplePlaybackRecord]
+
+  /// Day labels for the categorical x axis ("Mar 8") — medium style, no year,
+  /// matching what the on-screen axis shows every sixth day
+  private static let dayFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.setLocalizedDateFormatFromTemplate("MMMd")
+    return formatter
+  }()
+
+  func makeChartDescriptor() -> AXChartDescriptor {
+    let sorted = records.sorted { $0.date < $1.date }
+    let minutes = sorted.map { $0.time / 60 }
+
+    let descriptor = AXChartDescriptor(
+      title: "stats_chart_accessibility".localized
+    )
+    descriptor.xAxis = AXCategoricalDataAxisDescriptor(
+      title: "stats_chart_day_axis".localized,
+      categoryOrder: sorted.map { Self.dayFormatter.string(from: $0.date) }
+    )
+    descriptor.yAxis = AXNumericDataAxisDescriptor(
+      title: "minutes".localized,
+      range: 0...(minutes.max() ?? 0),
+      gridlinePositions: []
+    )
+    descriptor.series = [
+      AXDataSeriesDescriptor(
+        name: "minutes".localized,
+        isContinuous: false,
+        dataPoints: zip(sorted, minutes).map { record, value in
+          AXDataPoint(
+            x: Self.dayFormatter.string(from: record.date),
+            y: value
+          )
+        }
+      )
+    ]
+    return descriptor
   }
 }
