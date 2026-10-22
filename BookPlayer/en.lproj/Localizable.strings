@@ -674,3 +674,10 @@
 "import_duplicates_skip" = "Skip duplicates";
 "import_duplicates_replace" = "Replace existing";
 "import_duplicates_import_anyway" = "Import anyway";
+"storage_state_downloading" = "Downloading";
+"storage_state_backed_up" = "Backed up";
+"storage_state_in_cloud" = "In the cloud";
+"storage_no_files" = "No files";
+"storage_remove_downloads_button" = "Remove downloads";
+"storage_remove_downloads_title" = "Remove downloads?";
+"storage_remove_downloads_description" = "This removes %@ of downloaded files that are backed up. The books stay in your library and download again when you need them. Files still uploading are left alone.";

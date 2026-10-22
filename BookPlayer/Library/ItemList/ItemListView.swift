@@ -1074,7 +1074,10 @@ extension ItemListView {
     let item = items.first
     let isSingle = items.count == 1
 
-    if let item, syncService.isActive {
+    /// Media-server items get the same option without cloud sync: their remote
+    /// copy lives on the server, and `getDownloadState` accounts for the link
+    if let item,
+      syncService.isActive || item.externalResources?.streamingResource != nil {
       switch syncService.getDownloadState(for: item) {
       case .notDownloaded:
         Button {

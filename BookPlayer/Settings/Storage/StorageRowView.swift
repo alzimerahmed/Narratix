@@ -46,10 +46,21 @@ struct StorageRowView: View {
           .bpFont(.footnote)
           .multilineTextAlignment(.leading)
           .foregroundStyle(themeViewModel.secondaryColor)
+
+        if let stateLabel = item.stateLabel {
+          Text(stateLabel)
+            .bpFont(.footnote)
+            .multilineTextAlignment(.leading)
+            .foregroundStyle(themeViewModel.secondaryColor)
+        }
       }
       .padding(.trailing, item.showWarning ? 10 : 32)
       .accessibilityElement()
-      .accessibilityLabel("\(item.title), \(item.formattedSize)")
+      .accessibilityLabel(
+        [item.title, item.formattedSize, item.stateLabel]
+          .compactMap { $0 }
+          .joined(separator: ", ")
+      )
       .accessibilitySortPriority(3)
 
       Spacer()
