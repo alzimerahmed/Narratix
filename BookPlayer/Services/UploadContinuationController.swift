@@ -316,11 +316,14 @@ final class UploadContinuationController: BPLogger {
   }
 
   /// Something waiting sits in a lane that can run: no S3 access, or every waiting book
-  /// behind a blocked lane (a lane-level or account-level pause), means waiting on the user
+  /// behind a lane that can't move (a lane-level or account-level pause, or a hold the
+  /// user set in Queued Tasks), means waiting on the user
   private func canMakeProgress(_ pending: PendingBookUploads) -> Bool {
     guard let dependencies, dependencies.canUpload() else { return false }
     let counts = dependencies.currentCounts()
-    return pending.books.contains { !counts.isBlocked($0.queueKey) }
+    return pending.books.contains {
+      !counts.isBlocked($0.queueKey) && !counts.isUserPaused($0.queueKey)
+    }
   }
 
   // MARK: - The "Continue in background" buttons
@@ -333,6 +336,7 @@ final class UploadContinuationController: BPLogger {
     let waiting = counts.count(in: uploadLane) - counts.pausedCount(in: uploadLane)
     return waiting > 0
       && !counts.isBlocked(uploadLane)
+      && !counts.isUserPaused(uploadLane)
       && dependencies.canUpload()
       && dependencies.networkAllowsUploads()
   }
