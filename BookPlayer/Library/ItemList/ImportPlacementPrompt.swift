@@ -41,14 +41,32 @@ struct ImportPlacementModel {
 
   /// "Existing folder". Nothing happens when the folder is gone (a sync pull deleted it while the
   /// prompt waited): moving into its old path would leave the items' paths pointing nowhere.
+  /// The folder is remembered — the next prompt offers it as "Last folder".
   func move(_ placement: ImportPlacement, into folder: SimpleLibraryItem) throws {
     guard let destination = libraryService.getItemRefs(forUuids: [folder.uuid]).first else { return }
 
     try organizer.move(items(of: placement), into: destination)
+    UserDefaults.standard.set(folder.uuid, forKey: Constants.UserDefaults.lastImportPlacementFolder)
+  }
+
+  /// The folder the last prompt placed an import into — by uuid, so it still resolves after a
+  /// sync move. Nil once it doesn't (deleted, or turned into a volume, which a serial importer
+  /// wouldn't reuse), and for a placeholder uuid that can never resolve
+  func lastPlacementFolder() -> SimpleLibraryItem? {
+    guard
+      let uuid = UserDefaults.standard.string(forKey: Constants.UserDefaults.lastImportPlacementFolder),
+      Constants.isRealUuid(uuid),
+      let ref = libraryService.getItemRefs(forUuids: [uuid]).first,
+      let folder = libraryService.getSimpleItem(with: ref.relativePath),
+      folder.type == .folder
+    else { return nil }
+    return folder
   }
 
   /// "New folder", or "Create a volume" for an import of books: a new one holding them, in the
   /// folder they were imported into, wherever it is now. Nothing happens when that folder is gone.
+  /// A created folder becomes the remembered "Last folder"; a volume doesn't (an import can't
+  /// be placed inside one later)
   func createFolder(titled title: String, for placement: ImportPlacement, type: SimpleItemType) async throws {
     let parentPath: String?
     if placement.node.folderRelativePath != nil {
@@ -58,12 +76,15 @@ struct ImportPlacementModel {
       parentPath = nil
     }
 
-    try await organizer.createFolder(
+    let folder = try await organizer.createFolder(
       titled: title,
       inside: parentPath,
       holding: items(of: placement),
       type: type
     )
+    if type == .folder, let uuid = folder?.uuid {
+      UserDefaults.standard.set(uuid, forKey: Constants.UserDefaults.lastImportPlacementFolder)
+    }
   }
 
   /// "Create a volume" for an import that was one folder: that folder becomes the volume
@@ -232,6 +253,17 @@ struct ImportPlacementPrompt: ViewModifier {
     Button("library_title") {
       if hasParentFolder {
         perform(on: placement) { try model.moveToLibrary(placement) }
+      }
+    }
+
+    /// The last folder the prompt placed an import into. Skipped when it IS the folder the
+    /// import landed in ("Current playlist" covers that) or one of the imported items — a
+    /// folder can't move into itself
+    if let lastFolder = model.lastPlacementFolder(),
+       lastFolder.uuid != placement.node.uuid,
+       !placement.itemUuids.contains(lastFolder.uuid) {
+      Button(String(format: "import_last_folder_button".localized, lastFolder.title)) {
+        perform(on: placement) { try model.move(placement, into: lastFolder) }
       }
     }
 

@@ -126,6 +126,16 @@ public enum Constants {
     /// Library tab display style: title source (false = parsed title, true = original filename)
     public static let libraryDisplayTitleSource = "library_display:title_source"
 
+    /// Import placement prompt: uuid of the folder the last prompt moved an import into
+    /// (device-local — the "Last folder" shortcut reads it back)
+    public static let lastImportPlacementFolder = "importPlacement:lastFolder"
+
+    /// Queued Tasks: lanes the user paused (device-local — a pause isn't synced)
+    public static let pausedSyncLanes = "syncQueue:pausedLanes"
+
+    /// Transfer from Computer: the first-run help tip only shows once
+    public static let transferTipSeen = "transfer:tipSeen"
+
     /// Prefix used to enumerate / sync library display preferences
     public static let libraryDisplayPrefix = "library_display:"
 

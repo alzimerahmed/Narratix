@@ -27,6 +27,7 @@
 "settings_skip_custom_button" = "Custom…";
 "settings_skip_custom_title" = "Custom skip intervals";
 "settings_skip_custom_description" = "Seconds to skip, between 1 and 3600. Leave a field blank to keep its current value.";
+"import_last_folder_button" = "Last folder: %@";
 "settings_support_title" = "SUPPORT";
 "settings_shortcuts_title" = "SHORTCUTS";
 "settings_support_project_title" = "View project on Github";
