@@ -627,19 +627,19 @@
 "filter_new_title" = "New";
 "filter_started_title" = "Started";
 "filter_finished_title" = "Finished";
-"filter_did_not_finish_title" = "Did Not Finish";
-"mark_did_not_finish_title" = "Mark as Did Not Finish";
-"clear_did_not_finish_title" = "Clear Did Not Finish";
+"filter_did_not_finish_title" = "Did not finish";
+"mark_did_not_finish_title" = "Mark as did not finish";
+"clear_did_not_finish_title" = "Clear did not finish";
 "notes_title" = "Notes";
 "note_placeholder" = "Notes about this book";
 "queue_title" = "Up Next";
 "queue_empty_title" = "Nothing queued";
 "queue_empty_description" = "Add books from a book's options menu to plan what plays next.";
-"queue_add_title" = "Add to Queue";
-"queue_play_next_title" = "Play Next";
-"queue_remove_title" = "Remove from Queue";
+"queue_add_title" = "Add to queue";
+"queue_play_next_title" = "Play next";
+"queue_remove_title" = "Remove from queue";
 "queue_row_play_hint" = "Plays this item now";
-"history_title" = "Playback History";
+"history_title" = "Playback history";
 "history_empty_title" = "No listening sessions yet";
 "history_empty_description" = "Each time you play and pause, a session appears here with the position you left it at.";
 "history_row_restore_hint" = "Plays this book from that position";
@@ -647,7 +647,7 @@
 
 /* Phase 3c: Library Organization */
 "browse_section_title" = "Browse";
-"browse_title" = "Series & Authors";
+"browse_title" = "Series & authors";
 "browse_picker" = "Browse";
 "browse_group_empty_title" = "Nothing here";
 "browse_group_empty_description" = "This group has no books.";
@@ -659,19 +659,19 @@
 "authors_empty_title" = "No authors yet";
 "authors_empty_description" = "Books show their author here once they carry one.";
 "collections_title" = "Collections";
-"collection_new_title" = "New Collection";
+"collection_new_title" = "New collection";
 "collection_name_placeholder" = "Collection name";
-"collection_rename_title" = "Rename Collection";
-"collection_picker_title" = "Add to Collection";
-"collection_create_and_add_title" = "Create and Add";
-"collection_remove_title" = "Remove from Collection";
+"collection_rename_title" = "Rename collection";
+"collection_picker_title" = "Add to collection";
+"collection_create_and_add_title" = "Create and add";
+"collection_remove_title" = "Remove from collection";
 "collection_member_value" = "Contains the selection";
 "collection_not_member_value" = "Does not contain the selection";
 "collection_empty_title" = "No collections yet";
 "collection_empty_description" = "Collections let you shelve books across folders — a book can belong to many.";
 "collection_picker_empty_description" = "Create a collection to shelve this selection on it.";
 "collection_detail_empty_title" = "This shelf is empty";
-"collection_detail_empty_description" = "Add books from a book's options menu — Add to Collection.";
+"collection_detail_empty_description" = "Add books from a book's options menu — Add to collection.";
 
 /* Phase 3d: Storage & Import */
 "rescan_library_title" = "Rescan library";
@@ -720,10 +720,10 @@
 "webdav_select_folder_hint" = "Adds this folder's contents to the import";
 "webdav_insecure_title" = "Unencrypted connection";
 "webdav_insecure_description" = "This address uses http:// — your username and password would be sent in cleartext. Connect anyway?";
-"webdav_insecure_connect_button" = "Connect Anyway";
+"webdav_insecure_connect_button" = "Connect anyway";
 "webdav_partial_title" = "Incomplete download";
 "webdav_partial_description" = "%d of %d files didn't download. Import the rest anyway?";
-"webdav_partial_import_button" = "Import Anyway";
+"webdav_partial_import_button" = "Import anyway";
 "webdav_partial_discard_button" = "Discard";
 "back_title" = "Back";
 "settings_backup_restore_description" = "Backup & restore";
