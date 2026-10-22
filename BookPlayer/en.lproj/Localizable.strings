@@ -555,6 +555,8 @@
 "playback_error_session_expired" = "Playback failed: your media server session expired. Sign in again from Media Servers.";
 "playback_error_server_unavailable" = "Playback failed: your media server couldn't be reached, or no longer has this book.";
 "player_cloud_fallback_title" = "Media server unavailable — playing the cloud copy";
+"speed_decrease_button" = "Decrease speed";
+"speed_increase_button" = "Increase speed";
 "carplay_session_expired_message" = "Your media server session expired. Open BookPlayer on your phone to sign in again.";
 "carplay_playback_failed_message" = "Can't play this book. Open BookPlayer on your phone for details.";
 "carplay_missing_connection_message" = "This book streams from a media server that isn't set up on this device. Open BookPlayer on your phone to connect it.";

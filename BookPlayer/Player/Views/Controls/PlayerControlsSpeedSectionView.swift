@@ -20,6 +20,9 @@ struct PlayerControlsSpeedSectionView: View {
   let minimumSpeed: Double = 0.5
   let maximumSpeed: Double = 4.0
   let speedStep: Double = 0.1
+  /// One-tap speeds, fixed — the three quick buttons below stay user-configurable
+  /// (Settings), these cover the common picks without a detour
+  static let presetSpeeds: [Double] = [0.5, 1, 1.25, 1.5, 2, 2.5]
   @Binding var currentSpeed: Double
   let handleSpeedChange: (Double) -> Void
 
@@ -77,6 +80,14 @@ struct PlayerControlsSpeedSectionView: View {
           .accessibilityHidden(true)
       }
 
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: Spacing.S3) {
+          ForEach(Self.presetSpeeds, id: \.self) { speed in
+            presetChip(speed)
+          }
+        }
+      }
+
       // Speed control buttons
       HStack(spacing: 0) {
         // Decrement button
@@ -91,7 +102,7 @@ struct PlayerControlsSpeedSectionView: View {
         }
         .foregroundStyle(theme.primaryColor)
         .frame(width: 44, height: 44)
-        .accessibilityLabel("➖")
+        .accessibilityLabel("speed_decrease_button")
 
         Spacer()
 
@@ -116,10 +127,28 @@ struct PlayerControlsSpeedSectionView: View {
         }
         .foregroundStyle(theme.primaryColor)
         .frame(width: 44, height: 44)
-        .accessibilityLabel("➕")
+        .accessibilityLabel("speed_increase_button")
       }
       .frame(height: 44)
     }
+  }
+
+  /// A preset chip: the active speed is marked, for eyes and VoiceOver alike
+  @ViewBuilder
+  private func presetChip(_ speed: Double) -> some View {
+    let isCurrent = abs(currentSpeed - speed) < 0.001
+    Button {
+      handleSpeedChange(speed)
+    } label: {
+      Text(formatSpeed(speed))
+        .bpFont(.subheadline)
+        .fontWeight(isCurrent ? .bold : .regular)
+        .padding(.horizontal, Spacing.S3)
+        .frame(minWidth: 44, minHeight: 44)
+    }
+    .buttonStyle(.bordered)
+    .tint(isCurrent ? theme.linkColor : theme.secondaryColor)
+    .accessibilityAddTraits(isCurrent ? .isSelected : [])
   }
 
   @ViewBuilder
