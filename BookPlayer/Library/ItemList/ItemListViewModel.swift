@@ -799,32 +799,22 @@ extension ItemListViewModel {
 
 // MARK: - Network related handlers
 extension ItemListViewModel {
+  /// `LibraryItemActionHandler` owns this body now — shared with both detail
+  /// view models, which call it through the handler they own
   func startDownload(of item: SimpleLibraryItem) {
-    Task { @MainActor in
-      loadingState.show = true
-
-      do {
-        let fileURL = item.fileURL
-        /// Create backing folder if it does not exist
-        if item.type == .folder || item.type == .bound {
-          try DataManager.createBackingFolderIfNeeded(fileURL)
-        }
-        
-        try await syncService.downloadRemoteFiles(for: item)
-        loadingState.show = false
-      } catch {
-        loadingState.show = false
-        loadingState.error = error
-      }
-    }
+    LibraryItemActionHandler.startDownload(
+      of: item,
+      syncService: syncService,
+      loadingState: loadingState
+    )
   }
 
   func cancelDownload(of item: SimpleLibraryItem) {
-    do {
-      try syncService.cancelDownload(of: item)
-    } catch {
-      loadingState.error = error
-    }
+    LibraryItemActionHandler.cancelDownload(
+      of: item,
+      syncService: syncService,
+      loadingState: loadingState
+    )
   }
 
   func handleOffloading(of item: SimpleLibraryItem) {
