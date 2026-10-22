@@ -40,6 +40,10 @@ public enum Constants {
     public static let smartRewindEnabled = "userSettingsSmartRewind"
     public static let smartRewindMaxInterval = "userSettingsSmartRewindMaxInterval"
     public static let boostVolumeEnabled = "userSettingsBoostVolume"
+    /// Selected EQ preset (EQPreset raw value); nil/unknown reads as `.off`
+    public static let equalizerPreset = "userSettingsEqualizerPreset"
+    /// Presence-band emphasis stacked on the EQ preset — iOS playback only
+    public static let voiceBoostEnabled = "userSettingsVoiceBoostEnabled"
     public static let globalSpeedEnabled = "userSettingsGlobalSpeed"
     public static let seekProgressBarEnabled = "userSettingsSeekProgressBar"
     public static let autoplayEnabled = "userSettingsAutoplay"
