@@ -1147,7 +1147,12 @@ extension LibraryService {
         hint = AudioMetadataService.parseSeriesHint(from: book.title)
       }
       if book.seriesName == nil { book.seriesName = hint.name }
-      if book.seriesOrder == nil { book.seriesOrder = hint.order.map { NSNumber(value: $0) } }
+      /// A number without a series is meaningless — the same invariant
+      /// `updateSeriesInfo` enforces. Persist the hinted order only when a
+      /// series name (tagged or hinted) is actually in place.
+      if book.seriesOrder == nil, book.seriesName != nil {
+        book.seriesOrder = hint.order.map { NSNumber(value: $0) }
+      }
     }
 
     return book
