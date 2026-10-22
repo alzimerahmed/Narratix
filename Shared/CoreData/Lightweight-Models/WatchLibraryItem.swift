@@ -28,6 +28,15 @@ public enum WatchLibraryCommand {
 /// Deliberately compact: it crosses `sendMessageData`, whose payload budget
 /// is a few hundred KB — a 50-item page stays a fraction of that.
 public struct WatchLibraryItem: Codable, Hashable, Identifiable {
+  /// `DownloadState` flattened for the wire: the associated `progress` value
+  /// doesn't cross (the watch re-reads the page anyway), so the raw enum is
+  /// String-backed rather than reusing it
+  public enum DownloadState: String, Codable {
+    case notDownloaded
+    case downloading
+    case downloaded
+  }
+
   public var id: String { relativePath }
 
   public let relativePath: String
@@ -41,10 +50,9 @@ public struct WatchLibraryItem: Codable, Hashable, Identifiable {
   public let isFinished: Bool
   public let percentCompleted: Double
   public let duration: Double
-  /// `DownloadState`-equivalent when the item has a remote copy to get
-  /// (`downloaded` / `notDownloaded` / `downloading`); nil for local-only
-  /// items, where no download action applies
-  public let downloadState: String?
+  /// Set when the item has a remote copy to get; nil for local-only items,
+  /// where no download action applies
+  public let downloadState: DownloadState?
   /// True only when removing the local file keeps a copy to come back to —
   /// the same rule the phone's storage screen uses, evaluated phone-side
   /// so the watch never has to know why
@@ -62,7 +70,7 @@ public struct WatchLibraryItem: Codable, Hashable, Identifiable {
     isFinished: Bool,
     percentCompleted: Double,
     duration: Double,
-    downloadState: String?,
+    downloadState: DownloadState?,
     canOffload: Bool
   ) {
     self.relativePath = relativePath

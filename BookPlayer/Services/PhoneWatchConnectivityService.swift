@@ -355,16 +355,16 @@ extension PhoneWatchConnectivityService {
     let streamsFromServer = item.externalResources?.streamingResource != nil
     let remoteBacked = (syncService?.isActive == true) || streamsFromServer
 
-    var stateString: String?
+    var watchDownloadState: WatchLibraryItem.DownloadState?
     var canOffload = false
     if remoteBacked, let downloadState = syncService?.getDownloadState(for: item) {
       switch downloadState {
       case .notDownloaded:
-        stateString = "notDownloaded"
+        watchDownloadState = .notDownloaded
       case .downloading:
-        stateString = "downloading"
+        watchDownloadState = .downloading
       case .downloaded:
-        stateString = "downloaded"
+        watchDownloadState = .downloaded
         /// The shared rule (`SyncService.canOffload`): remote-copy evidence
         /// per leaf under a container, not the container's own metadata
         canOffload = syncService?.canOffload(item) ?? false
@@ -379,7 +379,7 @@ extension PhoneWatchConnectivityService {
       isFinished: item.isFinished,
       percentCompleted: item.percentCompleted,
       duration: item.duration,
-      downloadState: stateString,
+      downloadState: watchDownloadState,
       canOffload: canOffload
     )
   }
