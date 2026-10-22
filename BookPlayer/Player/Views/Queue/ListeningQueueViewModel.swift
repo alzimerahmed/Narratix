@@ -43,13 +43,13 @@ final class ListeningQueueViewModel: ListeningQueueView.Model {
   }
 
   override func handleSelect(_ item: SimpleLibraryItem) {
-    /// Playing the entry consumes it — it's what's playing now, not what's next
-    queueService.remove(item.relativePath)
-
     Task { @MainActor [weak self] in
       guard let self else { return }
       do {
         try await playerLoaderService.loadPlayer(item.relativePath, autoplay: true)
+        /// Playing the entry consumes it — remove only once the load went
+        /// through so a failure keeps the queue intact
+        queueService.remove(item.relativePath)
       } catch {
         loadingState.error = error
       }
@@ -61,8 +61,6 @@ final class ListeningQueueViewModel: ListeningQueueView.Model {
   }
 
   override func delete(at offsets: IndexSet) {
-    for index in offsets {
-      queueService.remove(items[index].relativePath)
-    }
+    queueService.removeAll(offsets.map { items[$0].relativePath })
   }
 }
