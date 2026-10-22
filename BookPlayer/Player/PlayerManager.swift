@@ -393,6 +393,12 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     /// stale build must not land last, or the wrong preset sticks for the item
     if self.audioEffectsGeneration == audioEffectsGeneration, self.playerItem === newItem {
       newItem.audioMix = audioMix
+    } else if self.playerItem === newItem {
+      /// A settings change landed mid-load: it bumped the generation, and the
+      /// rebuild it spawned targeted the previous item, so this one would
+      /// otherwise keep playing with no EQ. Re-apply so the newest settings
+      /// reach the item actually loaded.
+      self.applyAudioEffects()
     }
 
     /// The mix build awaits: a load started after this one owns the item again
@@ -1608,10 +1614,11 @@ extension PlayerManager {
   /// EQ is iOS-only.
   @MainActor
   func applyAudioEffects() {
-    guard let playerItem else { return }
-    /// Invalidates any mix build `loadPlayerItem` still has in flight — the
-    /// settings snapshot it reads is stale now, and this task owns the attach
+    /// Bumped BEFORE the item check: a change while no item is loaded (or while
+    /// a load still owns none) must still invalidate the mix build in flight,
+    /// or the load attaches the old settings when its item lands
     audioEffectsGeneration += 1
+    guard let playerItem else { return }
     audioEffectsTask?.cancel()
     audioEffectsTask = Task { @MainActor [weak self] in
       let mix = await self?.audioEQProcessor.audioMixIfEnabled(for: playerItem.asset)
