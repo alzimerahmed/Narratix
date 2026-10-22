@@ -118,9 +118,12 @@ private let eqTapPrepare: MTAudioProcessingTapPrepareCallback = { tap, _, proces
   let context = MTAudioProcessingTapGetStorage(tap).assumingMemoryBound(to: EQTapContext.self)
   let format = processingFormat.pointee
 
+  /// `process` reads Float32 samples — a Float64 LPCM format is "float" but
+  /// would be misinterpreted, so it takes the bypass path too
   let isFloatPCM =
     format.mFormatID == kAudioFormatLinearPCM
     && (format.mFormatFlags & kAudioFormatFlagIsFloat) != 0
+    && format.mBitsPerChannel == 32
 
   guard isFloatPCM, format.mSampleRate > 0, format.mChannelsPerFrame > 0 else {
     context.pointee.bypass = 1
