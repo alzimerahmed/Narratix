@@ -173,6 +173,7 @@ private let eqTapProcess: MTAudioProcessingTapProcessCallback = { tap, numberFra
       }
     }
     numberFramesOut.pointee = numberFrames
+    flagsOut.pointee = []
     return
   }
 
