@@ -1052,6 +1052,7 @@
 		6F9255106F424FC385C8F9C7 /* PlaybackHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4C2AE0BE0D45858D5AD0CB /* PlaybackHistoryViewModel.swift */; };
 		80D867CF65C8476D81974D20 /* ListeningQueueServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B685AC09497243C29D38841F /* ListeningQueueServiceTests.swift */; };
 		2F1C08490EAD42039EDE5568 /* ListeningStateFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */; };
+		9EA7F5E8BA024D2F9E341865 /* PlaybackHistoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2095,6 +2096,7 @@
 		EA4C2AE0BE0D45858D5AD0CB /* PlaybackHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryViewModel.swift; sourceTree = "<group>"; };
 		B685AC09497243C29D38841F /* ListeningQueueServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningQueueServiceTests.swift; sourceTree = "<group>"; };
 		2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStateFilterTests.swift; sourceTree = "<group>"; };
+		FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3486,6 +3488,7 @@
 			children = (
 				B685AC09497243C29D38841F /* ListeningQueueServiceTests.swift */,
 				2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */,
+				FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */,
 				69343D35213A07B4000C425E /* VoiceOverServiceTest.swift */,
 				6906A54F21720FDF00A9E0B2 /* BookSortServiceTest.swift */,
 				62AAE230274ABB5D001EB9FF /* LibraryServiceTests.swift */,
@@ -5440,6 +5443,7 @@
 			files = (
 				80D867CF65C8476D81974D20 /* ListeningQueueServiceTests.swift in Sources */,
 				2F1C08490EAD42039EDE5568 /* ListeningStateFilterTests.swift in Sources */,
+				9EA7F5E8BA024D2F9E341865 /* PlaybackHistoryServiceTests.swift in Sources */,
 				A64308C416AABB27C66476A5 /* SleepTimerOptionTests.swift in Sources */,
 				E79345DD00DC64A0F7E0939A /* SleepTimerOption.swift in Sources */,
 				9F1C30FC2A2E593300D5BC81 /* PlayableItemMock.swift in Sources */,
