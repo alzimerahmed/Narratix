@@ -3,7 +3,6 @@
 //  BookPlayer
 //
 //  Copyright © 2025 BookPlayer LLC. All rights reserved.
-//  Narratix — Phase 3e (equalizer / voice boost).
 //
 //  Equalizer DSP for the single-AVPlayer pipeline: an MTAudioProcessingTap
 //  hung off AVPlayerItem.audioMix, so playback stays on AVPlayer (time

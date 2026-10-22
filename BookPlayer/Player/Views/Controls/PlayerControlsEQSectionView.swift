@@ -3,7 +3,6 @@
 //  BookPlayer
 //
 //  Copyright © 2025 BookPlayer LLC. All rights reserved.
-//  Narratix — Phase 3e (equalizer / voice boost).
 //
 
 import BookPlayerKit
