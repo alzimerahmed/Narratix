@@ -32,12 +32,13 @@ struct CollectionDetailView: View {
           model.handleSelect(item)
         }
         .swipeActions(edge: .trailing) {
+          /// Removing from a collection isn't destructive — the book keeps
+          /// its file and folder — so no destructive tint either
           Button {
             model.remove(item)
           } label: {
             Text("collection_remove_title")
           }
-          .tint(.orange)
         }
       }
       .listRowBackground(theme.secondarySystemBackgroundColor)

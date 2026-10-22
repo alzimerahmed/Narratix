@@ -43,7 +43,6 @@ struct CollectionListView: View {
           Button("delete_button", role: .destructive) {
             model.delete(collection)
           }
-          .tint(.red)
         }
         .contextMenu {
           Button {

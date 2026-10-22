@@ -447,7 +447,6 @@ struct ItemListView: View {
         model.selectedSetItems = [item.id]
         activeAlert = .delete
       }
-      .tint(.red)
     }
     .listRowBackground(theme.systemBackgroundColor)
     .allowsHitTesting(!model.editMode.isEditing)
