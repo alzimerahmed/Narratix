@@ -62,6 +62,7 @@ struct BackupView: View {
                 Image(systemName: "square.and.arrow.up")
                   .foregroundStyle(theme.linkColor)
               }
+              .accessibilityLabel("export_button")
             }
           }
         } header: {
@@ -73,13 +74,7 @@ struct BackupView: View {
     .applyListStyle(with: theme, background: theme.systemGroupedBackgroundColor)
     .navigationTitle("backup_section_title")
     .navigationBarTitleDisplayMode(.inline)
-    .overlay {
-      if viewModel.isWorking {
-        ProgressView()
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .background(Color.black.opacity(0.2))
-      }
-    }
+    .loadingOverlay(viewModel.isWorking)
     .fileExporter(
       isPresented: $viewModel.exporting,
       document: viewModel.exportDocument,
@@ -143,7 +138,8 @@ struct BackupView: View {
       report.collectionsRestored
     )
     if !report.skipped.isEmpty {
-      text += String.localizedStringWithFormat(
+      /// A full sentence now — no leading-space fragment glued on
+      text += " " + String.localizedStringWithFormat(
         "backup_report_skipped".localized,
         report.skipped.count,
         report.skipped.prefix(3).joined(separator: ", ")
