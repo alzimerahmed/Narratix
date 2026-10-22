@@ -129,7 +129,7 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
   }
 
   /// The port the URL answers on — explicit, or the scheme's default
-  private static func effectivePort(of url: URL) -> Int? {
+  static func effectivePort(of url: URL) -> Int? {
     if let port = url.port { return port }
     switch url.scheme?.lowercased() {
     case "https": return 443
@@ -215,15 +215,37 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
     return parser.parse(data)
   }
 
+  /// A recursive listing trusts the server's collection tree — a hostile or
+  /// broken server could answer with a self-referencing or near-infinite
+  /// one, so the walk is depth-bounded, visited-set deduplicated and
+  /// cancellable
+  private static let maxCollectionDepth = 32
+
   /// Every importable file inside a collection, recursively. Returns
   /// (resource URL, path relative to the collection) pairs so the download
   /// can rebuild the folder structure.
   func collectFiles(under collection: WebDAVEntry) async throws -> [(url: URL, relativePath: String)] {
+    var visited: Set<URL> = []
+    return try await collectFiles(under: collection, depth: 0, visited: &visited)
+  }
+
+  private func collectFiles(
+    under collection: WebDAVEntry,
+    depth: Int,
+    visited: inout Set<URL>
+  ) async throws -> [(url: URL, relativePath: String)] {
+    try Task.checkCancellation()
+    /// Depth + visited bound the walk: a circular tree stops, a collection
+    /// reachable through two paths lists once (and imports once)
+    guard depth <= Self.maxCollectionDepth,
+      visited.insert(collection.url).inserted
+    else { return [] }
+
     let entries = try await listDirectory(at: collection.url)
     var files: [(URL, String)] = []
     for entry in entries {
       if entry.isCollection {
-        for file in try await collectFiles(under: entry) {
+        for file in try await collectFiles(under: entry, depth: depth + 1, visited: &visited) {
           files.append((file.url, "\(entry.name)/\(file.relativePath)"))
         }
       } else if Self.importableExtensions.contains(entry.url.pathExtension.lowercased()) {
@@ -244,21 +266,43 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
   ) async throws {
     let request = authorizedRequest(url: resourceURL, method: "GET")
 
-    let location = try await withCheckedThrowingContinuation { continuation in
-      let delegate = DownloadSessionDelegate(
-        progress: progress,
-        completion: continuation
-      )
-      let session = URLSession(
-        configuration: .default,
-        delegate: delegate,
-        delegateQueue: nil
-      )
-      delegate.owningSession = session
-      session.downloadTask(with: request).resume()
+    /// The box hands the cancellation handler the task — the continuation
+    /// only sees it after `resume`, and a cancelled task errors through the
+    /// delegate into the continuation
+    let taskBox = DownloadTaskBox()
+    let location = try await withTaskCancellationHandler {
+      try await withCheckedThrowingContinuation { continuation in
+        let delegate = DownloadSessionDelegate(
+          progress: progress,
+          completion: continuation
+        )
+        let session = URLSession(
+          configuration: .default,
+          delegate: delegate,
+          delegateQueue: nil
+        )
+        delegate.owningSession = session
+        let task = session.downloadTask(with: request)
+        taskBox.task = task
+        task.resume()
+      }
+    } onCancel: {
+      taskBox.task?.cancel()
     }
 
     try FileManager.default.moveItem(at: location, to: destination)
+  }
+}
+
+/// Lets `withTaskCancellationHandler` reach the download task the
+/// continuation created
+private final class DownloadTaskBox: @unchecked Sendable {
+  private let lock = NSLock()
+  private var storedTask: URLSessionDownloadTask?
+
+  var task: URLSessionDownloadTask? {
+    get { lock.withLock { storedTask } }
+    set { lock.withLock { storedTask = newValue } }
   }
 }
 
@@ -312,6 +356,31 @@ private final class DownloadSessionDelegate: NSObject, URLSessionDownloadDelegat
     } catch {
       continuation.resume(throwing: error)
     }
+  }
+
+  /// A redirect off the connection's origin must not carry the credentials —
+  /// URLSession would re-send the request's Authorization header to whatever
+  /// host it lands on. Same scheme+host+port keeps them.
+  func urlSession(
+    _ session: URLSession,
+    task: URLSessionTask,
+    willPerformHTTPRedirection response: HTTPURLResponse,
+    newRequest request: URLRequest,
+    completionHandler: @escaping (URLRequest?) -> Void
+  ) {
+    guard
+      let original = task.originalRequest?.url,
+      let redirected = request.url,
+      original.scheme?.lowercased() == redirected.scheme?.lowercased(),
+      original.host?.lowercased() == redirected.host?.lowercased(),
+      WebDAVClient.effectivePort(of: original) == WebDAVClient.effectivePort(of: redirected)
+    else {
+      var stripped = request
+      stripped.setValue(nil, forHTTPHeaderField: "Authorization")
+      completionHandler(stripped)
+      return
+    }
+    completionHandler(request)
   }
 
   func urlSession(

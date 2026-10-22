@@ -54,6 +54,11 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
     var currentName: String
   }
   @Published private(set) var downloadProgress: DownloadProgress?
+  /// The sheet dismisses itself on this — the import owns the staging now
+  @Published private(set) var didHandOff = false
+  /// Set when a download dropped leaves: the staged copy waits for
+  /// `confirmPartialImport` or `discardPartialImport`
+  @Published var partialFailure: (failed: Int, total: Int)?
 
   private var connection: WebDAVConnection?
   private var client: WebDAVClient?
@@ -61,6 +66,8 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
   /// The session's staging folder while downloads run — nil once the import
   /// owns it, so a dismiss can't delete files the operation is reading
   private var stagingRoot: URL?
+  /// The staged import a `partialFailure` prompt is holding for its answer
+  private var pendingHandOff: (files: [URL], staging: URL)?
 
   let importManager: ImportManager
   let libraryService: LibraryServiceProtocol
@@ -219,6 +226,9 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
     phase = .downloading
     downloadProgress = DownloadProgress(current: 0, total: 0, fraction: 0, currentName: "")
 
+    /// One throttle for the whole batch — per-file would let a run of small
+    /// files burst publish again
+    let progressThrottle = ProgressThrottle()
     downloadTask = Task { [weak self] in
       guard let self else { return }
       let holding = Self.holdingRoot.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -286,7 +296,11 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
         }
 
         do {
-          try await client.download(file.url, to: destination) { [weak self] fraction in
+          /// The client's progress runs per buffered chunk — the throttle
+          /// keeps a ~10 Hz UI rate instead of a MainActor hop per chunk,
+          /// with the finished state always landing
+          try await client.download(file.url, to: destination) { [weak self, progressThrottle] fraction in
+            guard progressThrottle.shouldPublish(fraction: fraction) else { return }
             Task { @MainActor in
               self?.downloadProgress?.fraction = fraction
             }
@@ -324,16 +338,49 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
 
       if failed > 0 {
         Self.logger.error("WebDAV import dropped \(failed) of \(plan.count) files")
+        /// An incomplete tree never imports silently — the staging survives
+        /// this task (`stagingRoot` nil keeps `dismissFlow`'s cleanup off it)
+        /// for "import anyway" to hand off or "discard" to throw away
+        self.stagingRoot = nil
+        self.pendingHandOff = (imported, holding)
+        self.partialFailure = (failed, plan.count)
+        self.downloadProgress = nil
+        return
       }
 
-      self.importManager.operationPublisher.send(
-        ImportOperation(files: imported, libraryService: self.libraryService, ownedSourceRoot: holding)
-      )
-      /// Ownership moved to the operation — a dismiss after this must not clean it
-      self.stagingRoot = nil
-      self.downloadProgress = nil
-      /// The sheet dismisses; the import and its placement prompt carry on
+      self.handOff(imported, staging: holding)
     }
+  }
+
+  /// Ownership moves to the operation: `stagingRoot` clears so a dismiss
+  /// can't clean files it now reads, and `didHandOff` is what sends the
+  /// sheet away — `interactiveDismissDisabled` pins it while `.downloading`
+  private func handOff(_ files: [URL], staging: URL) {
+    importManager.operationPublisher.send(
+      ImportOperation(files: files, libraryService: libraryService, ownedSourceRoot: staging)
+    )
+    stagingRoot = nil
+    downloadProgress = nil
+    didHandOff = true
+  }
+
+  /// "Import anyway" on a partial download — the staged files hand off like
+  /// a complete set
+  func confirmPartialImport() {
+    guard let pending = pendingHandOff else { return }
+    pendingHandOff = nil
+    partialFailure = nil
+    handOff(pending.files, staging: pending.staging)
+  }
+
+  /// "Discard" on a partial download — the staged copy goes away and the
+  /// browser comes back where the selection was left
+  func discardPartialImport() {
+    guard let pending = pendingHandOff else { return }
+    pendingHandOff = nil
+    partialFailure = nil
+    try? FileManager.default.removeItem(at: pending.staging)
+    phase = .browse
   }
 
   /// Sheet dismissed mid-download or mid-browse: stop work and drop staging.
@@ -345,5 +392,30 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
       try? FileManager.default.removeItem(at: stagingRoot)
       self.stagingRoot = nil
     }
+    /// A partial-download prompt can hold a staging after its task ended
+    if let pending = pendingHandOff {
+      try? FileManager.default.removeItem(at: pending.staging)
+      pendingHandOff = nil
+      partialFailure = nil
+    }
+  }
+}
+
+/// Bounds a progress closure's publish rate (~10 Hz): URLSession's download
+/// delegate reports per buffered chunk, and a MainActor hop per chunk showed
+/// up on large files. `Sendable`-safe so the gate runs before the hop.
+private final class ProgressThrottle: @unchecked Sendable {
+  private let lock = NSLock()
+  private var lastPublished = Date.distantPast
+
+  /// True when this update may publish — the finished state always does
+  func shouldPublish(fraction: Double, now: Date = .init()) -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    guard fraction < 1, now.timeIntervalSince(lastPublished) < 0.1 else {
+      lastPublished = now
+      return true
+    }
+    return false
   }
 }

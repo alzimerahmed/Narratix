@@ -48,6 +48,26 @@ struct WebDAVBrowserView: View {
           }
         }
         .errorAlert(error: $viewModel.error)
+        /// Some leaves failed to download — nothing imports silently; the
+        /// user picks the rest up or throws it away
+        .alert(
+          "webdav_partial_title",
+          isPresented: Binding(
+            get: { viewModel.partialFailure != nil },
+            set: { if !$0 { viewModel.discardPartialImport() } }
+          )
+        ) {
+          Button("webdav_partial_import_button") { viewModel.confirmPartialImport() }
+          Button("webdav_partial_discard_button", role: .cancel) { viewModel.discardPartialImport() }
+        } message: {
+          Text(
+            String.localizedStringWithFormat(
+              "webdav_partial_description".localized,
+              viewModel.partialFailure?.failed ?? 0,
+              viewModel.partialFailure?.total ?? 0
+            )
+          )
+        }
         .alert(
           "webdav_insecure_title",
           isPresented: Binding(
@@ -64,6 +84,11 @@ struct WebDAVBrowserView: View {
         .toolbarColorScheme(theme.useDarkVariant ? .dark : .light, for: .navigationBar)
     }
     .interactiveDismissDisabled(viewModel.phase == .downloading)
+    /// The import owns the staging once handed off — the sheet goes away and
+    /// the import's placement prompt carries on (same shape as Transfer)
+    .onChange(of: viewModel.didHandOff) { _, didHandOff in
+      if didHandOff { dismiss() }
+    }
     .onAppear { viewModel.restore() }
     .onDisappear { viewModel.dismissFlow() }
   }

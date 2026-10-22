@@ -25,11 +25,8 @@ final class TransferViewModel: ObservableObject, BPLogger {
   }
 
   /// What the browser may send: the file picker's audio, movie and zip types, by extension, since the page
-  /// filters before uploading.
-  static let acceptedExtensions: Set<String> = [
-    "mp3", "m4a", "m4b", "aac", "aax", "aaxc", "wav", "aif", "aiff", "caf", "flac", "opus", "ogg", "oga",
-    "mp4", "m4v", "mov", "avi", "zip", "lpf",
-  ]
+  /// filters before uploading. Same list WebDAV folder downloads keep — `WebDAVClient` owns it.
+  static let acceptedExtensions = WebDAVClient.importableExtensions
 
   /// Where Done moves the received files for the import to take. The import owns each folder in it and
   /// deletes it when done; what a killed app leaves behind goes at launch (``removeLeftovers()``).
@@ -77,6 +74,9 @@ final class TransferViewModel: ObservableObject, BPLogger {
   static func removeLeftovers() {
     BrowserDropServer.removeLeftovers()
     try? FileManager.default.removeItem(at: holdingRoot)
+    /// WebDAV downloads stage into their own holding root with the same
+    /// import-owns-it lifecycle
+    try? FileManager.default.removeItem(at: WebDAVBrowserViewModel.holdingRoot)
   }
 
   /// What the import list shows: each file at the top, and each folder with how many files it holds.
