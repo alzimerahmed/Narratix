@@ -681,3 +681,11 @@
 "storage_remove_downloads_button" = "Remove downloads";
 "storage_remove_downloads_title" = "Remove downloads?";
 "storage_remove_downloads_description" = "This removes %@ of downloaded files that are backed up. The books stay in your library and download again when you need them. Files still uploading are left alone.";
+"artwork_search_online_title" = "Search online";
+"cover_search_title" = "Find a cover";
+"cover_search_placeholder" = "Title or author";
+"cover_search_empty_title" = "No covers found";
+"cover_search_empty_description" = "Try a different title or author.";
+"cover_search_hint_title" = "Search for a cover";
+"cover_search_hint_description" = "Artwork is looked up online. Only the search text leaves your device.";
+"cover_search_pick_hint" = "Uses this cover";

@@ -19,6 +19,8 @@ struct ItemDetailsView: View {
   @State private var showingImagePicker = false
   /// Flag to show the empty pasteboard alert
   @State private var showingEmptyPasteboardAlert = false
+  /// Flag to show the online cover search
+  @State private var showingCoverSearch = false
 
   @State private var loadingState = LoadingOverlayState()
   /// Media Servers, presented on top of the editor so its edits stay
@@ -152,9 +154,21 @@ struct ItemDetailsView: View {
     .alert("artwork_clipboard_empty_title", isPresented: $showingEmptyPasteboardAlert) {
       Button("ok_button") {}
     }
+    .sheet(isPresented: $showingCoverSearch) {
+      CoverSearchView(
+        query: [viewModel.title, viewModel.author]
+          .filter { !$0.isEmpty }
+          .joined(separator: " ")
+      ) { image in
+        viewModel.selectedImage = image
+      }
+    }
     .confirmationDialog("artwork_options_title", isPresented: $showingArtworkOptions) {
       Button("artwork_photolibrary_title") {
         showingImagePicker = true
+      }
+      Button("artwork_search_online_title") {
+        showingCoverSearch = true
       }
       Button("artwork_clipboard_title") {
         if let image = UIPasteboard.general.image {
