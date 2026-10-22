@@ -117,14 +117,19 @@ struct MiniPlayerAccessoryView: View {
       .opacity(reduceMotion ? 1 : 1 - min(dismissDrag / (dismissThreshold * 2), 1))
       .simultaneousGesture(
         /// Down swipes only: sideways stays for the tab bar's own gestures, and the
-        /// accessory's buttons keep their taps
+        /// accessory's buttons keep their taps. A swipe must be more vertical than
+        /// horizontal or it isn't a dismissal
         DragGesture(minimumDistance: 10)
           .onChanged { gesture in
-            dismissDrag = max(0, gesture.translation.height)
+            let translation = gesture.translation
+            dismissDrag = translation.height > abs(translation.width)
+              ? max(0, translation.height)
+              : 0
           }
           .onEnded { gesture in
             dismissDrag = 0
-            if gesture.translation.height > dismissThreshold {
+            if gesture.translation.height > dismissThreshold,
+               gesture.translation.height > abs(gesture.translation.width) {
               dismiss()
             }
           }
