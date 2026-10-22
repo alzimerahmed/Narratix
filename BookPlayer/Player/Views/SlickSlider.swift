@@ -106,8 +106,23 @@ class ThinTrackSlider: UISlider {
       ), cornerRadius: 0.75))
     }
     ticksLayer.path = path.cgPath
-    // Element frames move with the track too
-    markerElements = nil
+    // Element frames move with the track: update them in place — the rotor predicate
+    // matches the current entry by element identity, so remaking them on every
+    // per-second value write (which re-runs layout) breaks flicks while playing
+    if let markerElements, markerElements.count == chapterMarkers.count {
+      for (element, marker) in zip(markerElements, chapterMarkers) {
+        element.accessibilityFrameInContainerSpace = markerElementFrame(for: marker, in: track)
+      }
+    } else {
+      markerElements = nil
+    }
+  }
+
+  /// A rotor entry's hit rect: over its tick, tall enough to be a usable target
+  private func markerElementFrame(for marker: ChapterMarker, in track: CGRect) -> CGRect {
+    let tickHeight = trackHeight * 2
+    let x = track.minX + CGFloat(min(max(marker.fraction, 0), 1)) * track.width
+    return CGRect(x: x - 11, y: track.midY - tickHeight / 2, width: 22, height: max(tickHeight, 22))
   }
 
   private func updateThumbShadow() {
@@ -337,12 +352,10 @@ extension ThinTrackSlider {
   private func chapterMarkerElements() -> [ChapterMarkerElement] {
     if let markerElements { return markerElements }
     let track = trackRect(forBounds: bounds)
-    let tickHeight = trackHeight * 2
     let built = chapterMarkers.map { marker in
-      let x = track.minX + CGFloat(min(max(marker.fraction, 0), 1)) * track.width
-      return ChapterMarkerElement(
+      ChapterMarkerElement(
         marker: marker,
-        frame: CGRect(x: x - 11, y: track.midY - tickHeight / 2, width: 22, height: max(tickHeight, 22)),
+        frame: markerElementFrame(for: marker, in: track),
         in: self
       )
     }
