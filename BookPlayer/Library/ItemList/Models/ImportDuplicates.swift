@@ -23,6 +23,8 @@ struct PendingDuplicateImport: Equatable, Identifiable {
   let matches: [ImportDuplicateMatch]
   /// The location the import landed in — the placement prompt needs it
   let node: LibraryNode
+  /// The folder name a multi-file import suggested, carried so it survives the warning
+  let suggestedFolderName: String?
 }
 
 /// The duplicate warning's three resolutions

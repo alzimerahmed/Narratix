@@ -976,6 +976,9 @@
 		CDA937D56B8AFBA03402E979 /* MediaServerChapterRefreshService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C85605CDB6C6075AADBE2D15 /* MediaServerChapterRefreshService.swift */; };
 		B26B34D894351E8452FBB64B /* IntegrationServerInformationSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F919ABFCEF9B58EFE9D82E /* IntegrationServerInformationSectionView.swift */; };
 		B759C623225F1797DDA0A16D /* ImportPlacementModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8126A7C769E7B3304A16427B /* ImportPlacementModelTests.swift */; };
+		D1D0C0E1F2A3B4C5D6E7F832 /* ImportDuplicatesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D0C0E1F2A3B4C5D6E7F831 /* ImportDuplicatesTests.swift */; };
+		D1D0C0E1F2A3B4C5D6E7F834 /* WebDAVPropfindParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D0C0E1F2A3B4C5D6E7F833 /* WebDAVPropfindParserTests.swift */; };
+		D1D0C0E1F2A3B4C5D6E7F836 /* LibraryBackupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D0C0E1F2A3B4C5D6E7F835 /* LibraryBackupServiceTests.swift */; };
 		B7F1E4A9D2C5B8F0A6E3C12A /* IntegrationImageSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D9C8B6E5F1D2A7C4E9B81B /* IntegrationImageSizing.swift */; };
 		BB37FB74C092BB59BE0D00B9 /* ImportPlacementPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CEA2AC93A6D2CE0CD2359CB /* ImportPlacementPrompt.swift */; };
 		BF96AEBA456420ADE446427F /* URL+BookPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5126F120258E9F18009965DC /* URL+BookPlayer.swift */; };
@@ -1861,6 +1864,9 @@
 		7DDD933F7FDEDC1BF67EC567 /* TabEditingEnvironmentKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabEditingEnvironmentKey.swift; sourceTree = "<group>"; };
 		808E351A8B30ABCBA9EC00EF /* IntegrationDetailsViewModelProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntegrationDetailsViewModelProtocol.swift; sourceTree = "<group>"; };
 		8126A7C769E7B3304A16427B /* ImportPlacementModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ImportPlacementModelTests.swift; sourceTree = "<group>"; };
+		D1D0C0E1F2A3B4C5D6E7F831 /* ImportDuplicatesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDuplicatesTests.swift; sourceTree = "<group>"; };
+		D1D0C0E1F2A3B4C5D6E7F833 /* WebDAVPropfindParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVPropfindParserTests.swift; sourceTree = "<group>"; };
+		D1D0C0E1F2A3B4C5D6E7F835 /* LibraryBackupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBackupServiceTests.swift; sourceTree = "<group>"; };
 		8A2A22382CEFEB8800E73A2D /* AdaptiveVGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveVGrid.swift; sourceTree = "<group>"; };
 		8A9D0D232CCED53C007A924D /* JellyfinLibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryViewModel.swift; sourceTree = "<group>"; };
 		8A9D0D252CCED543007A924D /* JellyfinLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JellyfinLibraryView.swift; sourceTree = "<group>"; };
@@ -2647,6 +2653,8 @@
 				69343D34213A079B000C425E /* Services */,
 				63833DF82AAC134600496246 /* PerformanceTests */,
 				4163E312214AC43000072AA2 /* ImportOperationTests.swift */,
+				D1D0C0E1F2A3B4C5D6E7F831 /* ImportDuplicatesTests.swift */,
+				D1D0C0E1F2A3B4C5D6E7F833 /* WebDAVPropfindParserTests.swift */,
 				3D4833D717C7B97F7B5DFDC5 /* PromptSurfaceArbiterTests.swift */,
 				65962B5F03D221629A83C22C /* RefreshTaskOperationTests.swift */,
 				098A98893A8783E8BE1C5420 /* ListSyncRefreshServiceTests.swift */,
@@ -3594,6 +3602,7 @@
 				C882A5C82657C48D2A1C74EF /* HardcoverServiceTests.swift */,
 				F6291BA47A38D043A49CE7AA /* LibraryOrganizerTests.swift */,
 				8126A7C769E7B3304A16427B /* ImportPlacementModelTests.swift */,
+				D1D0C0E1F2A3B4C5D6E7F835 /* LibraryBackupServiceTests.swift */,
 				6F83542FF9A240EC87E55AC8 /* ReviewPromptServiceTests.swift */,
 				9FC1E4762815F97E00522FA8 /* KeychainServiceTests.swift */,
 				700DFD61111AC10253D6EBAA /* SyncTasksStorageTests.swift */,
@@ -5626,6 +5635,9 @@
 				E2C38F227319804D0AEC2AD9 /* HardcoverServiceTests.swift in Sources */,
 				E60060C58E5E4B24A431C381 /* LibraryOrganizerTests.swift in Sources */,
 				B759C623225F1797DDA0A16D /* ImportPlacementModelTests.swift in Sources */,
+				D1D0C0E1F2A3B4C5D6E7F832 /* ImportDuplicatesTests.swift in Sources */,
+				D1D0C0E1F2A3B4C5D6E7F834 /* WebDAVPropfindParserTests.swift in Sources */,
+				D1D0C0E1F2A3B4C5D6E7F836 /* LibraryBackupServiceTests.swift in Sources */,
 				058C840BB5E944B2899BC769 /* ReviewPromptServiceTests.swift in Sources */,
 				9FC1E4772815F97E00522FA8 /* KeychainServiceTests.swift in Sources */,
 				63432B592AC1E6F7002619D0 /* MockNavigationController.swift in Sources */,

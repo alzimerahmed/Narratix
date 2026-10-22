@@ -93,7 +93,7 @@ struct LibraryBackup: Codable {
   }
 }
 
-enum LibraryBackupError: LocalizedError {
+enum LibraryBackupError: LocalizedError, Equatable {
   case emptyLibrary
   case unsupportedFormat(Int)
   case unreadableFile

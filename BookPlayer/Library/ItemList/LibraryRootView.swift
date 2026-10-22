@@ -314,7 +314,8 @@ struct LibraryRootView: View {
           importOperationState.pendingDuplicates = PendingDuplicateImport(
             items: processedItems,
             matches: matches,
-            node: importNode
+            node: importNode,
+            suggestedFolderName: suggestedFolderName
           )
           return
         }
@@ -521,7 +522,7 @@ struct LibraryRootView: View {
         processedItems: remaining,
         isStream: false,
         importNode: pending.node,
-        suggestedFolderName: nil
+        suggestedFolderName: pending.suggestedFolderName
       )
     }
   }

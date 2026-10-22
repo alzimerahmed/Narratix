@@ -56,12 +56,14 @@ struct WebDAVBrowserView: View {
     .onDisappear { viewModel.dismissFlow() }
   }
 
-  private var navigationTitle: LocalizedStringKey {
+  private var navigationTitle: String {
     switch viewModel.phase {
-    case .connect: return "webdav_title"
+    case .connect:
+      return "webdav_title".localized
     case .browse:
-      return viewModel.path.last?.name.map { LocalizedStringKey($0) } ?? "webdav_title"
-    case .downloading: return "webdav_downloading_title"
+      return viewModel.path.last?.name ?? "webdav_title".localized
+    case .downloading:
+      return "webdav_downloading_title".localized
     }
   }
 
