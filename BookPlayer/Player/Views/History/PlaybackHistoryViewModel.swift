@@ -55,9 +55,18 @@ final class PlaybackHistoryViewModel: PlaybackHistoryView.Model {
       guard let self else { return }
       do {
         try await playerLoaderService.loadPlayer(session.itemRelativePath, autoplay: true)
+        /// `play()` refuses a playhead that sits at the item's duration — a
+        /// session left at a finished book's end restarts it from the top
+        var position = session.position
+        if let currentItem = playerManager.currentItem,
+          currentItem.isFinished,
+          position >= currentItem.duration
+        {
+          position = 0
+        }
         /// The loader resolves to the stored position — the session's is the
         /// one the user asked for
-        playerManager.jumpTo(session.position, recordBookmark: false)
+        playerManager.jumpTo(position, recordBookmark: false)
       } catch {
         loadingState.error = error
       }
