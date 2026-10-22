@@ -106,6 +106,7 @@ struct ListeningQueueView: View {
 }
 
 extension ListeningQueueView {
+  @MainActor
   class Model: ObservableObject {
     @Published var items = [SimpleLibraryItem]()
 

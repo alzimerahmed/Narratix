@@ -97,6 +97,7 @@ struct PlaybackHistoryView: View {
 }
 
 extension PlaybackHistoryView {
+  @MainActor
   class Model: ObservableObject {
     @Published var sessions = [SimplePlaybackSession]()
 
