@@ -721,6 +721,10 @@
 "webdav_insecure_title" = "Unencrypted connection";
 "webdav_insecure_description" = "This address uses http:// — your username and password would be sent in cleartext. Connect anyway?";
 "webdav_insecure_connect_button" = "Connect Anyway";
+"webdav_partial_title" = "Incomplete download";
+"webdav_partial_description" = "%d of %d files didn't download. Import the rest anyway?";
+"webdav_partial_import_button" = "Import Anyway";
+"webdav_partial_discard_button" = "Discard";
 "back_title" = "Back";
 "settings_backup_restore_description" = "Backup & restore";
 "backup_section_title" = "Backup";
