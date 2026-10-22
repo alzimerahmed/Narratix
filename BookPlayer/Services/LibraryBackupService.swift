@@ -310,8 +310,10 @@ final class LibraryBackupService: BPLogger {
       }
       if let created = libraryService.createBookmark(
         at: record.time, relativePath: item.relativePath, uuid: UUID().uuidString, type: type
-      ), let note = record.note {
-        libraryService.addNote(note, bookmark: created)
+      ) {
+        if let note = record.note {
+          libraryService.addNote(note, bookmark: created)
+        }
         bookmarksCreated += 1
       }
     }
