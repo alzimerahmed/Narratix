@@ -192,7 +192,12 @@ private let eqTapProcess: MTAudioProcessingTapProcessCallback = { tap, numberFra
     guard let data = buffer.mData else { continue }
     let channelsInBuffer = Int(buffer.mNumberChannels)
     guard channelsInBuffer > 0 else { continue }
-    let frames = Int(buffer.mDataByteSize) / (MemoryLayout<Float>.stride * channelsInBuffer)
+    /// `mDataByteSize` is capacity, `numberFrames` is what was actually filled —
+    /// a short EOF read must not filter uninitialized tail bytes into the state
+    let frames = min(
+      Int(buffer.mDataByteSize) / (MemoryLayout<Float>.stride * channelsInBuffer),
+      Int(numberFrames)
+    )
     let samples = data.assumingMemoryBound(to: Float.self)
 
     for channelInBuffer in 0..<channelsInBuffer {
