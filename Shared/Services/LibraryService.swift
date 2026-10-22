@@ -130,6 +130,11 @@ public protocol LibraryServiceProtocol: AnyObject {
 
   /// The item's free-form note (book-level memo; `nil` clears it)
   func updateNote(_ note: String?, at relativePath: String)
+
+  /// Series name + book number (item-level metadata, local-only — the update
+  /// is never emitted into a sync payload). Implemented in
+  /// `LibraryService+Collections.swift`.
+  func updateSeriesInfo(name: String?, order: Double?, at relativePath: String)
   /// Apply a sort to the list at the given path: persists the sticky preference
   /// for resolvable locations (order is derived at query time); performs a
   /// one-shot rank materialization for `.unresolved` locations
@@ -504,7 +509,9 @@ public final class LibraryService: LibraryServiceProtocol, BPLogger, @unchecked 
         uuid: uuid,
         externalResources: externalResources?.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) }),
         didNotFinish: dictionary["didNotFinish"] as? Bool ?? false,
-        note: dictionary["note"] as? String
+        note: dictionary["note"] as? String,
+        seriesName: dictionary["seriesName"] as? String,
+        seriesOrder: (dictionary["seriesOrder"] as? NSNumber)?.doubleValue
       )
     })
   }
@@ -1129,7 +1136,20 @@ extension LibraryService {
     book.isFinished = false
     book.type = .book
     book.uuid = UUID().uuidString
-    
+
+    /// Series metadata (local-only): tags first — the filename heuristic is
+    /// conservative, so an unrelated name can't fabricate a series.
+    book.seriesName = metadata?.seriesName
+    book.seriesOrder = metadata?.seriesOrder.map { NSNumber(value: $0) }
+    if book.seriesName == nil || book.seriesOrder == nil {
+      var hint = AudioMetadataService.parseSeriesHint(from: url.lastPathComponent)
+      if hint.name == nil, hint.order == nil, !book.title.isEmpty {
+        hint = AudioMetadataService.parseSeriesHint(from: book.title)
+      }
+      if book.seriesName == nil { book.seriesName = hint.name }
+      if book.seriesOrder == nil { book.seriesOrder = hint.order.map { NSNumber(value: $0) } }
+    }
+
     return book
   }
 

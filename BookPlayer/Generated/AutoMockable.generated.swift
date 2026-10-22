@@ -738,6 +738,21 @@ class LibraryServiceProtocolMock: LibraryServiceProtocol {
         updateNoteAtReceivedInvocations.append((note: note, relativePath: relativePath))
         updateNoteAtClosure?(note, relativePath)
     }
+    //MARK: - updateSeriesInfo
+
+    var updateSeriesInfoNameOrderAtCallsCount = 0
+    var updateSeriesInfoNameOrderAtCalled: Bool {
+        return updateSeriesInfoNameOrderAtCallsCount > 0
+    }
+    var updateSeriesInfoNameOrderAtReceivedArguments: (name: String?, order: Double?, relativePath: String)?
+    var updateSeriesInfoNameOrderAtReceivedInvocations: [(name: String?, order: Double?, relativePath: String)] = []
+    var updateSeriesInfoNameOrderAtClosure: ((String?, Double?, String) -> Void)?
+    func updateSeriesInfo(name: String?, order: Double?, at relativePath: String) {
+        updateSeriesInfoNameOrderAtCallsCount += 1
+        updateSeriesInfoNameOrderAtReceivedArguments = (name: name, order: order, relativePath: relativePath)
+        updateSeriesInfoNameOrderAtReceivedInvocations.append((name: name, order: order, relativePath: relativePath))
+        updateSeriesInfoNameOrderAtClosure?(name, order, relativePath)
+    }
     //MARK: - sortContents
 
     var sortContentsAtByCallsCount = 0

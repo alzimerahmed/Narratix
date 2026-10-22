@@ -47,6 +47,10 @@ final class ItemDetailsViewModel: ObservableObject {
   /// The item's free-form note (book-level memo; `Bookmark.note` is the
   /// time-anchored cousin — this one lives on the item)
   @Published var note: String
+  /// Series the item belongs to (local-only metadata); empty at save clears it
+  @Published var seriesName: String
+  /// Book number inside the series, as typed text — "2", "2.5" (novellas)
+  @Published var seriesOrder: String
   /// Artwork image
   @Published var selectedImage: UIImage?
   /// Last played date
@@ -105,6 +109,8 @@ final class ItemDetailsViewModel: ObservableObject {
     self.title = item.title
     self.author = item.details
     self.note = item.note ?? ""
+    self.seriesName = item.seriesName ?? ""
+    self.seriesOrder = item.seriesOrder.map { Self.formatSeriesOrder($0) } ?? ""
     self.selectedImage = UIImage(contentsOfFile: cachedImageURL.path)
     self.lastPlayedDate = playedDate
 
@@ -257,6 +263,8 @@ final class ItemDetailsViewModel: ObservableObject {
       /// cacheKey is the post-rename path when a folder title changed — the note
       /// has to write to the item's current identity
       updateNote(note, relativePath: cacheKey)
+      /// Same rename rule: series metadata follows the item's current path
+      updateSeries(name: seriesName, orderText: seriesOrder, relativePath: cacheKey)
 
       if let pickerViewModel = hardcoverSectionViewModel?.pickerViewModel,
         pickerViewModel.selected?.id != hardcoverBook?.id
@@ -355,6 +363,31 @@ final class ItemDetailsViewModel: ObservableObject {
     guard cleanedNote != (item.note ?? "") else { return }
 
     libraryService.updateNote(cleanedNote.isEmpty ? nil : cleanedNote, at: relativePath)
+  }
+
+  /// Writes series metadata (local-only — `updateSeriesInfo` emits no sync
+  /// event). Commas are accepted as the decimal separator so "1,5" parses like
+  /// "1.5". An empty name clears both fields — a number without a series is
+  /// meaningless.
+  func updateSeries(name: String, orderText: String, relativePath: String) {
+    let cleanedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    let normalizedOrder = orderText
+      .replacingOccurrences(of: ",", with: ".")
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    let order = Double(normalizedOrder)
+
+    guard cleanedName != (item.seriesName ?? "") || order != item.seriesOrder else { return }
+
+    libraryService.updateSeriesInfo(
+      name: cleanedName.isEmpty ? nil : cleanedName,
+      order: cleanedName.isEmpty ? nil : order,
+      at: relativePath
+    )
+  }
+
+  /// "2" for 2.0, "2.5" for a novella — never "2.0" in the field
+  private static func formatSeriesOrder(_ order: Double) -> String {
+    order == floor(order) ? String(Int(order)) : String(order)
   }
 
   func assignNewSelection(

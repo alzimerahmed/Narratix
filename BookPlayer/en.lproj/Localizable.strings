@@ -636,3 +636,33 @@
 "history_empty_description" = "Each time you play and pause, a session appears here with the position you left it at.";
 "history_row_restore_hint" = "Plays this book from that position";
 "history_session_played_format" = "Listened for %@";
+
+/* Phase 3c: Library Organization */
+"browse_section_title" = "Browse";
+"browse_title" = "Series & Authors";
+"browse_picker" = "Browse";
+"browse_group_empty_title" = "Nothing here";
+"browse_group_empty_description" = "This group has no books.";
+"series_title" = "Series";
+"series_name_placeholder" = "Series name";
+"series_order_placeholder" = "Book number";
+"series_order_accessibility_label" = "Book %@";
+"series_empty_title" = "No series yet";
+"series_empty_description" = "Tag books with a series name and number in their details, and they'll be grouped here in reading order.";
+"authors_title" = "Authors";
+"authors_empty_title" = "No authors yet";
+"authors_empty_description" = "Books show their author here once they carry one.";
+"collections_title" = "Collections";
+"collection_new_title" = "New Collection";
+"collection_name_placeholder" = "Collection name";
+"collection_rename_title" = "Rename Collection";
+"collection_picker_title" = "Add to Collection";
+"collection_create_and_add_title" = "Create and Add";
+"collection_remove_title" = "Remove from Collection";
+"collection_member_value" = "Contains the selection";
+"collection_not_member_value" = "Does not contain the selection";
+"collection_empty_title" = "No collections yet";
+"collection_empty_description" = "Collections let you shelve books across folders — a book can belong to many.";
+"collection_picker_empty_description" = "Create a collection to shelve this selection on it.";
+"collection_detail_empty_title" = "This shelf is empty";
+"collection_detail_empty_description" = "Add books from a book's options menu — Add to Collection.";

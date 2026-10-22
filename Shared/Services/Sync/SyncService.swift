@@ -808,6 +808,8 @@ extension SyncService {
       /// them and the update body is posted verbatim
       params.removeValue(forKey: #keyPath(LibraryItem.didNotFinish))
       params.removeValue(forKey: #keyPath(LibraryItem.note))
+      params.removeValue(forKey: #keyPath(LibraryItem.seriesName))
+      params.removeValue(forKey: #keyPath(LibraryItem.seriesOrder))
 
       /// Override param `lastPlayDate` if it exists with the proper name
       if let lastPlayDate = params.removeValue(forKey: #keyPath(LibraryItem.lastPlayDate)) {

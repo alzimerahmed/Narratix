@@ -82,5 +82,23 @@
         <string>Downloading %d files</string>
       </dict>
     </dict>
+    <key>collection_items_count</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@format@</string>
+      <key>format</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>d</string>
+        <key>zero</key>
+        <string>No books</string>
+        <key>one</key>
+        <string>1 book</string>
+        <key>other</key>
+        <string>%d books</string>
+      </dict>
+    </dict>
   </dict>
 </plist>

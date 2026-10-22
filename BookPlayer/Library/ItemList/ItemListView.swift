@@ -59,11 +59,14 @@ struct ItemListView: View {
   @Environment(\.syncService) var syncService
   @Environment(\.syncQueueService) private var syncQueueService
   @Environment(\.hardcoverService) var hardcoverService
-  @Environment(\.playerLoaderService) private var playerLoaderService
+  @Environment(\.playerLoaderService) var playerLoaderService
+  /// The collections/series sheet models resolve folders to their next
+  /// unfinished book through this
+  @Environment(\.playbackService) var playbackService
   @Environment(\.preferencesService) var preferencesService
   @Environment(\.listState) var listState
-  @Environment(\.playerState) private var playerState
-  @Environment(\.loadingState) private var loadingState
+  @Environment(\.playerState) var playerState
+  @Environment(\.loadingState) var loadingState
   @Environment(\.importOperationState) private var importOperationState
   @Environment(\.scenePhase) private var scenePhase
   @EnvironmentObject private var importManager: ImportManager
@@ -625,6 +628,21 @@ struct ItemListView: View {
       }
 
       ThemedSection {
+        Button {
+          activeSheet = .collections
+        } label: {
+          Label("collections_title", systemImage: "square.stack")
+        }
+        Button {
+          activeSheet = .seriesBrowser
+        } label: {
+          Label("browse_title", systemImage: "books.vertical")
+        }
+      } header: {
+        Text("browse_section_title")
+      }
+
+      ThemedSection {
         addFilesOptions()
       } header: {
         Text("playlist_add_title")
@@ -799,6 +817,7 @@ extension ItemListView {
     markFinishedOption(for: items, forMenu: false)
     markDidNotFinishOption(for: items, forMenu: false)
     queueOptions(for: items, forMenu: false)
+    collectionsOption(for: items, forMenu: false)
     boundBooksOption(for: items, forMenu: false)
     downloadOption(for: items, forMenu: false)
     deleteOption(for: items, forMenu: false)
@@ -811,6 +830,7 @@ extension ItemListView {
     deleteOption(for: items, forMenu: true)
     downloadOption(for: items, forMenu: true)
     boundBooksOption(for: items, forMenu: true)
+    collectionsOption(for: items, forMenu: true)
     queueOptions(for: items, forMenu: true)
     markDidNotFinishOption(for: items, forMenu: true)
     markFinishedOption(for: items, forMenu: true)
@@ -833,6 +853,7 @@ extension ItemListView {
     markFinishedOption(for: items, forMenu: false)
     markDidNotFinishOption(for: items, forMenu: false)
     queueOptions(for: items, forMenu: false)
+    collectionsOption(for: items, forMenu: false)
     boundBooksOption(for: items, forMenu: false)
     downloadOption(for: items, forMenu: false)
     Divider()
@@ -970,6 +991,20 @@ extension ItemListView {
       }
       .menuTint(theme.primaryColor, enabled: forMenu)
     }
+  }
+
+  /// Cross-cutting shelves: the picker toggles membership for the whole
+  /// selection — a collection checked for all selected removes them, any
+  /// other adds the missing ones
+  @ViewBuilder
+  private func collectionsOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    Button {
+      select(items)
+      activeSheet = .collectionPicker
+    } label: {
+      Label("collection_picker_title", systemImage: "square.stack")
+    }
+    .menuTint(theme.primaryColor, enabled: forMenu)
   }
 
   @ViewBuilder

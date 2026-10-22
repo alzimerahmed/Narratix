@@ -33,17 +33,25 @@ public struct AudioMetadata {
   public let artist: String
   public let duration: TimeInterval
   public let chapters: [ChapterMetadata]?
+  /// Series name carried by the file's tags (grouping / content-group), if any
+  public let seriesName: String?
+  /// Book number inside the series (movement number / part-of-set), if any
+  public let seriesOrder: Double?
 
   public init(
     title: String,
     artist: String = "",
     duration: TimeInterval = 0,
-    chapters: [ChapterMetadata]? = nil
+    chapters: [ChapterMetadata]? = nil,
+    seriesName: String? = nil,
+    seriesOrder: Double? = nil
   ) {
     self.title = title
     self.artist = artist
     self.duration = duration
     self.chapters = chapters
+    self.seriesName = seriesName
+    self.seriesOrder = seriesOrder
   }
 }
 
@@ -106,12 +114,16 @@ public class AudioMetadataService: BPLogger, AudioMetadataServiceProtocol {
       let title = await extractTitle(from: metadata)
       let artist = await extractArtist(from: metadata)
       let chapters = await extractChapters(from: asset, metadata: metadata, duration: durationSeconds)
+      let seriesName = await extractSeriesName(from: metadata)
+      let seriesOrder = await extractSeriesOrder(from: metadata)
 
       return AudioMetadata(
         title: title,
         artist: artist,
         duration: durationSeconds,
-        chapters: chapters
+        chapters: chapters,
+        seriesName: seriesName,
+        seriesOrder: seriesOrder
       )
 
     } catch {
@@ -159,6 +171,119 @@ public class AudioMetadataService: BPLogger, AudioMetadataServiceProtocol {
     }
     
     return ""
+  }
+
+  // MARK: - Series tags
+
+  /// Tag keys that carry the series name across formats: iTunes grouping (©grp),
+  /// ID3 content-group (TIT1), Audible's GRP1, and the lowercase `series` atom
+  /// some tagging tools write directly.
+  private static let seriesNameKeys: Set<String> = ["©grp", "tit1", "grp1", "series"]
+
+  /// Tag keys that carry the book number: iTunes movement number (mvin) and its
+  /// ID3 twin (MVIN), plus ID3 part-of-set (TPOS, written "n/total").
+  private static let seriesOrderKeys: Set<String> = ["mvin", "tpos"]
+
+  /// The format-agnostic form of a metadata key: `item.key` for known atoms
+  /// ("©grp", "TIT1"), the identifier's trailing component otherwise
+  /// ("itsk/mvin" → "mvin").
+  private func metadataKey(of item: AVMetadataItem) -> String? {
+    if let key = item.key as? String { return key }
+    return item.identifier?.rawValue.split(separator: "/").last.map(String.init)
+  }
+
+  private func extractSeriesName(from metadata: [AVMetadataItem]) async -> String? {
+    for item in metadata {
+      guard let key = metadataKey(of: item),
+        Self.seriesNameKeys.contains(key.lowercased()),
+        let raw = try? await item.load(.stringValue)
+      else { continue }
+
+      let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !value.isEmpty { return value }
+    }
+    return nil
+  }
+
+  private func extractSeriesOrder(from metadata: [AVMetadataItem]) async -> Double? {
+    for item in metadata {
+      guard let key = metadataKey(of: item),
+        Self.seriesOrderKeys.contains(key.lowercased())
+      else { continue }
+
+      if let number = try? await item.load(.numberValue) {
+        return number.doubleValue
+      }
+      if let text = try? await item.load(.stringValue) {
+        /// TPOS is written "n/total" — the book number is the leading component
+        let head = text.split(separator: "/").first.map(String.init) ?? text
+        if let order = Double(head.trimmingCharacters(in: .whitespacesAndNewlines)) {
+          return order
+        }
+      }
+    }
+    return nil
+  }
+
+  // MARK: - Filename heuristic
+
+  /// Conservative filename fallback, used only when the tags carry no series
+  /// info at all. It recognizes the common layouts rather than guessing
+  /// freely, so an unrelated name can't fabricate a series:
+  ///   "Series - Book 3 - Title.m4b", "Title (Series, Book 3).m4b",
+  ///   "Series, Book 3.m4b", "Series #3.m4b"
+  /// `part` is deliberately excluded — split files ("Title Part 1") are
+  /// file-chunk naming, not series numbering.
+  /// - Returns: `(name, order)` — name is nil when it can't be isolated.
+  public static func parseSeriesHint(from fileName: String) -> (name: String?, order: Double?) {
+    let stem = URL(fileURLWithPath: fileName).deletingPathExtension().lastPathComponent
+
+    /// "Title (Series, Book 3)" — a parenthesized "(name,|) book|vol N" tail
+    if let match = stem.firstMatch(
+      of: /\((?<name>[^()]*?)\s*,?\s*(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\s*\)/.ignoresCase()
+    ) {
+      return (cleanSeriesName(String(match.name)), Double(match.order))
+    }
+
+    /// "Title (Series #3)"
+    if let match = stem.firstMatch(
+      of: /\((?<name>[^()]*?)\s*#\s*(?<order>\d+(?:\.\d+)?)\s*\)/.ignoresCase()
+    ) {
+      return (cleanSeriesName(String(match.name)), Double(match.order))
+    }
+
+    /// "Author - Series - Book 3 - Title": the run of text immediately before
+    /// "book|vol N" is the series name — a dash-bound segment can only be
+    /// captured once `book N` actually follows it.
+    if let match = stem.firstMatch(
+      of: /(?<name>[^\-–—()]+?)\s*[-–—,]\s*(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\b/.ignoresCase()
+    ) {
+      return (cleanSeriesName(String(match.name)), Double(match.order))
+    }
+
+    /// "Series #3" — trailing #number outside parens
+    if let match = stem.firstMatch(
+      of: /(?<name>.+?)\s*#\s*(?<order>\d+(?:\.\d+)?)\s*$/.ignoresCase()
+    ) {
+      return (cleanSeriesName(String(match.name)), Double(match.order))
+    }
+
+    /// Bare "… Book 3" with no isolatable name — order only
+    if let match = stem.firstMatch(
+      of: /(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\b/.ignoresCase()
+    ) {
+      return (nil, Double(match.order))
+    }
+
+    return (nil, nil)
+  }
+
+  private static func cleanSeriesName(_ raw: String) -> String? {
+    let cleaned = raw
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .trimmingCharacters(in: CharacterSet(charactersIn: "-–—,"))
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    return cleaned.isEmpty ? nil : cleaned
   }
 
   // MARK: - Chapter Extraction

@@ -43,6 +43,10 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
   public let didNotFinish: Bool
   /// Free-form note attached to the item itself (unlike `SimpleBookmark.note`)
   public let note: String?
+  /// Series the item belongs to, if any (local-only metadata)
+  public let seriesName: String?
+  /// Book number inside `seriesName` — fractional entries allowed, nil = unordered
+  public let seriesOrder: Double?
 
   public var progress: Double {
     if type == .folder,
@@ -67,6 +71,9 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     && lhs.type.rawValue == rhs.type.rawValue
     && lhs.orderRank == rhs.orderRank
     && lhs.uuid == rhs.uuid
+    // Series rows surface the name/number — a metadata write must refresh them
+    && lhs.seriesName == rhs.seriesName
+    && lhs.seriesOrder == rhs.seriesOrder
     // Rows render provider icons from this — snapshots differing only in their
     // external resources must not compare equal, or removeDuplicates/onChange
     // paths skip refreshing a row that just gained or lost a media-server link
@@ -93,7 +100,9 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     "type",
     "uuid",
     "didNotFinish",
-    "note"
+    "note",
+    "seriesName",
+    "seriesOrder"
   ]
 
   public func hash(into hasher: inout Hasher) {
@@ -123,7 +132,9 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     uuid: String,
     externalResources: [SimpleExternalResource]? = nil,
     didNotFinish: Bool = false,
-    note: String? = nil
+    note: String? = nil,
+    seriesName: String? = nil,
+    seriesOrder: Double? = nil
   ) {
     self.title = title
     self.details = details
@@ -145,6 +156,8 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     self.externalResources = externalResources
     self.didNotFinish = didNotFinish
     self.note = note
+    self.seriesName = seriesName
+    self.seriesOrder = seriesOrder
   }
 }
 
@@ -168,6 +181,8 @@ extension SimpleLibraryItem {
     self.uuid = item.uuid
     self.didNotFinish = item.didNotFinish
     self.note = item.note
+    self.seriesName = item.seriesName
+    self.seriesOrder = item.seriesOrder?.doubleValue
 
     self.externalResources = item.resourcesArray.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) })
 

@@ -45,6 +45,15 @@ struct ItemDetailsView: View {
         authorPlaceholder: viewModel.authorPlaceholder
       )
 
+      // Series metadata for books and volumes — same gate as the author field
+      // (a plain folder is a container, not a book)
+      if viewModel.showAuthor {
+        ItemDetailsSeriesSectionView(
+          name: $viewModel.seriesName,
+          order: $viewModel.seriesOrder
+        )
+      }
+
       ItemDetailsArtworkSectionView(image: $viewModel.selectedImage) {
         showingArtworkOptions = true
       }

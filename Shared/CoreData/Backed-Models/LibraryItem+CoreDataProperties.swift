@@ -42,8 +42,16 @@ extension LibraryItem {
   /// Free-form note about the item (book-level memo, unlike the time-anchored
   /// `Bookmark.note`)
   @NSManaged public var note: String?
+  /// Series the item belongs to (ingested from tags or set in item details).
+  /// Local-only — never synced.
+  @NSManaged public var seriesName: String?
+  /// Book number inside `seriesName`; fractional entries (novellas) are
+  /// supported. nil = unordered/unknown.
+  @NSManaged public var seriesOrder: NSNumber?
   @NSManaged public var playbackSessions: NSSet?
   @NSManaged public var listeningQueueItems: NSSet?
+  /// User-made shelves the item belongs to (many-to-many, local-only)
+  @NSManaged public var collections: NSSet?
 }
 
 // MARK: Generated accessors for playbackSessions
@@ -117,4 +125,23 @@ extension LibraryItem {
 
   @objc(removeBookmarks:)
   @NSManaged public func removeFromBookmarks(_ values: NSSet)
+}
+
+// MARK: Generated accessors for collections
+extension LibraryItem {
+  @objc(addCollectionsObject:)
+  @NSManaged public func addToCollections(_ value: ItemCollection)
+
+  @objc(removeCollectionsObject:)
+  @NSManaged public func removeFromCollections(_ value: ItemCollection)
+
+  @objc(addCollections:)
+  @NSManaged public func addToCollections(_ values: NSSet)
+
+  @objc(removeCollections:)
+  @NSManaged public func removeFromCollections(_ values: NSSet)
+
+  public var collectionsArray: [ItemCollection] {
+    return collections?.allObjects as? [ItemCollection] ?? []
+  }
 }
