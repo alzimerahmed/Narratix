@@ -643,13 +643,11 @@
 "browse_picker" = "Browse";
 "browse_group_empty_title" = "Nothing here";
 "browse_group_empty_description" = "This group has no books.";
-"series_title" = "Series";
 "series_name_placeholder" = "Series name";
 "series_order_placeholder" = "Book number";
 "series_order_accessibility_label" = "Book %@";
 "series_empty_title" = "No series yet";
 "series_empty_description" = "Tag books with a series name and number in their details, and they'll be grouped here in reading order.";
-"authors_title" = "Authors";
 "authors_empty_title" = "No authors yet";
 "authors_empty_description" = "Books show their author here once they carry one.";
 "collections_title" = "Collections";
