@@ -31,7 +31,8 @@ final class ListeningStatsViewModel: ListeningStatsView.Model {
     self.statsService = statsService
     super.init()
 
-    reload()
+    /// No init reload: the view's `.task` reloads on open — computing the
+    /// stats here too doubled the fetch work per sheet
 
     statsService.updates
       .receive(on: DispatchQueue.main)

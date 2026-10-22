@@ -674,18 +674,18 @@ public actor SyncQueueRepository: SyncQueueRepositoryProtocol, BPLogger {
   /// can lead to a book file upload.
   public func hasUploadTask(matchingPrefix pathPrefix: String) -> Bool {
     let descendantPrefix = pathPrefix + "/"
-    let references = (try? modelContext.fetch(FetchDescriptor<QueuedTaskReferenceModel>())) ?? []
-
-    return references.contains { reference in
-      guard
-        reference.jobType == .upload
+    /// The store filters — every offload check used to pull ALL task
+    /// references into memory just to test a prefix
+    let descriptor = FetchDescriptor<QueuedTaskReferenceModel>(
+      predicate: #Predicate<QueuedTaskReferenceModel> { reference in
+        (reference.jobType == .upload
           || reference.jobType == .uploadFile
-          || reference.jobType == .externalResourceToDownload
-      else { return false }
-
-      return reference.relativePath == pathPrefix
-        || reference.relativePath.hasPrefix(descendantPrefix)
-    }
+          || reference.jobType == .externalResourceToDownload)
+          && (reference.relativePath == pathPrefix
+            || reference.relativePath.starts(with: descendantPrefix))
+      }
+    )
+    return ((try? modelContext.fetch(descriptor)) ?? []).isEmpty == false
   }
 
   /// Rewrites task reference and task model uuids for each conflict returned by `matchUuid`.

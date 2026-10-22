@@ -32,7 +32,9 @@ final class PlaybackHistoryViewModel: PlaybackHistoryView.Model {
     self.playerLoaderService = playerLoaderService
     self.loadingState = loadingState
 
-    super.init(sessions: historyService.fetchSessions())
+    /// The view's `.task` reloads on open — seeding sessions here fetched
+    /// the whole history twice per sheet
+    super.init(sessions: [])
 
     /// A session ends while the list is on screen (the panel beside the player
     /// runs alongside live playback) — refresh instead of going stale

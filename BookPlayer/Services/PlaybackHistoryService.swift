@@ -251,7 +251,7 @@ final class PlaybackHistoryService {
     let context = dataManager.getContext()
 
     context.performAndWait {
-      guard let item = libraryItem(for: itemRelativePath, context: context) else { return }
+      guard let item = context.libraryItem(for: itemRelativePath) else { return }
 
       let session: PlaybackSession
       if let objectID,
@@ -307,11 +307,4 @@ final class PlaybackHistoryService {
 
   /// `BookPlayerKit.` qualification is load-bearing: the SDK's
   /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
-  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> BookPlayerKit.LibraryItem? {
-    let fetch = BookPlayerKit.LibraryItem.fetchRequest()
-    /// Literal key: `#keyPath` rejects the module-qualified type
-    fetch.predicate = NSPredicate(format: "%K == %@", "relativePath", relativePath)
-    fetch.fetchLimit = 1
-    return try? context.fetch(fetch).first
-  }
 }

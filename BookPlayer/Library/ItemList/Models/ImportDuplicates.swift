@@ -95,12 +95,16 @@ enum ImportDuplicateDetector {
       ) ?? []
     ).filter { !importedPaths.contains($0.relativePath) }
 
+    /// Normalize once: the diacritic fold ran per candidate per imported
+    /// book before — a map lookup keeps it O(library) instead of O(n²)
+    let existingByTitle = Dictionary(grouping: existing, by: { normalized($0.title) })
+
     return importedBooks.compactMap { book in
       let title = normalized(book.title)
       /// A blank title would match every other blank-titled book in the library
       guard !title.isEmpty else { return nil }
-      guard let match = existing.first(where: {
-        normalized($0.title) == title && durationsMatch($0.duration, book.duration)
+      guard let match = existingByTitle[title]?.first(where: {
+        durationsMatch($0.duration, book.duration)
       }) else { return nil }
       return ImportDuplicateMatch(imported: book, existing: match)
     }

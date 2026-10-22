@@ -68,6 +68,20 @@ final class ListeningQueueService {
     }
   }
 
+  /// One fetch answering "which of these are queued" — the options menu's
+  /// all-queued check used to fetch once per selected item
+  func queuedPaths(_ relativePaths: [String]) -> Set<String> {
+    guard let dataManager, !relativePaths.isEmpty else { return [] }
+    let context = dataManager.getContext()
+    return context.performAndWait {
+      let fetch = ListeningQueueItem.fetchRequest()
+      fetch.predicate = NSPredicate(format: "item.relativePath IN %@", relativePaths)
+      fetch.relationshipKeyPathsForPrefetching = ["item"]
+      let entries = (try? context.fetch(fetch)) ?? []
+      return Set(entries.compactMap { $0.item?.relativePath })
+    }
+  }
+
   /// Appends the item at the queue's tail; keeps position when already queued
   func enqueue(_ relativePath: String) {
     insert(relativePath, atHead: false)
@@ -192,7 +206,7 @@ final class ListeningQueueService {
         }
         return
       }
-      guard let item = libraryItem(for: relativePath, context: context) else { return }
+      guard let item = context.libraryItem(for: relativePath) else { return }
 
       let entry = ListeningQueueItem.create(in: context)
       /// A head insert lands first once `renumber` normalizes to 0…n-1
@@ -220,14 +234,6 @@ final class ListeningQueueService {
 
   /// `BookPlayerKit.` qualification is load-bearing: the SDK's
   /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
-  private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> BookPlayerKit.LibraryItem? {
-    let fetch = BookPlayerKit.LibraryItem.fetchRequest()
-    /// Literal key: `#keyPath` rejects the module-qualified type
-    fetch.predicate = NSPredicate(format: "%K == %@", "relativePath", relativePath)
-    fetch.fetchLimit = 1
-    return try? context.fetch(fetch).first
-  }
-
   /// Contiguous 0…n-1 in the stored order — the only invariants a move or an
   /// insert has to keep
   private func renumber(context: NSManagedObjectContext) {

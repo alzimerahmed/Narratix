@@ -551,6 +551,16 @@ public final class SyncService: SyncServiceProtocol, BPLogger {
     return response.content
   }
 
+  /// A server-returned relative path joined onto Processed — nil when the
+  /// joined location would escape the folder (`..` or absolute components)
+  static func safeProcessedURL(for relativePath: String) -> URL? {
+    let root = DataManager.getProcessedFolderURL()
+    let rootPath = root.path.hasSuffix("/") ? root.path : root.path + "/"
+    let candidate = root.appendingPathComponent(relativePath).standardizedFileURL
+    guard candidate.path.hasPrefix(rootPath) else { return nil }
+    return candidate
+  }
+
   public func downloadRemoteFiles(for item: SimpleLibraryItem) async throws {
     var remoteURLs: [RemoteFileURL] = []
     // streamingResource, not first(where:) over an unordered set: it is provider-filtered.
@@ -564,7 +574,19 @@ public final class SyncService: SyncServiceProtocol, BPLogger {
     } else {
       remoteURLs = try await getRemoteFileURLs(of: item.relativePath, for: item.uuid, type: item.type)
     }
-    
+
+    /// Server-returned paths join onto Processed — a hostile or buggy server
+    /// could send `..`/absolute components that escape it (upstream-adjacent
+    /// hole, now remotely reachable): drop anything that wouldn't land inside
+    remoteURLs = remoteURLs.filter {
+      if Self.safeProcessedURL(for: $0.relativePath) == nil {
+        Self.logger.error("Dropping unsafe remote path from download: \($0.relativePath)")
+        return false
+      }
+      return true
+    }
+    guard !remoteURLs.isEmpty else { return }
+
     let processedFolderURL = DataManager.getProcessedFolderURL()
     let folderURLs = remoteURLs.filter({ $0.type != .book })
 
@@ -1004,19 +1026,26 @@ extension SyncService {
     if error == nil,
       let location
     {
-      let fileURL = DataManager.getProcessedFolderURL().appendingPathComponent(relativePath)
-
-      do {
-        /// If there's already something there, replace with new finished download
-        if FileManager.default.fileExists(atPath: fileURL.path) {
-          try FileManager.default.removeItem(at: fileURL)
+      /// The task's description came from a server path — the move itself is
+      /// where `..` would escape, so the join is validated even though the
+      /// download entry point already filtered it
+      if let fileURL = Self.safeProcessedURL(for: relativePath) {
+        do {
+          /// If there's already something there, replace with new finished download
+          if FileManager.default.fileExists(atPath: fileURL.path) {
+            try FileManager.default.removeItem(at: fileURL)
+          }
+          try DataManager.createContainingFolderIfNeeded(for: fileURL)
+          try FileManager.default.moveItem(at: location, to: fileURL)
+          movedFileURL = fileURL
+        } catch {
+          finalError = error
+          Self.logger.warning("Error moving downloaded file to the destination: \(error.localizedDescription)")
         }
-        try DataManager.createContainingFolderIfNeeded(for: fileURL)
-        try FileManager.default.moveItem(at: location, to: fileURL)
-        movedFileURL = fileURL
-      } catch {
-        finalError = error
-        Self.logger.warning("Error moving downloaded file to the destination: \(error.localizedDescription)")
+      } else {
+        Self.logger.error("Refusing to move a download outside Processed: \(relativePath)")
+        try? FileManager.default.removeItem(at: location)
+        finalError = BookPlayerError.runtimeError("Unsafe download path")
       }
     }
 

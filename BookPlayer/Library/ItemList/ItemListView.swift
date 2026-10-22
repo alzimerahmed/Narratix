@@ -1016,7 +1016,9 @@ extension ItemListView {
   /// a fully-queued selection offers removal instead
   @ViewBuilder
   private func queueOptions(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
-    let allQueued = items.allSatisfy { model.isQueued($0) }
+    /// One fetch for the whole set — a per-item check re-ran a Core Data
+    /// fetch for every selected row each time this menu built
+    let allQueued = model.areAllQueued(items)
 
     if allQueued {
       Button {

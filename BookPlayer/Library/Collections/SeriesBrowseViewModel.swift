@@ -37,7 +37,8 @@ final class SeriesBrowseViewModel: SeriesBrowseView.Model {
     self.loadingState = loadingState
 
     super.init()
-    reload()
+    /// No init reload: the view's `.task` reloads on open — fetching here
+    /// too ran the whole group query twice per sheet
   }
 
   override func reload() {

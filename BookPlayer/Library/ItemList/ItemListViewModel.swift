@@ -500,6 +500,14 @@ extension ItemListViewModel {
     listeningQueueService.isQueued(relativePath: item.relativePath)
   }
 
+  /// Whether every item is queued — one fetch for the whole set (a fetch
+  /// per item was the options menu's N+1)
+  func areAllQueued(_ items: [SimpleLibraryItem]) -> Bool {
+    guard !items.isEmpty else { return false }
+    let queued = listeningQueueService.queuedPaths(items.map(\.relativePath))
+    return items.allSatisfy { queued.contains($0.relativePath) }
+  }
+
   /// Removes the selection from the queue (their positions close up)
   func handleDequeue() {
     listeningQueueService.removeAll(selectedItems.map(\.relativePath))
