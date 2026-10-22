@@ -30,6 +30,12 @@ final class CollectionPickerViewModel: CollectionPickerView.Model {
   override func reload() {
     let all = libraryService.fetchCollections()
     collections = all
+    /// An empty selection would count as "fully inside" every row —
+    /// nothing is checked when there's nothing to check for
+    guard !selectedPaths.isEmpty else {
+      fullyMemberUuids = []
+      return
+    }
     fullyMemberUuids = Set(
       all.filter {
         libraryService.collectionMembership(uuid: $0.uuid, of: selectedPaths).count == selectedPaths.count
