@@ -17,6 +17,7 @@ final class SeriesBrowseViewModel: SeriesBrowseView.Model {
   private let libraryService: LibraryService
   private let playbackService: PlaybackService
   private let playerLoaderService: PlayerLoaderService
+  private let syncService: SyncService
   private let playerState: PlayerState
   private let loadingState: LoadingOverlayState
 
@@ -24,12 +25,14 @@ final class SeriesBrowseViewModel: SeriesBrowseView.Model {
     libraryService: LibraryService,
     playbackService: PlaybackService,
     playerLoaderService: PlayerLoaderService,
+    syncService: SyncService,
     playerState: PlayerState,
     loadingState: LoadingOverlayState
   ) {
     self.libraryService = libraryService
     self.playbackService = playbackService
     self.playerLoaderService = playerLoaderService
+    self.syncService = syncService
     self.playerState = playerState
     self.loadingState = loadingState
 
@@ -47,6 +50,7 @@ final class SeriesBrowseViewModel: SeriesBrowseView.Model {
       group: group,
       playbackService: playbackService,
       playerLoaderService: playerLoaderService,
+      syncService: syncService,
       playerState: playerState,
       loadingState: loadingState
     )

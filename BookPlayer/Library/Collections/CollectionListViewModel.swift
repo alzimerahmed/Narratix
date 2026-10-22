@@ -19,6 +19,7 @@ final class CollectionListViewModel: CollectionListView.Model {
   private let libraryService: LibraryService
   private let playbackService: PlaybackService
   private let playerLoaderService: PlayerLoaderService
+  private let syncService: SyncService
   private let playerState: PlayerState
   private let loadingState: LoadingOverlayState
 
@@ -26,12 +27,14 @@ final class CollectionListViewModel: CollectionListView.Model {
     libraryService: LibraryService,
     playbackService: PlaybackService,
     playerLoaderService: PlayerLoaderService,
+    syncService: SyncService,
     playerState: PlayerState,
     loadingState: LoadingOverlayState
   ) {
     self.libraryService = libraryService
     self.playbackService = playbackService
     self.playerLoaderService = playerLoaderService
+    self.syncService = syncService
     self.playerState = playerState
     self.loadingState = loadingState
 
@@ -64,6 +67,7 @@ final class CollectionListViewModel: CollectionListView.Model {
       libraryService: libraryService,
       playbackService: playbackService,
       playerLoaderService: playerLoaderService,
+      syncService: syncService,
       playerState: playerState,
       loadingState: loadingState
     )

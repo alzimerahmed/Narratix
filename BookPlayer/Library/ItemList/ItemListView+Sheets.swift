@@ -93,6 +93,7 @@ extension ItemListView {
           libraryService: libraryService,
           playbackService: playbackService,
           playerLoaderService: playerLoaderService,
+          syncService: syncService,
           playerState: playerState,
           loadingState: loadingState
         )
@@ -123,6 +124,7 @@ extension ItemListView {
           libraryService: libraryService,
           playbackService: playbackService,
           playerLoaderService: playerLoaderService,
+          syncService: syncService,
           playerState: playerState,
           loadingState: loadingState
         )

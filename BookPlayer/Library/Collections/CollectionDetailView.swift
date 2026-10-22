@@ -56,6 +56,24 @@ struct CollectionDetailView: View {
       }
     }
     .errorAlert(error: loadingState.errorBinding)
+    /// Tapping a row mid-download asks before cancelling, same as the
+    /// library's cancel-download alert
+    .alert(
+      "cancel_download_title",
+      isPresented: Binding(
+        get: { model.cancelDownloadTarget != nil },
+        set: { if !$0 { model.cancelDownloadTarget = nil } }
+      )
+    ) {
+      Button("ok_button") {
+        if let item = model.cancelDownloadTarget {
+          model.cancelDownload(of: item)
+        }
+      }
+      Button("cancel_button", role: .cancel) {
+        model.cancelDownloadTarget = nil
+      }
+    }
     .task {
       model.reload()
     }
@@ -67,6 +85,8 @@ extension CollectionDetailView {
   class Model: ObservableObject {
     let collection: SimpleCollection
     @Published var items = [SimpleLibraryItem]()
+    /// Row mid-download awaiting the cancel confirmation — drives the alert
+    @Published var cancelDownloadTarget: SimpleLibraryItem?
 
     init(collection: SimpleCollection, items: [SimpleLibraryItem] = []) {
       self.collection = collection
@@ -74,8 +94,11 @@ extension CollectionDetailView {
     }
 
     func reload() {}
-    /// Play the item (a folder plays its next unfinished book)
+    /// Play the item (a folder plays its next unfinished book) — gated on
+    /// its download state, like the library's artwork tap
     func handleSelect(_ item: SimpleLibraryItem) {}
+    /// Confirm action of the cancel-download alert
+    func cancelDownload(of item: SimpleLibraryItem) {}
     /// Remove it from this collection only
     func remove(_ item: SimpleLibraryItem) {}
   }
