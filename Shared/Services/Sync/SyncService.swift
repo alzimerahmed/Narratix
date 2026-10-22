@@ -804,6 +804,11 @@ extension SyncService {
     Task {
       var params = params
 
+      /// Fork-local fields never leave the device — the server doesn't know
+      /// them and the update body is posted verbatim
+      params.removeValue(forKey: #keyPath(LibraryItem.didNotFinish))
+      params.removeValue(forKey: #keyPath(LibraryItem.note))
+
       /// Override param `lastPlayDate` if it exists with the proper name
       if let lastPlayDate = params.removeValue(forKey: #keyPath(LibraryItem.lastPlayDate)) {
         params["lastPlayDateTimestamp"] = lastPlayDate
