@@ -99,7 +99,14 @@ struct DynamicAccessibilityLabelModifier: ViewModifier {
           lastPlayDate: item.lastPlayDate,
           type: item.type,
           uuid: item.uuid,
-          externalResources: item.externalResources
+          externalResources: item.externalResources,
+          /// The rebuild must carry what the label reads — DNF and series
+          /// metadata aren't in the progress payload, so defaulting them
+          /// here would silently drop the state from the announcement
+          didNotFinish: item.didNotFinish,
+          note: item.note,
+          seriesName: item.seriesName,
+          seriesOrder: item.seriesOrder
         )
 
         accessibilityLabel = VoiceOverService.getAccessibilityLabel(
@@ -166,7 +173,11 @@ struct DynamicAccessibilityLabelModifier: ViewModifier {
           lastPlayDate: item.lastPlayDate,
           type: item.type,
           uuid: item.uuid,
-          externalResources: item.externalResources
+          externalResources: item.externalResources,
+          didNotFinish: item.didNotFinish,
+          note: item.note,
+          seriesName: item.seriesName,
+          seriesOrder: item.seriesOrder
         )
         accessibilityLabel = VoiceOverService.getAccessibilityLabel(
           for: updatedItem,

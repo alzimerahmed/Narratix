@@ -30,9 +30,10 @@ class VoiceOverService {
     }
     let displayTitle = item.displayTitle(useOriginalFileName: useOriginalFileName)
     let sourcePrefix = includeSource ? self.sourcePrefix(for: item) : ""
+    var label: String
     switch item.type {
     case .book:
-      return sourcePrefix + String.localizedStringWithFormat(
+      label = sourcePrefix + String.localizedStringWithFormat(
         "voiceover_book_progress".localized,
         displayTitle,
         item.details,
@@ -40,19 +41,25 @@ class VoiceOverService {
         item.durationFormatted
       ) + ", \(remainingTimeLabel)"
     case .folder:
-      return sourcePrefix + String.localizedStringWithFormat(
+      label = sourcePrefix + String.localizedStringWithFormat(
         "voiceover_playlist_progress".localized,
         displayTitle,
         displayPercent
       )
     case .bound:
-      return sourcePrefix + String.localizedStringWithFormat(
+      label = sourcePrefix + String.localizedStringWithFormat(
         "voiceover_bound_books_progress".localized,
         displayTitle,
         displayPercent,
         item.durationFormatted
       ) + ", \(remainingTimeLabel)"
     }
+    /// DNF wins over the progress the label just read — say it so a
+    /// "92% completed" row doesn't sound unfinished-by-accident
+    if item.didNotFinish {
+      label += ", " + "filter_did_not_finish_title".localized
+    }
+    return label
   }
 
   /// `"Jellyfin, "` — the spoken counterpart of the provider glyphs, and in the same
