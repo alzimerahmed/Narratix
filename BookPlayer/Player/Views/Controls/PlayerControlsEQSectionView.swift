@@ -13,7 +13,9 @@ import SwiftUI
 /// the voice-boost toggle. Presets are chips like the speed presets above them;
 /// the toggle mirrors the boost-volume row's styling.
 struct PlayerControlsEQSectionView: View {
-  @Binding var selectedPreset: EQPreset
+  /// Read-only: chips route changes through `handlePresetChange`, so nothing
+  /// here writes the preset — a binding would carry a dead setter
+  let selectedPreset: EQPreset
   @Binding var voiceBoostEnabled: Bool
   let handlePresetChange: (EQPreset) -> Void
 
@@ -74,7 +76,7 @@ struct PlayerControlsEQSectionView: View {
   @Previewable @State var preset: EQPreset = .voice
   @Previewable @State var voiceBoost: Bool = true
   PlayerControlsEQSectionView(
-    selectedPreset: $preset,
+    selectedPreset: preset,
     voiceBoostEnabled: $voiceBoost
   ) { preset = $0 }
 }

@@ -42,10 +42,7 @@ struct PlayerControlsView: View {
 
           // Equalizer Section (preset + voice boost)
           PlayerControlsEQSectionView(
-            selectedPreset: Binding(
-              get: { model.eqPreset },
-              set: { model.handleEQPresetChange($0) }
-            ),
+            selectedPreset: model.eqPreset,
             voiceBoostEnabled: Binding(
               get: { model.isVoiceBoostEnabled },
               set: { model.handleVoiceBoostToggle($0) }
