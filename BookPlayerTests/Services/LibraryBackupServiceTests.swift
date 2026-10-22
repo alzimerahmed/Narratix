@@ -145,9 +145,48 @@ final class LibraryBackupServiceTests: XCTestCase {
     XCTAssertEqual(libraryService.getLibraryLastItem()?.relativePath, book.relativePath)
   }
 
+  /// Terminal-forward only: a `false` flag or absent metadata in the backup
+  /// never clears what this device already has — folder records would cascade
+  /// the regression into every descendant
+  func testRestoreNeverRegressesFlagsOrMetadata() async throws {
+    let book = addBook(title: "Dune", duration: 3600)
+    libraryService.markAsFinished(flag: true, relativePath: book.relativePath)
+    libraryService.updateNote("keep me", at: book.relativePath)
+    libraryService.updateSeriesInfo(name: "Dune Saga", order: 2, at: book.relativePath)
+
+    let backup = LibraryBackup(
+      formatVersion: 1,
+      createdAt: Date(),
+      app: "test",
+      appVersion: nil,
+      library: .init(
+        lastPlayedPath: nil,
+        items: [
+          .init(
+            uuid: book.uuid, relativePath: book.relativePath, type: "book",
+            title: "Dune", details: "", originalFileName: "", duration: 3600,
+            currentTime: 0, percentCompleted: 0, isFinished: false,
+            didNotFinish: false, note: nil, seriesName: nil, seriesOrder: nil,
+            speed: 1, lastPlayDate: nil, orderRank: 0
+          )
+        ],
+        bookmarks: [],
+        collections: []
+      )
+    )
+
+    _ = await sut.restore(backup)
+
+    let restored = libraryService.getSimpleItem(with: book.relativePath)!
+    XCTAssertTrue(restored.isFinished)
+    XCTAssertEqual(restored.note, "keep me")
+    XCTAssertEqual(restored.seriesName, "Dune Saga")
+    XCTAssertEqual(restored.seriesOrder, 2)
+  }
+
   /// A backup that knows about a book the library doesn't must skip it, and a
   /// path match still finds an item whose uuid changed on re-import
-  func testRestoreMatchesByPathAndSkipsUnknownItems() throws {
+  func testRestoreMatchesByPathAndSkipsUnknownItems() async throws {
     let book = addBook(title: "Dune", duration: 3600)
 
     let backup = LibraryBackup(

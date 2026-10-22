@@ -262,17 +262,30 @@ final class LibraryBackupService: BPLogger {
 
       let path = item.relativePath
       /// Only owned progress fields move — the restore never "advances" a book
-      /// the user is further into on this device... unless the backup says the
-      /// book ended (finished/DNF are terminal, they always apply)
+      /// the user is further into on this device
       if record.currentTime > item.currentTime {
         libraryService.updatePlaybackTime(
-          relativePath: path, time: record.currentTime, date: Date(), scheduleSave: false
+          relativePath: path, time: record.currentTime, date: record.lastPlayDate ?? Date(), scheduleSave: false
         )
       }
-      libraryService.markAsFinished(flag: record.isFinished, relativePath: path)
-      libraryService.markAsDidNotFinish(flag: record.didNotFinish, relativePath: path)
-      libraryService.updateNote(record.note, at: path)
-      libraryService.updateSeriesInfo(name: record.seriesName, order: record.seriesOrder, at: path)
+      /// Finished/DNF are terminal: a true moves forward, a false never
+      /// clears what this device already marked — folder records cascade the
+      /// flag into every descendant, so a false would un-finish whole folders
+      if record.isFinished {
+        libraryService.markAsFinished(flag: true, relativePath: path)
+      }
+      if record.didNotFinish {
+        libraryService.markAsDidNotFinish(flag: true, relativePath: path)
+      }
+      /// A backup field only overwrites when it carries something — nil can
+      /// mean "no note" or "the field didn't exist in that format version"
+      if let note = record.note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        libraryService.updateNote(note, at: path)
+      }
+      if let seriesName = record.seriesName,
+        !seriesName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        libraryService.updateSeriesInfo(name: seriesName, order: record.seriesOrder, at: path)
+      }
       libraryService.updateBookSpeed(at: path, speed: Float(record.speed))
       if item.details.isEmpty, !record.details.isEmpty {
         libraryService.updateDetails(at: path, details: record.details)
