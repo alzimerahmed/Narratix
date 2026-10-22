@@ -74,8 +74,9 @@ enum ImportDuplicateDetector {
   }
 
   /// Pairs each just-imported book with the first library book carrying the
-  /// same title and (about) the same duration. The imports' own paths are
-  /// excluded, so a batch can't match itself.
+  /// same title and (about) the same duration — one collision per book is
+  /// enough to warn; the warning acts on the whole import anyway. The
+  /// imports' own paths are excluded, so a batch can't match itself.
   static func findDuplicates(
     of imported: [SimpleLibraryItem],
     libraryService: LibraryServiceProtocol
@@ -96,6 +97,8 @@ enum ImportDuplicateDetector {
 
     return importedBooks.compactMap { book in
       let title = normalized(book.title)
+      /// A blank title would match every other blank-titled book in the library
+      guard !title.isEmpty else { return nil }
       guard let match = existing.first(where: {
         normalized($0.title) == title && durationsMatch($0.duration, book.duration)
       }) else { return nil }
