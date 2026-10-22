@@ -252,6 +252,16 @@ final class LibraryCollectionsTests: XCTestCase {
     XCTAssertNil(hint.order)
   }
 
+  func testSeriesHintEmbeddedWordNotMisread() {
+    /// "book"/"vol" inside a longer word is not a series marker — "Workbook 3"
+    /// and "Facebook 2024" must not parse as "Book 3"
+    for fileName in ["Workbook 3.m4b", "Facebook 2024.m4b", "Anthology (Workbook 2).m4b"] {
+      let hint = AudioMetadataService.parseSeriesHint(from: fileName)
+      XCTAssertNil(hint.name, fileName)
+      XCTAssertNil(hint.order, fileName)
+    }
+  }
+
   func testSeriesHintUnrelatedFilename() {
     let hint = AudioMetadataService.parseSeriesHint(from: "The Hobbit.m4b")
     XCTAssertNil(hint.name)

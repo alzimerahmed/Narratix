@@ -238,9 +238,10 @@ public class AudioMetadataService: BPLogger, AudioMetadataServiceProtocol {
   public static func parseSeriesHint(from fileName: String) -> (name: String?, order: Double?) {
     let stem = URL(fileURLWithPath: fileName).deletingPathExtension().lastPathComponent
 
-    /// "Title (Series, Book 3)" — a parenthesized "(name,|) book|vol N" tail
+    /// "Title (Series, Book 3)" — a parenthesized "(name,|) book|vol N" tail.
+    /// The `\b` keeps "Workbook"/"Facebook" from matching `book` mid-word.
     if let match = stem.firstMatch(
-      of: /\((?<name>[^()]*?)\s*,?\s*(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\s*\)/.ignoresCase()
+      of: /\((?<name>[^()]*?)\s*,?\s*\b(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\s*\)/.ignoresCase()
     ) {
       return (cleanSeriesName(String(match.name)), Double(match.order))
     }
@@ -268,9 +269,10 @@ public class AudioMetadataService: BPLogger, AudioMetadataServiceProtocol {
       return (cleanSeriesName(String(match.name)), Double(match.order))
     }
 
-    /// Bare "… Book 3" with no isolatable name — order only
+    /// Bare "… Book 3" with no isolatable name — order only. `\b` so an
+    /// embedded "book"/"vol" ("Workbook 3", "Facebook 2024") can't match.
     if let match = stem.firstMatch(
-      of: /(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\b/.ignoresCase()
+      of: /\b(?:book|bk|vol(?:ume)?)\s*(?<order>\d+(?:\.\d+)?)\b/.ignoresCase()
     ) {
       return (nil, Double(match.order))
     }
