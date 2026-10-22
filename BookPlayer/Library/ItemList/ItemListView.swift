@@ -372,6 +372,8 @@ struct ItemListView: View {
       } else {
         BookView(item: item) {
           handleArtworkTap(for: item)
+        } resumeTap: {
+          resumeItem(item)
         }
         .onTapGesture {
           handleTap(on: item)
@@ -383,6 +385,11 @@ struct ItemListView: View {
           }
 
           handleTap(on: item)
+        }
+        // Resume without the player opening, the same as the row's play button
+        .accessibilityAction(named: "voiceover_continue_playback_title") {
+          guard !model.editMode.isEditing else { return }
+          resumeItem(item)
         }
       }
     }
@@ -683,6 +690,25 @@ struct ItemListView: View {
       cancelDownload(of: item.id)
     case .downloaded, .notDownloaded:
       loadPlayer(with: item.relativePath)
+    }
+  }
+
+  /// The row's resume: play where the book left off WITHOUT opening the player — the mini
+  /// player picks it up. A not-downloaded book starts its download instead
+  func resumeItem(_ item: SimpleLibraryItem) {
+    switch syncService.getDownloadState(for: item) {
+    case .notDownloaded:
+      model.startDownload(of: item)
+    case .downloading:
+      cancelDownload(of: item.id)
+    case .downloaded:
+      Task {
+        do {
+          try await playerLoaderService.loadPlayer(item.relativePath, autoplay: true)
+        } catch {
+          loadingState.error = error
+        }
+      }
     }
   }
 

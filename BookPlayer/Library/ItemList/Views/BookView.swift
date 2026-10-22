@@ -13,6 +13,9 @@ import SwiftUI
 struct BookView: View {
   let item: SimpleLibraryItem
   let artworkTap: () -> Void
+  /// One-tap resume for a book with saved progress: plays where it left off without
+  /// opening the player
+  var resumeTap: (() -> Void)? = nil
 
   @Environment(\.syncService) private var syncService
   @Environment(\.playingItemParentPath) private var playingItemParentPath
@@ -68,6 +71,17 @@ struct BookView: View {
       }
       .padding(.leading, Spacing.S)
       Spacer()
+      if let resumeTap, item.percentCompleted > 0, !item.isFinished {
+        Button(action: resumeTap) {
+          Image(systemName: "play.fill")
+            .bpFont(.subheadline)
+            .foregroundStyle(theme.linkColor)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("voiceover_continue_playback_title")
+      }
       ItemProgressView(
         item: item,
         isHighlighted: isHighlighted
