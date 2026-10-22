@@ -35,7 +35,9 @@ class ThinTrackSlider: UISlider {
       setNeedsLayout()
     }
   }
-  var markerTint: UIColor = .secondaryLabel.withAlphaComponent(0.6) {
+  /// Chapter ticks must read over both halves of the track — 0.6 alpha
+  /// washed them out against the unfilled side
+  var markerTint: UIColor = .secondaryLabel.withAlphaComponent(0.8) {
     didSet { ticksLayer.fillColor = markerTint.cgColor }
   }
   /// The rotor's double-tap: the owner seeks to the marker's book time
@@ -99,11 +101,11 @@ class ThinTrackSlider: UISlider {
     for marker in chapterMarkers where marker.fraction > 0 && marker.fraction < 1 {
       let x = track.minX + CGFloat(marker.fraction) * track.width
       path.append(UIBezierPath(roundedRect: CGRect(
-        x: x - 0.75,
+        x: x - 1.0,
         y: track.midY - tickHeight / 2,
-        width: 1.5,
+        width: 2.0,
         height: tickHeight
-      ), cornerRadius: 0.75))
+      ), cornerRadius: 1.0))
     }
     ticksLayer.path = path.cgPath
     // Element frames move with the track: update them in place — the rotor predicate
@@ -320,7 +322,9 @@ private final class ChapterMarkerElement: UIAccessibilityElement {
     super.init(accessibilityContainer: slider)
     accessibilityFrameInContainerSpace = frame
     accessibilityLabel = marker.title
-    accessibilityValue = TimeParser.formatTime(marker.start)
+    /// "12 minutes 34 seconds" — a "12:34" read-out is opaque spoken aloud
+    let spokenStart = VoiceOverService.secondsToMinutes(marker.start)
+    accessibilityValue = spokenStart.isEmpty ? TimeParser.formatTime(marker.start) : spokenStart
     accessibilityHint = "voiceover_chapter_jump_hint".localized
     accessibilityTraits = [.button]
   }
