@@ -809,7 +809,28 @@ struct ItemListView: View {
         listState.reloadAll(padding: result.registeredItems)
       }
 
-      if result.pendingImports == 0 {
+      /// Re-registered orphans take the same duplicate gate a fresh import
+      /// does — a title+duration collision must not silently double-register
+      var duplicatesQueued = false
+      if !result.registered.isEmpty {
+        let matches = ImportDuplicateDetector.findDuplicates(
+          of: result.registered,
+          libraryService: libraryService
+        )
+        if !matches.isEmpty {
+          duplicatesQueued = true
+          importOperationState.pendingDuplicates.append(
+            PendingDuplicateImport(
+              items: result.registered,
+              matches: matches,
+              node: .root,
+              suggestedFolderName: nil
+            )
+          )
+        }
+      }
+
+      if result.pendingImports == 0, !duplicatesQueued {
         activeAlert = .rescanResult(registered: result.registeredItems)
       }
     }

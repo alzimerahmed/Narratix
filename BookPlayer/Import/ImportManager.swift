@@ -108,6 +108,9 @@ final class ImportManager: ObservableObject {
   struct RescanResult {
     let pendingImports: Int
     let registeredItems: Int
+    /// The re-registered records themselves — the caller runs the same
+    /// duplicate check on them a fresh import does
+    let registered: [SimpleLibraryItem]
   }
 
   /// Manual rescan for files dropped via the Files app or iTunes File Sharing:
@@ -133,7 +136,8 @@ final class ImportManager: ObservableObject {
 
     return RescanResult(
       pendingImports: files.value.count,
-      registeredItems: registered.count
+      registeredItems: registered.count,
+      registered: registered
     )
   }
 
