@@ -137,14 +137,16 @@ final class LibraryCollectionsTests: XCTestCase {
 
   func testDeleteItemNullifiesMembership() {
     let book = addBook("book-1")
+    /// Capture before the delete — the deleted object faults its properties
+    let path = book.relativePath!
     let collection = libraryService.createCollection(title: "Shelf")!
-    libraryService.addToCollection(uuid: collection.uuid, items: [book.relativePath!])
+    libraryService.addToCollection(uuid: collection.uuid, items: [path])
 
     dataManager.getContext().delete(book)
     dataManager.saveContext()
 
     XCTAssertTrue(libraryService.fetchCollectionItems(uuid: collection.uuid).isEmpty)
-    XCTAssertTrue(libraryService.fetchCollections(containing: book.relativePath!).isEmpty)
+    XCTAssertTrue(libraryService.fetchCollections(containing: path).isEmpty)
   }
 
   // MARK: - Series metadata
