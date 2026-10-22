@@ -81,3 +81,8 @@ fastlane/test_output
 
 # OSX
 .DS_Store
+
+# Agent system + private knowledge layer (never pushed)
+/.devin/
+/.switchboard/
+/docs/
