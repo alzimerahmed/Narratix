@@ -3956,7 +3956,6 @@
 		9F4691EB2800C8EE00A8F0E8 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
-				3F7A00050000000000000001 /* Stats */,
 				9F5F13662978D9B800F061A0 /* Views */,
 				9F5F12DA2976E8CD00F061A0 /* ProfileView.swift */,
 				63AD93D62E3C74990077E73A /* ProfileCardSectionView.swift */,
@@ -4123,6 +4122,7 @@
 			isa = PBXGroup;
 			children = (
 				6399EA242F12B1870077BB13 /* Passkey */,
+				3F7A00050000000000000001 /* Stats */,
 				9F4691EB2800C8EE00A8F0E8 /* Profile */,
 				9F4691F82800F85C00A8F0E8 /* Account */,
 				9F4691EC2800C90400A8F0E8 /* Login */,
