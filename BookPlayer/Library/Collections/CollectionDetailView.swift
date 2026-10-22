@@ -55,7 +55,7 @@ struct CollectionDetailView: View {
         )
       }
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .task {
       model.reload()
     }

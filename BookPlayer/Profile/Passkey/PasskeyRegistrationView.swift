@@ -55,7 +55,7 @@ struct PasskeyRegistrationView: View {
       }
     }
     .environment(\.loadingState, loadingState)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     .alert("passkey_email_exists_title".localized, isPresented: $showEmailExistsAlert) {
       Button("ok_button".localized) {}

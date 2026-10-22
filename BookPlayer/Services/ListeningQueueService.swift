@@ -222,7 +222,8 @@ final class ListeningQueueService {
   /// `DeveloperToolsSupport.LibraryItem` makes the bare name ambiguous
   private func libraryItem(for relativePath: String, context: NSManagedObjectContext) -> BookPlayerKit.LibraryItem? {
     let fetch = BookPlayerKit.LibraryItem.fetchRequest()
-    fetch.predicate = NSPredicate(format: "%K == %@", #keyPath(BookPlayerKit.LibraryItem.relativePath), relativePath)
+    /// Literal key: `#keyPath` rejects the module-qualified type
+    fetch.predicate = NSPredicate(format: "%K == %@", "relativePath", relativePath)
     fetch.fetchLimit = 1
     return try? context.fetch(fetch).first
   }

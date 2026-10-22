@@ -104,7 +104,7 @@ struct CollectionListView: View {
         renameTarget = nil
       }
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button {

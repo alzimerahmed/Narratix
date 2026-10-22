@@ -23,7 +23,7 @@ struct SettingsAppIconsView: View {
       .listRowBackground(theme.tertiarySystemBackgroundColor)
     }
     .environment(\.loadingState, loadingState)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .scrollContentBackground(.hidden)
     .background(theme.systemBackgroundColor)
     .navigationTitle("settings_app_icon_title")

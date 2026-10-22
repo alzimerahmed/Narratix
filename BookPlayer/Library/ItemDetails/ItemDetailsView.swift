@@ -165,7 +165,7 @@ struct ItemDetailsView: View {
       }
       Button("cancel_button", role: .cancel) {}
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {

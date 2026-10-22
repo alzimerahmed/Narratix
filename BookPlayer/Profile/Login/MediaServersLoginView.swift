@@ -78,7 +78,7 @@ struct MediaServersLoginView: View {
     .listSectionSpacing(Spacing.S2)
     .navigationTitle("external_sync_info_title")
     .navigationBarTitleDisplayMode(.inline)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     /// Presented as a sheet, so there is no back button to fall back on
     .toolbar {

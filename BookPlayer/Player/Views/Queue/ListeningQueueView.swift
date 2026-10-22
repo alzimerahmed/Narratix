@@ -49,7 +49,7 @@ struct ListeningQueueView: View {
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("queue_title")
     .navigationBarTitleDisplayMode(.inline)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         EditButton()

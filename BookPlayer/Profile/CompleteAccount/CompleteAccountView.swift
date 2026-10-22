@@ -83,7 +83,7 @@ struct CompleteAccountView: View {
       loadingState.show,
       showConfetti: showConfetti
     )
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .navigationTitle(subType == .lite ? "BookPlayer Lite" : "BookPlayer Pro")
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {

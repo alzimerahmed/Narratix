@@ -64,7 +64,7 @@ struct SettingsTipJarView: View {
       }
       .scrollIndicators(.hidden)
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .padding(.horizontal, Spacing.M)
     .background(theme.systemBackgroundColor)
     .environment(\.loadingState, loadingState)

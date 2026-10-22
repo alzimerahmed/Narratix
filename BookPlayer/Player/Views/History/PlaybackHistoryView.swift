@@ -43,7 +43,7 @@ struct PlaybackHistoryView: View {
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("history_title")
     .navigationBarTitleDisplayMode(.inline)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .task {
       model.reload()
     }

@@ -76,7 +76,7 @@ struct SeriesBrowseView: View {
         model.makeDetailModel(for: group)
       }
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {
         Button {

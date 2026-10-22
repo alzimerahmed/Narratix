@@ -63,7 +63,7 @@ struct LoginView: View {
     .listSectionSpacing(Spacing.S2)
     .navigationTitle("BookPlayer Pro")
     .navigationBarTitleDisplayMode(.inline)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     .sheet(isPresented: $showCompleteAccount) {
       NavigationStack {

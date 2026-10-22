@@ -47,7 +47,7 @@ struct ItemGroupDetailView: View {
         )
       }
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
   }
 }
 

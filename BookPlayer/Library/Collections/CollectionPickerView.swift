@@ -90,7 +90,7 @@ struct CollectionPickerView: View {
         createName = ""
       }
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         Button("done_title") {

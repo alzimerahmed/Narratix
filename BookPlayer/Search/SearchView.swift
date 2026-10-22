@@ -40,7 +40,7 @@ struct SearchView: View {
       .onChange(of: viewModel.searchText) { _, newValue in
         viewModel.searchBooks(query: newValue)
       }
-      .errorAlert(error: $loadingState.error)
+      .errorAlert(error: loadingState.errorBinding)
       .loadingOverlay(loadingState.show)
     }
     .onAppear {

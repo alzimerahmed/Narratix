@@ -38,7 +38,7 @@ struct AccountView: View {
     .navigationBarTitleDisplayMode(.inline)
     .miniPlayerSafeAreaInset()
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     .alert("Delete Account", isPresented: $showDeleteAlert) {
       Button("cancel_button", role: .cancel) {}

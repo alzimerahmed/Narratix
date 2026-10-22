@@ -104,7 +104,7 @@ struct SettingsView: View {
         attachmentData: attachmentData
       )
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .alert("settings_support_compose_title", isPresented: $showMailUnavailableModal) {
       Button("settings_support_compose_copy") {
         UIPasteboard.general.string = debugInfo
