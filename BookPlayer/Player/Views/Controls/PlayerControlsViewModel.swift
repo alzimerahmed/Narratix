@@ -12,16 +12,20 @@ import Foundation
 import SwiftUI
 
 class PlayerControlsViewModel: PlayerControlsView.Model {
-  let playerManager: PlayerManagerProtocol
+  /// Concrete, not `PlayerManagerProtocol`: EQ is iOS-only, so `applyAudioEffects`
+  /// deliberately lives off the shared protocol the watch player conforms to.
+  let playerManager: PlayerManager
   private var disposeBag = Set<AnyCancellable>()
   private var boostVolumeObserver: NSKeyValueObservation?
 
-  init(playerManager: PlayerManagerProtocol) {
+  init(playerManager: PlayerManager) {
     self.playerManager = playerManager
 
     super.init(
       currentSpeed: Double(playerManager.currentSpeed),
-      isBoostVolumeEnabled: UserDefaults.standard.bool(forKey: Constants.UserDefaults.boostVolumeEnabled)
+      isBoostVolumeEnabled: UserDefaults.standard.bool(forKey: Constants.UserDefaults.boostVolumeEnabled),
+      eqPreset: AudioEQSettings.preset,
+      isVoiceBoostEnabled: AudioEQSettings.voiceBoostEnabled
     )
 
     bindObservers()
@@ -58,5 +62,19 @@ class PlayerControlsViewModel: PlayerControlsView.Model {
     UserDefaults.standard.set(enabled, forKey: Constants.UserDefaults.boostVolumeEnabled)
 
     playerManager.setBoostVolume(enabled)
+  }
+
+  override func handleEQPresetChange(_ preset: EQPreset) {
+    guard eqPreset != preset else { return }
+
+    eqPreset = preset
+    AudioEQSettings.preset = preset
+    playerManager.applyAudioEffects()
+  }
+
+  override func handleVoiceBoostToggle(_ enabled: Bool) {
+    isVoiceBoostEnabled = enabled
+    AudioEQSettings.voiceBoostEnabled = enabled
+    playerManager.applyAudioEffects()
   }
 }

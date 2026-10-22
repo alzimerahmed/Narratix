@@ -40,6 +40,24 @@ struct PlayerControlsView: View {
             .fill(theme.secondaryColor)
             .frame(height: 0.5)
 
+          // Equalizer Section (preset + voice boost)
+          PlayerControlsEQSectionView(
+            selectedPreset: Binding(
+              get: { model.eqPreset },
+              set: { model.handleEQPresetChange($0) }
+            ),
+            voiceBoostEnabled: Binding(
+              get: { model.isVoiceBoostEnabled },
+              set: { model.handleVoiceBoostToggle($0) }
+            ),
+            handlePresetChange: model.handleEQPresetChange
+          )
+
+          // Separator
+          Rectangle()
+            .fill(theme.secondaryColor)
+            .frame(height: 0.5)
+
           // Volume Section
           PlayerControlsVolumeSectionView(boostVolumeEnabled: Binding(
             get: { model.isBoostVolumeEnabled },
@@ -99,15 +117,21 @@ extension PlayerControlsView {
   class Model: ObservableObject {
     @Published var currentSpeed: Double = 1.0
     @Published var isBoostVolumeEnabled: Bool = false
+    @Published var eqPreset: EQPreset = .off
+    @Published var isVoiceBoostEnabled: Bool = false
 
     let speedStep: Double = 0.1
 
     init(
       currentSpeed: Double = 1.0,
-      isBoostVolumeEnabled: Bool = false
+      isBoostVolumeEnabled: Bool = false,
+      eqPreset: EQPreset = .off,
+      isVoiceBoostEnabled: Bool = false
     ) {
       self.currentSpeed = currentSpeed
       self.isBoostVolumeEnabled = isBoostVolumeEnabled
+      self.eqPreset = eqPreset
+      self.isVoiceBoostEnabled = isVoiceBoostEnabled
     }
 
     func roundSpeedValue(_ value: Double) -> Double {
@@ -116,6 +140,8 @@ extension PlayerControlsView {
 
     func handleSpeedChange(_ speed: Double) {}
     func handleBoostVolumeToggle(_ enabled: Bool) {}
+    func handleEQPresetChange(_ preset: EQPreset) {}
+    func handleVoiceBoostToggle(_ enabled: Bool) {}
   }
 }
 

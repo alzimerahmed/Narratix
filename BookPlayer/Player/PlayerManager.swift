@@ -34,6 +34,13 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   /// when empty or not wired — the default keeps tests and isolated instances
   /// queue-free)
   private let dequeueNextQueuedItem: () -> SimpleLibraryItem?
+  /// Builds the EQ `AVAudioMix` (MTAudioProcessingTap) for each loaded item.
+  /// Returns nil whenever EQ is off or unbuildable, so the processed path is
+  /// strictly opt-in and can never break playback.
+  private let audioEQProcessor: AudioEQProcessing
+  /// In-flight `applyAudioEffects` rebuild — a new settings change cancels the
+  /// pending one so last-tap-wins, never last-task-completes
+  private var audioEffectsTask: Task<Void, Never>?
   /// Last time the user touched a transport action, the position they were at,
   /// and which item it was on: "when did I fall asleep" data for the pause-time
   /// `.sleep` bookmark. The path guards against a stamp carried over an item swap.
@@ -126,7 +133,8 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     hasStreamingEnabled: @escaping () -> Bool,
     presentFailure: @escaping (PlaybackFailure) -> Void,
     streamLookup: ExternalStreamLooking = AudiobookShelfStreamLookup(),
-    dequeueNextQueuedItem: @escaping () -> SimpleLibraryItem? = { nil }
+    dequeueNextQueuedItem: @escaping () -> SimpleLibraryItem? = { nil },
+    audioEQProcessor: AudioEQProcessing = AudioEQProcessor()
   ) {
     self.libraryService = libraryService
     self.playbackService = playbackService
@@ -139,6 +147,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     self.presentFailure = presentFailure
     self.streamLookup = streamLookup
     self.dequeueNextQueuedItem = dequeueNextQueuedItem
+    self.audioEQProcessor = audioEQProcessor
     super.init()
 
     setupPlayerInstance()
@@ -366,6 +375,16 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     self.playerItem = AVPlayerItem(asset: asset)
     self.playerItemRelativePath = chapter.relativePath
     self.playerItem?.audioTimePitchAlgorithm = .timeDomain
+    /// EQ rides the item's audioMix — nil whenever the feature is off or the tap
+    /// can't be built (the await loads the asset's tracks: instant locally, a
+    /// header read for streams). `audioTimePitchAlgorithm` is untouched, so
+    /// per-book speed keeps working through the processed path.
+    self.playerItem?.audioMix = await audioEQProcessor.audioMixIfEnabled(for: asset)
+
+    /// The mix build awaits: a load started after this one owns the item again
+    guard !Task.isCancelled else {
+      throw BookPlayerError.cancelledTask
+    }
 
     return self.currentItem?.currentChapter ?? chapter
   }
@@ -1565,6 +1584,25 @@ extension PlayerManager {
 
   func setBoostVolume(_ newValue: Bool) {
     self.boostVolume = newValue
+  }
+
+  /// Re-applies the persisted EQ preset + voice boost to the loaded item —
+  /// called from the player controls when the user changes them mid-playback.
+  /// Swapping `audioMix` on the live item rebuilds the render pipeline's tap
+  /// (a brief render restart is possible); nil takes EQ back off cleanly.
+  /// Not on `PlayerManagerProtocol`: the watch player is a separate class and
+  /// EQ is iOS-only.
+  func applyAudioEffects() {
+    guard let playerItem else { return }
+    audioEffectsTask?.cancel()
+    audioEffectsTask = Task { @MainActor [weak self] in
+      let mix = await self?.audioEQProcessor.audioMixIfEnabled(for: playerItem.asset)
+      /// A load could have swapped `playerItem` while tracks loaded — the mix
+      /// carries this item's asset track IDs, so it must only land on it.
+      /// Cancellation covers superseded settings changes (rapid taps).
+      guard !Task.isCancelled, let self, self.playerItem === playerItem else { return }
+      self.playerItem?.audioMix = mix
+    }
   }
 
   // swiftlint:disable block_based_kvo

@@ -589,6 +589,10 @@
 		63B914A12EE49079000918D8 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B914A02EE49079000918D8 /* NetworkMonitor.swift */; };
 		63B9EFA82E9A4230002361A0 /* PlayerControlsVolumeSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B9EFA72E9A4230002361A0 /* PlayerControlsVolumeSectionView.swift */; };
 		63B9EFAA2E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B9EFA92E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift */; };
+		3E0E0000000000000000A102 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A101 /* EQPreset.swift */; };
+		3E0E0000000000000000A104 /* AudioEQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A103 /* AudioEQProcessor.swift */; };
+		3E0E0000000000000000A106 /* PlayerControlsEQSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */; };
+		3E0E0000000000000000A108 /* AudioEqualizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A107 /* AudioEqualizerTests.swift */; };
 		63B9EFAB2E9A4700002361A0 /* SystemVolumeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */; };
 		63C1A8B02B0915EE00C4B418 /* WidgetUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418445C2258AE11E0072DD13 /* WidgetUtils.swift */; };
 		63C1A8B22B09166F00C4B418 /* WidgetEntries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637DAB092AEB3E0D006DC2D1 /* WidgetEntries.swift */; };
@@ -1789,6 +1793,10 @@
 		63B914A02EE49079000918D8 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		63B9EFA72E9A4230002361A0 /* PlayerControlsVolumeSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerControlsVolumeSectionView.swift; sourceTree = "<group>"; };
 		63B9EFA92E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerControlsSpeedSectionView.swift; sourceTree = "<group>"; };
+		3E0E0000000000000000A101 /* EQPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQPreset.swift; sourceTree = "<group>"; };
+		3E0E0000000000000000A103 /* AudioEQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEQProcessor.swift; sourceTree = "<group>"; };
+		3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerControlsEQSectionView.swift; sourceTree = "<group>"; };
+		3E0E0000000000000000A107 /* AudioEqualizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEqualizerTests.swift; sourceTree = "<group>"; };
 		63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolumeSlider.swift; sourceTree = "<group>"; };
 		63C48C792E3DAC9D005FBB96 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		63C48C7B2E3DAD6E005FBB96 /* LoginBenefitSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginBenefitSectionView.swift; sourceTree = "<group>"; };
@@ -2669,6 +2677,7 @@
 				7C4A9E1B2D3F405162738A02 /* SkipIntervalsTests.swift */,
 				689E2BCD29DC1D9253949A53 /* PlayableChapterTests.swift */,
 				9FB7C48C2835A2C1003B917E /* PlayerManagerTests.swift */,
+				3E0E0000000000000000A107 /* AudioEqualizerTests.swift */,
 				B0B0F11E5EA1CA27D0000005 /* PlayerTimeSampleTests.swift */,
 				FEEDBABE0000000000000004 /* SharedWidgetStoreTests.swift */,
 				6279361D272D0CF50097837D /* Coordinators */,
@@ -4003,6 +4012,7 @@
 			children = (
 				63B4A3C52E93858C00784A22 /* PlayerControlsView.swift */,
 				63B9EFA72E9A4230002361A0 /* PlayerControlsVolumeSectionView.swift */,
+				3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */,
 				63B9EFA92E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift */,
 				63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */,
 				9F64C6232793C3DA00B2493C /* PlayerControlsViewModel.swift */,
@@ -4263,6 +4273,8 @@
 				99329DC82F3BF464003F8E73 /* ViewModels */,
 				99329DB22F3A9B9C003F8E73 /* Views */,
 				410D0FF01EDF659900A52EB9 /* PlayerManager.swift */,
+				3E0E0000000000000000A101 /* EQPreset.swift */,
+				3E0E0000000000000000A103 /* AudioEQProcessor.swift */,
 				B0B0F11E5EA1CA27D0000003 /* PlayerTimeSample.swift */,
 				63E893972CAFAC7500946CD4 /* PlayerManagerProtocol.swift */,
 				63E893912CAFA89000946CD4 /* BPPlayerError.swift */,
@@ -5349,6 +5361,9 @@
 				6338C7892E48DDC4008016E5 /* EmptyListView.swift in Sources */,
 				63C48D402E3E8128005FBB96 /* AccountView.swift in Sources */,
 				63B9EFAA2E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift in Sources */,
+				3E0E0000000000000000A102 /* EQPreset.swift in Sources */,
+				3E0E0000000000000000A104 /* AudioEQProcessor.swift in Sources */,
+				3E0E0000000000000000A106 /* PlayerControlsEQSectionView.swift in Sources */,
 				63B9EFAB2E9A4700002361A0 /* SystemVolumeSlider.swift in Sources */,
 				9F2DC9D92A008B19006CDF1F /* PricingOptionsView.swift in Sources */,
 				634BA5902C14FB730015314D /* StoryViewer.swift in Sources */,
@@ -5611,6 +5626,7 @@
 				9EA7F5E8BA024D2F9E341865 /* PlaybackHistoryServiceTests.swift in Sources */,
 				A64308C416AABB27C66476A5 /* SleepTimerOptionTests.swift in Sources */,
 				7C4A9E1B2D3F405162738A01 /* SkipIntervalsTests.swift in Sources */,
+				3E0E0000000000000000A108 /* AudioEqualizerTests.swift in Sources */,
 				E79345DD00DC64A0F7E0939A /* SleepTimerOption.swift in Sources */,
 				9F1C30FC2A2E593300D5BC81 /* PlayableItemMock.swift in Sources */,
 				69343D36213A07B4000C425E /* VoiceOverServiceTest.swift in Sources */,
