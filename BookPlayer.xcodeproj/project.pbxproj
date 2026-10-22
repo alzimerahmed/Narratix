@@ -1094,6 +1094,14 @@
 		80D867CF65C8476D81974D20 /* ListeningQueueServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B685AC09497243C29D38841F /* ListeningQueueServiceTests.swift */; };
 		2F1C08490EAD42039EDE5568 /* ListeningStateFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */; };
 		9EA7F5E8BA024D2F9E341865 /* PlaybackHistoryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */; };
+		3F7A00010000000000000002 /* ListeningStatsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00010000000000000001 /* ListeningStatsService.swift */; };
+		3F7A00020000000000000002 /* ListeningStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00020000000000000001 /* ListeningStatsView.swift */; };
+		3F7A00030000000000000002 /* ListeningStatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00030000000000000001 /* ListeningStatsViewModel.swift */; };
+		3F7A00040000000000000002 /* ListeningStatsChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00040000000000000001 /* ListeningStatsChartView.swift */; };
+		3F7A00060000000000000002 /* ListeningStatsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00060000000000000001 /* ListeningStatsServiceTests.swift */; };
+		3F7A00070000000000000002 /* WatchLibraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00070000000000000001 /* WatchLibraryItem.swift */; };
+		3F7A00070000000000000003 /* WatchLibraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00070000000000000001 /* WatchLibraryItem.swift */; };
+		3F7A00080000000000000002 /* PhoneLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A00080000000000000001 /* PhoneLibraryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2176,6 +2184,13 @@
 		B685AC09497243C29D38841F /* ListeningQueueServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningQueueServiceTests.swift; sourceTree = "<group>"; };
 		2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStateFilterTests.swift; sourceTree = "<group>"; };
 		FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryServiceTests.swift; sourceTree = "<group>"; };
+		3F7A00010000000000000001 /* ListeningStatsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsService.swift; sourceTree = "<group>"; };
+		3F7A00020000000000000001 /* ListeningStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsView.swift; sourceTree = "<group>"; };
+		3F7A00030000000000000001 /* ListeningStatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsViewModel.swift; sourceTree = "<group>"; };
+		3F7A00040000000000000001 /* ListeningStatsChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsChartView.swift; sourceTree = "<group>"; };
+		3F7A00060000000000000001 /* ListeningStatsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningStatsServiceTests.swift; sourceTree = "<group>"; };
+		3F7A00070000000000000001 /* WatchLibraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLibraryItem.swift; sourceTree = "<group>"; };
+		3F7A00080000000000000001 /* PhoneLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneLibraryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2509,6 +2524,7 @@
 				6334CF1C2CF90AF900F1FA17 /* PlayerMoreListView.swift */,
 				63E7DCBF2D076185005B5E1F /* View+BookPlayer.swift */,
 				63E15D932D8F0A4E005B42E5 /* LocalPlayback */,
+				3F7A00090000000000000001 /* PhoneLibrary */,
 				63CD851B2CE2963600EDBEA8 /* Settings */,
 				9FA334B427C156DB0064E8EA /* ItemList */,
 				9FA334B727C163510064E8EA /* NowPlaying */,
@@ -2993,6 +3009,7 @@
 				63398E3C2D68254000A6934E /* SimplePlaybackRecord.swift */,
 				412AB73B2702BDED00969618 /* SimpleTheme.swift */,
 				9F6BC86427E6D027002CF2A6 /* WatchApplicationContext.swift */,
+				3F7A00070000000000000001 /* WatchLibraryItem.swift */,
 				63AD93D12E3C1BA70077E73A /* SimpleAccount.swift */,
 			);
 			path = "Lightweight-Models";
@@ -3497,6 +3514,14 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		3F7A00090000000000000001 /* PhoneLibrary */ = {
+			isa = PBXGroup;
+			children = (
+				3F7A00080000000000000001 /* PhoneLibraryView.swift */,
+			);
+			path = PhoneLibrary;
+			sourceTree = "<group>";
+		};
 		63E15D932D8F0A4E005B42E5 /* LocalPlayback */ = {
 			isa = PBXGroup;
 			children = (
@@ -3573,6 +3598,7 @@
 			children = (
 				AAD75E1D9B9646A1A67D0833 /* ListeningQueueService.swift */,
 				F65D0F365EDB42F091630D99 /* PlaybackHistoryService.swift */,
+				3F7A00010000000000000001 /* ListeningStatsService.swift */,
 				69343D322133844D000C425E /* VoiceOverService.swift */,
 				3C80A51B636D4C7381529505 /* ReviewPromptService.swift */,
 				C1D0C0E1F2A3B4C5D6E7F822 /* LibraryBackupService.swift */,
@@ -3601,6 +3627,7 @@
 				75A80DD6CF6E427AA04CCDBB /* LibraryCollectionsTests.swift */,
 				2239BCFF3620478E89BDA54B /* ListeningStateFilterTests.swift */,
 				FD04F7CF8DB34647858BCDEC /* PlaybackHistoryServiceTests.swift */,
+				3F7A00060000000000000001 /* ListeningStatsServiceTests.swift */,
 				69343D35213A07B4000C425E /* VoiceOverServiceTest.swift */,
 				6906A54F21720FDF00A9E0B2 /* BookSortServiceTest.swift */,
 				62AAE230274ABB5D001EB9FF /* LibraryServiceTests.swift */,
@@ -3905,9 +3932,20 @@
 			path = ButtonFree;
 			sourceTree = "<group>";
 		};
+		3F7A00050000000000000001 /* Stats */ = {
+			isa = PBXGroup;
+			children = (
+				3F7A00020000000000000001 /* ListeningStatsView.swift */,
+				3F7A00030000000000000001 /* ListeningStatsViewModel.swift */,
+				3F7A00040000000000000001 /* ListeningStatsChartView.swift */,
+			);
+			path = Stats;
+			sourceTree = "<group>";
+		};
 		9F4691EB2800C8EE00A8F0E8 /* Profile */ = {
 			isa = PBXGroup;
 			children = (
+				3F7A00050000000000000001 /* Stats */,
 				9F5F13662978D9B800F061A0 /* Views */,
 				9F5F12DA2976E8CD00F061A0 /* ProfileView.swift */,
 				63AD93D62E3C74990077E73A /* ProfileCardSectionView.swift */,
@@ -4978,6 +5016,7 @@
 				9FA334C727C28D650064E8EA /* PlaybackControlsView.swift in Sources */,
 				4140EA8522728A160009F794 /* BookPlayer.xcdatamodeld in Sources */,
 				63CD851D2CE2964900EDBEA8 /* SettingsView.swift in Sources */,
+				3F7A00080000000000000002 /* PhoneLibraryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4985,6 +5024,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F7A00070000000000000003 /* WatchLibraryItem.swift in Sources */,
 				98468F034D60494280B41468 /* ListeningQueueItem+CoreDataClass.swift in Sources */,
 				9743C617CE554854871156B5 /* ListeningQueueItem+CoreDataProperties.swift in Sources */,
 				92DA8E36E17849C2942C66BE /* ItemCollection+CoreDataClass.swift in Sources */,
@@ -5222,6 +5262,10 @@
 				FF241BCCDA7F4303B5DD0DFD /* ItemGroupDetailViewModel.swift in Sources */,
 				A35C9819FD5B41B3BB9F3D69 /* ItemDetailsSeriesSectionView.swift in Sources */,
 				C44E018933BF4DAB98402234 /* PlaybackHistoryService.swift in Sources */,
+				3F7A00010000000000000002 /* ListeningStatsService.swift in Sources */,
+				3F7A00020000000000000002 /* ListeningStatsView.swift in Sources */,
+				3F7A00030000000000000002 /* ListeningStatsViewModel.swift in Sources */,
+				3F7A00040000000000000002 /* ListeningStatsChartView.swift in Sources */,
 				28037D6537EE47118BA64A60 /* ListeningQueueView.swift in Sources */,
 				BDCA49ECD1E84BE8A96C968D /* ListeningQueueViewModel.swift in Sources */,
 				18E2E3A2D0E04BA5B253D8C4 /* PlaybackHistoryView.swift in Sources */,
@@ -5624,6 +5668,7 @@
 				0CF83B468896487293859A3C /* LibraryCollectionsTests.swift in Sources */,
 				2F1C08490EAD42039EDE5568 /* ListeningStateFilterTests.swift in Sources */,
 				9EA7F5E8BA024D2F9E341865 /* PlaybackHistoryServiceTests.swift in Sources */,
+				3F7A00060000000000000002 /* ListeningStatsServiceTests.swift in Sources */,
 				A64308C416AABB27C66476A5 /* SleepTimerOptionTests.swift in Sources */,
 				7C4A9E1B2D3F405162738A01 /* SkipIntervalsTests.swift in Sources */,
 				3E0E0000000000000000A108 /* AudioEqualizerTests.swift in Sources */,
@@ -5707,6 +5752,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F7A00070000000000000002 /* WatchLibraryItem.swift in Sources */,
 				4EFEE9B78BE6401EA38C1D06 /* ListeningQueueItem+CoreDataClass.swift in Sources */,
 				3175260EE8E747FEB24183D6 /* ListeningQueueItem+CoreDataProperties.swift in Sources */,
 				BCF7F61F63B94EB9A61A88EC /* ItemCollection+CoreDataClass.swift in Sources */,
