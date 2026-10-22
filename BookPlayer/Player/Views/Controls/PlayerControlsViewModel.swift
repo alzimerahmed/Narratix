@@ -69,12 +69,16 @@ class PlayerControlsViewModel: PlayerControlsView.Model {
 
     eqPreset = preset
     AudioEQSettings.preset = preset
-    playerManager.applyAudioEffects()
+    Task { @MainActor in
+      playerManager.applyAudioEffects()
+    }
   }
 
   override func handleVoiceBoostToggle(_ enabled: Bool) {
     isVoiceBoostEnabled = enabled
     AudioEQSettings.voiceBoostEnabled = enabled
-    playerManager.applyAudioEffects()
+    Task { @MainActor in
+      playerManager.applyAudioEffects()
+    }
   }
 }
