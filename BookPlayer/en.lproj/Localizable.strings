@@ -718,6 +718,8 @@
 "webdav_error_not_webdav" = "That address doesn't answer like a WebDAV server.";
 "webdav_error_too_large" = "The server's answer was too large to read.";
 "webdav_select_folder_hint" = "Adds this folder's contents to the import";
+/* used in: WebDAV browser overflow menu; the pull-to-refresh alternative for VoiceOver */
+"webdav_refresh_button" = "Refresh";
 "webdav_insecure_title" = "Unencrypted connection";
 "webdav_insecure_description" = "This address uses http:// — your username and password would be sent in cleartext. Connect anyway?";
 "webdav_insecure_connect_button" = "Connect anyway";

@@ -46,6 +46,15 @@ struct WebDAVBrowserView: View {
               .disabled(!viewModel.canImport)
             }
           }
+          /// Pull-to-refresh isn't an easy VoiceOver reach — the overflow
+          /// item gives the listing's reload a named action
+          if viewModel.phase == .browse {
+            ToolbarItem(placement: .secondaryAction) {
+              Button("webdav_refresh_button") {
+                Task { await viewModel.refresh() }
+              }
+            }
+          }
         }
         .errorAlert(error: $viewModel.error)
         /// Some leaves failed to download — nothing imports silently; the
@@ -207,6 +216,8 @@ struct WebDAVBrowserView: View {
             .foregroundStyle(viewModel.selection.contains(entry.url) ? theme.linkColor : theme.secondaryColor)
         }
         .buttonStyle(.borderless)
+        .accessibilityLabel(Text(entry.name))
+        .accessibilityAddTraits(viewModel.selection.contains(entry.url) ? .isSelected : [])
         .accessibilityHint("webdav_select_folder_hint")
 
         Button {
@@ -245,6 +256,7 @@ struct WebDAVBrowserView: View {
             Spacer()
           }
         }
+        .accessibilityAddTraits(viewModel.selection.contains(entry.url) ? .isSelected : [])
         .accessibilityHint("webdav_select_file_hint")
       }
     }
