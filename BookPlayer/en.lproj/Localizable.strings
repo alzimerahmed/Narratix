@@ -622,4 +622,4 @@
 "history_empty_title" = "No listening sessions yet";
 "history_empty_description" = "Each time you play and pause, a session appears here with the position you left it at.";
 "history_row_restore_hint" = "Plays this book from that position";
-"history_session_played_format" = "Listened %@";
+"history_session_played_format" = "Listened for %@";

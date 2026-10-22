@@ -74,6 +74,7 @@ struct ItemDetailsView: View {
           TextEditor(text: $viewModel.note)
             .frame(minHeight: Spacing.M * 4)
             .foregroundStyle(theme.primaryColor)
+            .accessibilityLabel(Text("notes_title"))
         }
       } header: {
         Text("notes_title")

@@ -115,11 +115,15 @@ extension PlaybackHistoryView {
       String(format: "history_session_played_format".localized, TimeParser.formatTime(session.duration))
     }
 
-    func dateText(for session: SimplePlaybackSession) -> String {
+    private static let dateFormatter: DateFormatter = {
       let formatter = DateFormatter()
       formatter.dateStyle = .short
       formatter.timeStyle = .short
-      return formatter.string(from: session.date)
+      return formatter
+    }()
+
+    func dateText(for session: SimplePlaybackSession) -> String {
+      Self.dateFormatter.string(from: session.date)
     }
   }
 }
