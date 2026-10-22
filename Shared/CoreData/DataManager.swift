@@ -111,6 +111,25 @@ public class DataManager {
     return backupFolderURL
   }
 
+  /// Local library backups (JSON) — in Application Support, not Documents:
+  /// `getBackupFolderURL()` is scanned by the sync-deleted flow, which would
+  /// list them as recoverable files and sweep them into an import
+  public class func getLibraryBackupFolderURL() -> URL {
+    let appSupportURL = self.getApplicationSupportFolderURL()
+
+    let backupFolderURL = appSupportURL.appendingPathComponent("LibraryBackups")
+
+    if !FileManager.default.fileExists(atPath: backupFolderURL.path) {
+      do {
+        try FileManager.default.createDirectory(at: backupFolderURL, withIntermediateDirectories: true, attributes: nil)
+      } catch {
+        fatalError("Couldn't create Library Backup folder")
+      }
+    }
+
+    return backupFolderURL
+  }
+
   public class func getDatabaseBackupFolderURL() -> URL {
     let appSupportURL = self.getApplicationSupportFolderURL()
 

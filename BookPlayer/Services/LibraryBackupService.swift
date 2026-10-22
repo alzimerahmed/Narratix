@@ -183,8 +183,9 @@ final class LibraryBackupService: BPLogger {
     )
   }
 
-  /// The backup file: JSON in the app's backup folder, timestamped so repeated
-  /// exports keep a history and a share-sheet send has a real file to carry
+  /// The backup file: JSON in the app's library-backup folder (Application
+  /// Support — Documents/BPBackup belongs to the sync-deleted flow), timestamped
+  /// so repeated exports keep a history and a share-sheet send has a real file
   func exportFile() throws -> URL {
     let backup = try export()
     let encoder = JSONEncoder()

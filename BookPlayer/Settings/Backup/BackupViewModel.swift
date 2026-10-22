@@ -48,7 +48,7 @@ final class BackupViewModel: ObservableObject, BPLogger {
   /// The URL a restore confirmation came from — shown in the dialog
   @Published private(set) var restoreSourceName: String?
   @Published var lastReport: LibraryRestoreReport?
-  /// Backup files already sitting in Documents/Backup
+  /// Backup files already sitting in the app's library-backup folder
   @Published private(set) var savedBackups: [URL] = []
   @Published var error: Error?
   @Published var isWorking = false
@@ -70,7 +70,7 @@ final class BackupViewModel: ObservableObject, BPLogger {
     }
   }
 
-  /// The copy the app keeps for itself in Documents/Backup — runs after the
+  /// The copy the app keeps for itself in its backup folder — runs after the
   /// export sheet finishes so a canceled save still leaves one on device
   func recordLocalCopy() {
     guard exportDocument != nil else { return }
@@ -84,7 +84,7 @@ final class BackupViewModel: ObservableObject, BPLogger {
   }
 
   func refreshSavedBackups() {
-    let folder = DataManager.getBackupFolderURL()
+    let folder = DataManager.getLibraryBackupFolderURL()
     let contents = (try? FileManager.default.contentsOfDirectory(
       at: folder, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
     )) ?? []
