@@ -192,6 +192,15 @@ final class PlayerViewModel: ObservableObject {
         self?.requestReview()
       }
       .store(in: &disposeBag)
+
+    /// The posted chapter swap: while paused nothing else recomputes the label or the
+    /// marker set, so a chapter-jump would read stale until the next play tick
+    NotificationCenter.default.publisher(for: .chapterChange)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.recalculateProgress()
+      }
+      .store(in: &disposeBag)
     
     NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)
       .debounce(for: 1.0, scheduler: DispatchQueue.main)
