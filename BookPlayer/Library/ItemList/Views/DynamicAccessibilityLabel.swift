@@ -100,10 +100,11 @@ struct DynamicAccessibilityLabelModifier: ViewModifier {
           type: item.type,
           uuid: item.uuid,
           externalResources: item.externalResources,
-          /// The rebuild must carry what the label reads — DNF and series
-          /// metadata aren't in the progress payload, so defaulting them
-          /// here would silently drop the state from the announcement
-          didNotFinish: item.didNotFinish,
+          /// The rebuild must carry what the label reads — series metadata
+          /// isn't in the progress payload either. DNF can't ride the snapshot
+          /// blindly: `markAsFinished` clears it in the store without it ever
+          /// appearing in the payload, and the states are exclusive
+          didNotFinish: updatedFinished ? false : item.didNotFinish,
           note: item.note,
           seriesName: item.seriesName,
           seriesOrder: item.seriesOrder
@@ -174,7 +175,7 @@ struct DynamicAccessibilityLabelModifier: ViewModifier {
           type: item.type,
           uuid: item.uuid,
           externalResources: item.externalResources,
-          didNotFinish: item.didNotFinish,
+          didNotFinish: playingItem.isFinished ? false : item.didNotFinish,
           note: item.note,
           seriesName: item.seriesName,
           seriesOrder: item.seriesOrder
