@@ -242,13 +242,14 @@ class ContextManager: ObservableObject, BPLogger {
 
   /// Play a browsed phone item through the same remote-control path a recent
   /// row uses — the play command goes to the phone, the reply context update
-  /// follows on its own
+  /// follows on its own. `isPlaying` is NOT set optimistically: an unreachable
+  /// phone drops the sendMessage silently, and the `.bookPlaying` broadcast
+  /// (the only proof playback started) sets it instead
   func handlePhoneItemSelected(_ item: WatchLibraryItem) {
     watchConnectivityService.sendMessage(message: [
       "command": Command.play.rawValue as AnyObject,
       "identifier": item.relativePath as AnyObject,
     ])
-    isPlaying = true
   }
 
   private func sendItemCommand(

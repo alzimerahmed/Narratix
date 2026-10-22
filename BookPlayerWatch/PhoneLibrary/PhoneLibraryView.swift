@@ -135,9 +135,9 @@ struct PhoneLibraryView: View {
         } else {
           Button {
             contextManager.handlePhoneItemSelected(item)
-            /// The remote-control model assumes the phone plays it — same
-            /// optimism the recent list applies on tap
-            showPlayer = true
+            /// No optimistic open: Now Playing follows the phone's `play`
+            /// broadcast (.bookPlaying above) — an unreachable phone drops
+            /// the command silently and a pushed player would sit dead
           } label: {
             PhoneLibraryCell(item: item)
           }
