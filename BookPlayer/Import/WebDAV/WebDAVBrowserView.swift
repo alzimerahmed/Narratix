@@ -48,6 +48,18 @@ struct WebDAVBrowserView: View {
           }
         }
         .errorAlert(error: $viewModel.error)
+        .alert(
+          "webdav_insecure_title",
+          isPresented: Binding(
+            get: { viewModel.insecureURL != nil },
+            set: { if !$0 { viewModel.insecureURL = nil } }
+          )
+        ) {
+          Button("webdav_insecure_connect_button") { viewModel.confirmInsecureConnect() }
+          Button("cancel_button", role: .cancel) {}
+        } message: {
+          Text("webdav_insecure_description")
+        }
         .tint(theme.linkColor)
         .toolbarColorScheme(theme.useDarkVariant ? .dark : .light, for: .navigationBar)
     }

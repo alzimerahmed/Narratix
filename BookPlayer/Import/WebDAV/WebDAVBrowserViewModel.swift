@@ -43,6 +43,8 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
   @Published var selection = Set<URL>()
   @Published private(set) var isLoading = false
   @Published var error: Error?
+  /// An explicit http:// URL waiting on the cleartext warning's answer
+  @Published var insecureURL: URL?
 
   /// Download staging progress: "file i of n" plus the current file's fraction
   struct DownloadProgress: Equatable {
@@ -98,6 +100,24 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
       return
     }
 
+    /// An explicit http:// address sends the password cleartext — hold for
+    /// the warning's "Connect anyway" instead of connecting blind
+    if url.scheme?.lowercased() == "http" {
+      insecureURL = url
+      return
+    }
+
+    await connect(to: url)
+  }
+
+  /// "Connect anyway" on the cleartext warning
+  func confirmInsecureConnect() {
+    guard let url = insecureURL else { return }
+    insecureURL = nil
+    Task { await connect(to: url) }
+  }
+
+  private func connect(to url: URL) async {
     let connection = WebDAVConnection(url: url, username: username, password: password)
     self.connection = connection
     let client = WebDAVClient(connection: connection)
