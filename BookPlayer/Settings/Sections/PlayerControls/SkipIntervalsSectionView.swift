@@ -164,12 +164,13 @@ struct SkipIntervalsSectionView: View {
     }
   }
 
+  /// Nil only when there's no number at all: an out-of-range one clamps to the
+  /// nearest bound rather than being dropped without a word
   static func parseSeconds(_ text: String) -> TimeInterval? {
     guard
-      let value = Double(text.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)),
-      customIntervalRange.contains(value)
+      let value = Double(text.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces))
     else { return nil }
-    return value
+    return min(max(value, customIntervalRange.lowerBound), customIntervalRange.upperBound)
   }
 }
 
