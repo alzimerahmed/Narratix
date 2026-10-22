@@ -68,12 +68,13 @@ final class ListeningQueueService {
     }
   }
 
-  /// Appends the item at the queue's tail; no-op when already queued
+  /// Appends the item at the queue's tail; keeps position when already queued
   func enqueue(_ relativePath: String) {
     insert(relativePath, atHead: false)
   }
 
-  /// Inserts the item at the queue's head ("Play Next"); no-op when already queued
+  /// Inserts the item at the queue's head ("Play Next"); an already-queued
+  /// item moves to the head instead of staying put
   func enqueueNext(_ relativePath: String) {
     insert(relativePath, atHead: true)
   }
@@ -182,7 +183,15 @@ final class ListeningQueueService {
     let context = dataManager.getContext()
 
     context.performAndWait {
-      guard entry(for: relativePath, context: context) == nil else { return }
+      if let existing = entry(for: relativePath, context: context) {
+        /// Already queued: a head insert still moves it to the front, a tail
+        /// enqueue keeps its position
+        if atHead {
+          existing.order = -1
+          renumber(context: context)
+        }
+        return
+      }
       guard let item = libraryItem(for: relativePath, context: context) else { return }
 
       let entry = ListeningQueueItem.create(in: context)
