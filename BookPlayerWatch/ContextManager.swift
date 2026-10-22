@@ -293,14 +293,18 @@ class ContextManager: ObservableObject, BPLogger {
     case unreachable
     case notFound
     case noRemoteCopy
+    case notDownloaded
     case uploadInProgress
+    case nowPlaying
     case failed
 
     init(code: String?) {
       switch code {
       case "notFound": self = .notFound
       case "noRemoteCopy": self = .noRemoteCopy
+      case "notDownloaded": self = .notDownloaded
       case "uploadInProgress": self = .uploadInProgress
+      case "nowPlaying": self = .nowPlaying
       default: self = .failed
       }
     }

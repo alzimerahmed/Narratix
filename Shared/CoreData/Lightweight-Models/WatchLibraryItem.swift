@@ -90,8 +90,9 @@ public struct WatchLibraryPage: Codable {
 }
 
 /// Acknowledgement for `downloadItem` / `removeDownloadItem`. `error` is a
-/// code (`notFound`, `noRemoteCopy`, `uploadInProgress`, `failed`), never a
-/// user-facing sentence — the watch localizes its own copy.
+/// code (`notFound`, `noRemoteCopy`, `notDownloaded`, `uploadInProgress`,
+/// `nowPlaying`, `failed`), never a user-facing sentence — the watch
+/// localizes its own copy.
 public struct WatchActionResponse: Codable {
   public let ok: Bool
   public let error: String?

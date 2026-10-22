@@ -413,7 +413,14 @@ extension PhoneWatchConnectivityService {
         return
       }
 
-      guard syncService.isActive || item.externalResources?.streamingResource != nil else {
+      /// A download needs somewhere to download FROM (sync on, or a server
+      /// stream link) AND this item must actually hold a remote copy — sync
+      /// being active says nothing about a book that was never uploaded
+      let streamsFromServer = item.externalResources?.streamingResource != nil
+      guard
+        syncService.isActive || streamsFromServer,
+        item.remoteURL != nil || streamsFromServer
+      else {
         self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
         return
       }
@@ -451,17 +458,25 @@ extension PhoneWatchConnectivityService {
         return
       }
 
+      /// Never pull the file out from under playback — the target itself,
+      /// or a chapter inside a folder or bound target
+      if let playingPath = playerManager.currentItem?.relativePath,
+         playingPath == relativePath || playingPath.hasPrefix(relativePath + "/") {
+        self.reply(response: WatchActionResponse(ok: false, error: "nowPlaying"), to: replyHandler)
+        return
+      }
+
       /// Verify offloading here too — the watch only offers the action for
       /// rows the phone flagged `canOffload`, but a file is never deleted on
       /// another device's say-so without the remote-copy evidence holding up
       let streamsFromServer = item.externalResources?.streamingResource != nil
       let remoteBacked = syncService.isActive || streamsFromServer
-      guard
-        remoteBacked,
-        syncService.getDownloadState(for: item) == .downloaded,
-        offloadAllowed(for: item, streamsFromServer: streamsFromServer)
-      else {
+      guard remoteBacked, offloadAllowed(for: item, streamsFromServer: streamsFromServer) else {
         self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
+        return
+      }
+      guard syncService.getDownloadState(for: item) == .downloaded else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notDownloaded"), to: replyHandler)
         return
       }
 

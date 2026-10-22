@@ -48,6 +48,10 @@ struct PhoneLibraryView: View {
         return "watchapp_browse_unavailable_description".localized
       case .noRemoteCopy:
         return "watchapp_browse_no_remote_copy".localized
+      case .notDownloaded:
+        return "watchapp_browse_not_downloaded".localized
+      case .nowPlaying:
+        return "watchapp_browse_now_playing".localized
       case .uploadInProgress:
         return "watchapp_browse_upload_in_progress".localized
       case .notFound, .failed:

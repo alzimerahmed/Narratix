@@ -771,5 +771,7 @@
 "watchapp_download_failed_title" = "The download couldn't be started";
 "watchapp_browse_no_remote_copy" = "There's no online copy of this book to download from.";
 "watchapp_browse_upload_in_progress" = "This book is still uploading to your cloud storage — its download can't be removed yet.";
+"watchapp_browse_not_downloaded" = "This book isn't downloaded on your phone.";
+"watchapp_browse_now_playing" = "Pause this book on your phone before removing its download.";
 "watchapp_remove_download_confirm_title" = "Remove download?";
 "watchapp_remove_download_confirm_description" = "The file leaves this phone. The book stays in your library and downloads again when you need it.";
