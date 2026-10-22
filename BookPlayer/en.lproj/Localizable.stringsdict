@@ -116,5 +116,21 @@
         <string>Found %d files that weren't in your library and added them.</string>
       </dict>
     </dict>
+    <key>import_duplicates_more_format</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@format@</string>
+      <key>format</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>d</string>
+        <key>one</key>
+        <string>and %d more</string>
+        <key>other</key>
+        <string>and %d more</string>
+      </dict>
+    </dict>
   </dict>
 </plist>

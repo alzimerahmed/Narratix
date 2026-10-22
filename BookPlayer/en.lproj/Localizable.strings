@@ -669,3 +669,8 @@
 "rescan_library_title" = "Rescan library";
 "rescan_in_progress_title" = "Scanning for new files";
 "rescan_up_to_date_description" = "No new files were found. Your library is up to date.";
+"import_duplicates_title" = "Possible duplicates";
+"import_duplicates_description" = "These imports look like items already in your library: %@.";
+"import_duplicates_skip" = "Skip duplicates";
+"import_duplicates_replace" = "Replace existing";
+"import_duplicates_import_anyway" = "Import anyway";

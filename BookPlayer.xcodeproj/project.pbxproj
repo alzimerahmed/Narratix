@@ -556,6 +556,7 @@
 		63B4A2FD2E91828B00784A22 /* ItemListView+Sheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A2FC2E91828B00784A22 /* ItemListView+Sheets.swift */; };
 		63B4A2FE2E91828B00784A22 /* ItemListView+Alerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A2FB2E91828B00784A22 /* ItemListView+Alerts.swift */; };
 		63B4A3012E9182AA00784A22 /* ItemListAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A2FF2E9182AA00784A22 /* ItemListAlert.swift */; };
+		A1B2C3D4E5F60718293A4B01 /* ImportDuplicates.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B02 /* ImportDuplicates.swift */; };
 		63B4A3022E9182AA00784A22 /* ItemListSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A3002E9182AA00784A22 /* ItemListSheet.swift */; };
 		63B4A3042E9182BB00784A22 /* FolderCreationInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A3032E9182BB00784A22 /* FolderCreationInput.swift */; };
 		63B4A3BC2E9186CD00784A22 /* ConfirmationDialogType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B4A3BB2E9186CD00784A22 /* ConfirmationDialogType.swift */; };
@@ -1738,6 +1739,7 @@
 		63B4A2FB2E91828B00784A22 /* ItemListView+Alerts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemListView+Alerts.swift"; sourceTree = "<group>"; };
 		63B4A2FC2E91828B00784A22 /* ItemListView+Sheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ItemListView+Sheets.swift"; sourceTree = "<group>"; };
 		63B4A2FF2E9182AA00784A22 /* ItemListAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemListAlert.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B02 /* ImportDuplicates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDuplicates.swift; sourceTree = "<group>"; };
 		63B4A3002E9182AA00784A22 /* ItemListSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemListSheet.swift; sourceTree = "<group>"; };
 		63B4A3032E9182BB00784A22 /* FolderCreationInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderCreationInput.swift; sourceTree = "<group>"; };
 		63B4A3BB2E9186CD00784A22 /* ConfirmationDialogType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationDialogType.swift; sourceTree = "<group>"; };
@@ -2409,6 +2411,7 @@
 				63B4A3BB2E9186CD00784A22 /* ConfirmationDialogType.swift */,
 				63B4A3032E9182BB00784A22 /* FolderCreationInput.swift */,
 				63B4A2FF2E9182AA00784A22 /* ItemListAlert.swift */,
+				A1B2C3D4E5F60718293A4B02 /* ImportDuplicates.swift */,
 				63B4A3002E9182AA00784A22 /* ItemListSheet.swift */,
 				62F2F25E25E18C7500E1D6A0 /* ImportableItem.swift */,
 				6338C7842E486232008016E5 /* ItemListSearchScope.swift */,
@@ -5445,6 +5448,7 @@
 				8ADD46262CF67592002E9C50 /* JellyfinAudiobookDetailsViewModel.swift in Sources */,
 				63AB64EB2E371FCE00EF6866 /* SettingsThemesView.swift in Sources */,
 				63B4A3012E9182AA00784A22 /* ItemListAlert.swift in Sources */,
+				A1B2C3D4E5F60718293A4B01 /* ImportDuplicates.swift in Sources */,
 				63B4A3022E9182AA00784A22 /* ItemListSheet.swift in Sources */,
 				636E77892DF4C76600D4DC0A /* JellyfinRootView.swift in Sources */,
 				3F7B643D2E0FA0B800299D97 /* GraphQLClient.swift in Sources */,
