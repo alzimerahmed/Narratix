@@ -70,30 +70,30 @@ private struct StatsChartDescriptor: AXChartDescriptorRepresentable {
     let sorted = records.sorted { $0.date < $1.date }
     let minutes = sorted.map { $0.time / 60 }
 
-    let descriptor = AXChartDescriptor(
-      title: "stats_chart_accessibility".localized
-    )
-    descriptor.xAxis = AXCategoricalDataAxisDescriptor(
+    let xAxis = AXCategoricalDataAxisDescriptor(
       title: "stats_chart_day_axis".localized,
       categoryOrder: sorted.map { Self.dayFormatter.string(from: $0.date) }
     )
-    descriptor.yAxis = AXNumericDataAxisDescriptor(
+    let yAxis = AXNumericDataAxisDescriptor(
       title: "minutes".localized,
       range: 0...(minutes.max() ?? 0),
       gridlinePositions: []
     )
-    descriptor.series = [
-      AXDataSeriesDescriptor(
-        name: "minutes".localized,
-        isContinuous: false,
-        dataPoints: zip(sorted, minutes).map { record, value in
-          AXDataPoint(
-            x: Self.dayFormatter.string(from: record.date),
-            y: value
-          )
-        }
-      )
-    ]
-    return descriptor
+    let series = AXDataSeriesDescriptor(
+      name: "minutes".localized,
+      isContinuous: false,
+      dataPoints: zip(sorted, minutes).map { record, value in
+        AXDataPoint(
+          x: Self.dayFormatter.string(from: record.date),
+          y: value
+        )
+      }
+    )
+    return AXChartDescriptor(
+      title: "stats_chart_accessibility".localized,
+      xAxis: xAxis,
+      yAxis: yAxis,
+      series: [series]
+    )
   }
 }
