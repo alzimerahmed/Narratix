@@ -1780,24 +1780,48 @@ extension PlayerManager {
   }
 
   func playNextItem(autoPlayed: Bool = false, shouldAutoplay: Bool = true) {
-    /// If it's autoplayed, check if setting is enabled
-    if autoPlayed,
-      !UserDefaults.standard.bool(forKey: Constants.UserDefaults.autoplayEnabled)
-    {
-      return
-    }
-
     let restartFinished = UserDefaults.standard.bool(forKey: Constants.UserDefaults.autoplayRestartEnabled)
 
     /// An explicitly queued item always wins over the folder's next sibling —
-    /// the listening queue is user ordering, folder chaining is implicit.
+    /// the listening queue is user ordering, folder chaining is implicit, and
+    /// the queue drains even with autoplay off (the user asked for these).
     /// `dequeueNext` consumes the entry: an item that fails to resolve (e.g. a
     /// queued folder) is dropped and the next head is tried.
     while let queued = dequeueNextQueuedItem() {
       guard let queuedBook = try? playbackService.getPlayableItem(from: queued) else { continue }
 
+      /// Same filters as the sibling path: autoplay without restart-finished
+      /// skips finished items, and non-audio files never load
+      if autoPlayed,
+        queuedBook.isFinished,
+        !restartFinished
+      {
+        continue
+      }
+      if let fileType = queuedBook.fileURL.fileType,
+        !fileType.isSubtype(of: .audiovisualContent)
+      {
+        continue
+      }
+
+      /// If autoplaying a finished book and restart is enabled, set currentTime to 0
+      if autoPlayed,
+        queuedBook.isFinished,
+        restartFinished
+      {
+        updatePlaybackTime(item: queuedBook, time: 0)
+      }
+
       load(queuedBook, autoplay: shouldAutoplay)
       libraryService.setLibraryLastBook(with: queuedBook.relativePath)
+      return
+    }
+
+    /// If it's autoplayed, check if setting is enabled — the gate covers the
+    /// implicit sibling chain only; the explicit queue already drained above
+    if autoPlayed,
+      !UserDefaults.standard.bool(forKey: Constants.UserDefaults.autoplayEnabled)
+    {
       return
     }
 
