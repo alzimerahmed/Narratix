@@ -42,6 +42,8 @@ final class PlayerViewModel: ObservableObject {
   @Published var showButtonFreeScreen = false
   /// Whether the current chapter's file is a video (drives the video surface + fullscreen button)
   @Published var isVideoItem = false
+  /// The chapter plays its cloud copy because its media server couldn't serve it
+  @Published var playingCloudFallback = false
 
   let libraryService: LibraryServiceProtocol
   let playbackService: PlaybackServiceProtocol
@@ -233,6 +235,12 @@ final class PlayerViewModel: ObservableObject {
         self.playbackSpeed = speed
         self.recalculateProgress()
       }
+      .store(in: &disposeBag)
+
+    self.playerManager.$playingCloudFallback
+      .removeDuplicates()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] in self?.playingCloudFallback = $0 }
       .store(in: &disposeBag)
     
     self.playingProgressSubscriber?.cancel()

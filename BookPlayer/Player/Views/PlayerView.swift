@@ -244,6 +244,14 @@ private struct PlayerContentView: View {
             keepsTitleHeight: !isSideBySide
           )
 
+          /// The media server didn't serve the chapter and its cloud copy did — said once,
+          /// small, so a buffering pause or a replaced file doesn't read as a random stall
+          if viewModel.playingCloudFallback {
+            Label("player_cloud_fallback_title", systemImage: "icloud.and.arrow.down")
+              .bpFont(.caption)
+              .foregroundStyle(theme.secondaryColor)
+          }
+
           ListeningProgressView(
             progress: $viewModel.progressData.sliderValue,
             remainingTime: viewModel.progressData.formattedMaxTime ?? "00:00",

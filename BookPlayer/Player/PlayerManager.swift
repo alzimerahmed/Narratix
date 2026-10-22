@@ -105,6 +105,11 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   private var loadChapterTask: Task<(), Never>?
   @Published var currentItem: PlayableItem?
   @Published var currentSpeed: Float = 1.0
+  /// The current chapter is playing its cloud copy because its media server couldn't serve
+  /// it — surfaced in the player so a pause for buffering or a changed file isn't a mystery.
+  /// Set only in the streamed-chapter branch of `loadPlayerItem`; cleared on the next
+  /// successful server stream, an item swap and stop
+  @Published private(set) var playingCloudFallback = false
 
   var nowPlayingInfo = [String: Any]()
 
@@ -318,6 +323,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
       // nothing server-side can gate it.
       switch try await streamURL(for: chapter, forceRefresh: forceRefreshURL) {
       case .success(let streamURL):
+        playingCloudFallback = false
         // No metadata is loaded here: the length comes from the server at import time
         // (`VirtualImportPipeline` refuses an item without one), so there is nothing a round
         // trip to the stream could add. `AVURLAssetHTTPHeaderFieldsKey` is undocumented, but it
@@ -334,6 +340,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
         guard let cloudAsset = try await cloudAssetIfAvailable(for: chapter, forceRefresh: forceRefreshURL) else {
           throw failure
         }
+        playingCloudFallback = true
         asset = cloudAsset
       }
     } else if isMissingLocally, syncService.isActive {
@@ -492,6 +499,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     playTask?.cancel()
     loadChapterTask?.cancel()
     clockState = .unknown
+    playingCloudFallback = false
 
     // Recover in case of failure
     if audioPlayer.status == .failed {
@@ -1714,6 +1722,7 @@ extension PlayerManager {
   func stop() {
     stopPlayback()
     clockState = .unknown
+    playingCloudFallback = false
 
     self.currentItem = nil
     playerItem = nil
