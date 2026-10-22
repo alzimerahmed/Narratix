@@ -85,7 +85,8 @@ struct PlaybackHistoryView: View {
             .foregroundStyle(theme.secondaryColor)
           /// Where the session was left — the position a tap restores
           Text(TimeParser.formatTime(session.position))
-            .bpFont(.caption.monospacedDigit())
+            .bpFont(.caption)
+            .monospacedDigit()
             .foregroundStyle(theme.secondaryColor)
         }
       }
