@@ -15,9 +15,10 @@ final class ImportOperationState {
   var isOperationActive = false
   /// A finished import waiting for its placement prompt (`ImportPlacementPrompt`)
   var pendingPlacement: ImportPlacement?
-  /// An import that produced suspected duplicates, waiting on the warning's
-  /// answer — resolved before uploads are scheduled (`LibraryRootView`)
-  var pendingDuplicates: PendingDuplicateImport?
+  /// Imports that produced suspected duplicates, waiting on the warning's
+  /// answer — a queue: another import can finish while a warning is still on
+  /// screen, and overwriting it would strand that import (`LibraryRootView`)
+  var pendingDuplicates = [PendingDuplicateImport]()
 }
 
 /// What the "where should these go?" prompt offers for a finished import.

@@ -23,8 +23,9 @@ struct LibraryRootView: View {
 
   @State private var importOperationState = ImportOperationState()
   @State private var loadingState = LoadingOverlayState()
-  /// The duplicate warning on screen — `pendingDuplicates` hands it over once
-  /// nothing covers the library, same posture as the placement prompt
+  /// The duplicate warning on screen — `pendingDuplicates` hands it the next
+  /// queued import once nothing covers the library, same posture as the
+  /// placement prompt
   @State private var duplicatePrompt: PendingDuplicateImport?
 
   @StateObject private var documentFolderWatcher = DirectoryWatcher.watch(
@@ -155,13 +156,21 @@ struct LibraryRootView: View {
     )
     /// Same gate as the placement prompt's, in miniature: a warning raised under
     /// a cover (the transfer/WebDAV sheet, the player) would be dropped and its
-    /// pending import lost, so it waits for an uncovered, visible library
+    /// pending import lost, so it waits for an uncovered, visible library — and
+    /// `promptShowing` in the gate refires this when the current warning's
+    /// dismissal frees the slot for a queued one
     .onChange(of: duplicateGate) { _, gate in
-      guard gate.isOpen, duplicatePrompt == nil,
-        let pending = importOperationState.pendingDuplicates
+      guard gate.isOpen, !importOperationState.pendingDuplicates.isEmpty
       else { return }
-      importOperationState.pendingDuplicates = nil
-      duplicatePrompt = pending
+      /// A pass later: handed over in the same update the closing alert would
+      /// take it for its own contents changing
+      Task { @MainActor in
+        guard duplicatePrompt == nil,
+          let pending = importOperationState.pendingDuplicates.first
+        else { return }
+        importOperationState.pendingDuplicates.removeFirst()
+        duplicatePrompt = pending
+      }
     }
     .alert(
       "import_duplicates_title",
@@ -311,11 +320,13 @@ struct LibraryRootView: View {
           libraryService: libraryService
         )
         if !matches.isEmpty {
-          importOperationState.pendingDuplicates = PendingDuplicateImport(
-            items: processedItems,
-            matches: matches,
-            node: importNode,
-            suggestedFolderName: suggestedFolderName
+          importOperationState.pendingDuplicates.append(
+            PendingDuplicateImport(
+              items: processedItems,
+              matches: matches,
+              node: importNode,
+              suggestedFolderName: suggestedFolderName
+            )
           )
           return
         }
@@ -429,21 +440,25 @@ struct LibraryRootView: View {
   }
 
   /// What decides when the duplicate warning can show, watched as one value so a
-  /// pending import set while covered presents on the cover's close
+  /// pending import set while covered presents on the cover's close — and a
+  /// queued one presents when the warning on screen dismisses (`promptShowing`
+  /// flipping off is itself a gate change)
   private struct DuplicateGate: Equatable {
     let hasPending: Bool
+    let promptShowing: Bool
     let isCovered: Bool
     let isImportScreenShown: Bool
     let isLibraryVisible: Bool
 
     var isOpen: Bool {
-      hasPending && !isCovered && !isImportScreenShown && isLibraryVisible
+      hasPending && !promptShowing && !isCovered && !isImportScreenShown && isLibraryVisible
     }
   }
 
   private var duplicateGate: DuplicateGate {
     DuplicateGate(
-      hasPending: importOperationState.pendingDuplicates != nil,
+      hasPending: !importOperationState.pendingDuplicates.isEmpty,
+      promptShowing: duplicatePrompt != nil,
       isCovered: !listState.coversOnScreen.isEmpty,
       isImportScreenShown: importManager.isImportScreenShown,
       isLibraryVisible: isVisible
@@ -471,6 +486,9 @@ struct LibraryRootView: View {
     _ pending: PendingDuplicateImport,
     action: DuplicateImportAction
   ) {
+    /// Imports whose delete failed stay in the batch — filtering them out
+    /// anyway would strand records the delete never removed
+    var skipDeleted = false
     switch action {
     case .importAnyway:
       break
@@ -478,20 +496,35 @@ struct LibraryRootView: View {
       /// Nothing of the imports uploaded yet: a plain delete drops the new
       /// record and its file in Processed, with no sync delete to schedule
       let duplicates = pending.matches.map(\.imported)
-      try? libraryService.delete(duplicates, mode: .deep)
+      do {
+        try libraryService.delete(duplicates, mode: .deep)
+        skipDeleted = true
+      } catch {
+        loadingState.error = error
+      }
     case .replace:
       /// The pre-existing items are the ones to go — record, file, and cloud
       /// copy (they may have synced long ago), matching what a list delete does
       var seen = Set<String>()
       let existing = pending.matches.map(\.existing).filter { seen.insert($0.uuid).inserted }
-      try? libraryService.delete(existing, mode: .deep)
-      syncService.scheduleDelete(existing, mode: .deep)
+      /// Same guard the list's delete has: never pull the file under a live player
+      if existing.contains(where: { $0.relativePath == playerManager.currentItem?.relativePath }) {
+        playerManager.stop()
+      }
+      do {
+        try libraryService.delete(existing, mode: .deep)
+        /// Only what actually deleted gets a cloud delete — a failed delete
+        /// must not take the server's copy down with it
+        syncService.scheduleDelete(existing, mode: .deep)
+      } catch {
+        loadingState.error = error
+      }
     }
 
     /// "Skip" can empty an imported folder out: a folder left with no contents
     /// goes too, and an empty remainder means there's nothing to place
     let remaining = pending.items.filter { item in
-      if action == .skip {
+      if action == .skip, skipDeleted {
         if pending.matches.contains(where: { $0.imported.uuid == item.uuid }) {
           return false
         }
@@ -504,8 +537,13 @@ struct LibraryRootView: View {
             offset: nil
           ) ?? []
           if contents.isEmpty {
-            try? libraryService.delete([item], mode: .deep)
-            return false
+            do {
+              try libraryService.delete([item], mode: .deep)
+              return false
+            } catch {
+              loadingState.error = error
+              return true
+            }
           }
         }
       }
