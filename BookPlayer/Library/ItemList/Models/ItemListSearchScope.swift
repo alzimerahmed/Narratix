@@ -50,6 +50,18 @@ enum ItemListeningFilter: String, CaseIterable, Identifiable {
     }
   }
 
+  /// The spoken form of `title` — a `LocalizedStringKey` can't hand its
+  /// resolved string back out for `accessibilityValue`
+  var titleString: String {
+    switch self {
+    case .all: "filter_all_title".localized
+    case .new: "filter_new_title".localized
+    case .started: "filter_started_title".localized
+    case .finished: "filter_finished_title".localized
+    case .didNotFinish: "filter_did_not_finish_title".localized
+    }
+  }
+
   /// Maps to the state predicate used by `LibraryService.filterContents`.
   /// `nil` means no state restriction (all items).
   var listeningState: ListeningState? {

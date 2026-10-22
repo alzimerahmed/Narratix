@@ -69,6 +69,7 @@ struct ItemListView: View {
   @Environment(\.loadingState) var loadingState
   @Environment(\.importOperationState) private var importOperationState
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @EnvironmentObject private var importManager: ImportManager
   @EnvironmentObject private var theme: ThemeViewModel
 
@@ -417,9 +418,13 @@ struct ItemListView: View {
 
           handleTap(on: item)
         }
-        // Resume without the player opening, the same as the row's play button
+        // Resume without the player opening, the same as the row's play button —
+        // and gated like it: nothing to continue on a book never started or
+        // already finished
         .accessibilityAction(named: "voiceover_continue_playback_title") {
-          guard !model.editMode.isEditing else { return }
+          guard !model.editMode.isEditing,
+                item.percentCompleted > 0,
+                !item.isFinished else { return }
           resumeItem(item)
         }
       }
@@ -577,7 +582,7 @@ struct ItemListView: View {
       Text(importOperationState.processingTitle)
     } label: {
       Image(systemName: "square.and.arrow.down")
-        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+        .symbolEffect(.pulse.wholeSymbol, options: .repeating, isActive: !reduceMotion)
         .foregroundStyle(theme.linkColor)
         .accessibilityLabel("import_preparing_title")
     }
@@ -600,6 +605,7 @@ struct ItemListView: View {
             }
           }
         }
+        .accessibilityAddTraits(model.listeningFilter == filter ? .isSelected : [])
       }
     } label: {
       Label(
@@ -610,6 +616,8 @@ struct ItemListView: View {
       )
     }
     .accessibilityLabel("filter_title".localized)
+    /// The active filter — the checkmark is visual-only otherwise
+    .accessibilityValue(model.listeningFilter.titleString)
   }
 
   @ViewBuilder
