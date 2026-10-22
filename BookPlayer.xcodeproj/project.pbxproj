@@ -592,6 +592,7 @@
 		3E0E0000000000000000A102 /* EQPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A101 /* EQPreset.swift */; };
 		3E0E0000000000000000A104 /* AudioEQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A103 /* AudioEQProcessor.swift */; };
 		3E0E0000000000000000A106 /* PlayerControlsEQSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */; };
+		3E0E0000000000000000A10A /* PresetChipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A109 /* PresetChipView.swift */; };
 		3E0E0000000000000000A108 /* AudioEqualizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E0E0000000000000000A107 /* AudioEqualizerTests.swift */; };
 		63B9EFAB2E9A4700002361A0 /* SystemVolumeSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */; };
 		63C1A8B02B0915EE00C4B418 /* WidgetUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418445C2258AE11E0072DD13 /* WidgetUtils.swift */; };
@@ -1807,6 +1808,7 @@
 		3E0E0000000000000000A101 /* EQPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EQPreset.swift; sourceTree = "<group>"; };
 		3E0E0000000000000000A103 /* AudioEQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEQProcessor.swift; sourceTree = "<group>"; };
 		3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerControlsEQSectionView.swift; sourceTree = "<group>"; };
+		3E0E0000000000000000A109 /* PresetChipView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetChipView.swift; sourceTree = "<group>"; };
 		3E0E0000000000000000A107 /* AudioEqualizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEqualizerTests.swift; sourceTree = "<group>"; };
 		63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemVolumeSlider.swift; sourceTree = "<group>"; };
 		63C48C792E3DAC9D005FBB96 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
@@ -4057,6 +4059,7 @@
 				63B4A3C52E93858C00784A22 /* PlayerControlsView.swift */,
 				63B9EFA72E9A4230002361A0 /* PlayerControlsVolumeSectionView.swift */,
 				3E0E0000000000000000A105 /* PlayerControlsEQSectionView.swift */,
+				3E0E0000000000000000A109 /* PresetChipView.swift */,
 				63B9EFA92E9A4644002361A0 /* PlayerControlsSpeedSectionView.swift */,
 				63B9EFAC2E9A4700002361A0 /* SystemVolumeSlider.swift */,
 				9F64C6232793C3DA00B2493C /* PlayerControlsViewModel.swift */,
@@ -5416,6 +5419,7 @@
 				3E0E0000000000000000A102 /* EQPreset.swift in Sources */,
 				3E0E0000000000000000A104 /* AudioEQProcessor.swift in Sources */,
 				3E0E0000000000000000A106 /* PlayerControlsEQSectionView.swift in Sources */,
+				3E0E0000000000000000A10A /* PresetChipView.swift in Sources */,
 				63B9EFAB2E9A4700002361A0 /* SystemVolumeSlider.swift in Sources */,
 				9F2DC9D92A008B19006CDF1F /* PricingOptionsView.swift in Sources */,
 				634BA5902C14FB730015314D /* StoryViewer.swift in Sources */,

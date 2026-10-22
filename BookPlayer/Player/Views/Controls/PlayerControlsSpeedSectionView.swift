@@ -83,7 +83,12 @@ struct PlayerControlsSpeedSectionView: View {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: Spacing.S3) {
           ForEach(Self.presetSpeeds, id: \.self) { speed in
-            presetChip(speed)
+            PresetChipView(
+              title: formatSpeed(speed),
+              isCurrent: abs(currentSpeed - speed) < 0.001
+            ) {
+              handleSpeedChange(speed)
+            }
           }
         }
       }
@@ -133,24 +138,7 @@ struct PlayerControlsSpeedSectionView: View {
     }
   }
 
-  /// A preset chip: the active speed is marked, for eyes and VoiceOver alike
-  @ViewBuilder
-  private func presetChip(_ speed: Double) -> some View {
-    let isCurrent = abs(currentSpeed - speed) < 0.001
-    Button {
-      handleSpeedChange(speed)
-    } label: {
-      Text(formatSpeed(speed))
-        .bpFont(.subheadline)
-        .fontWeight(isCurrent ? .bold : .regular)
-        .padding(.horizontal, Spacing.S3)
-        .frame(minWidth: 44, minHeight: 44)
-    }
-    .buttonStyle(.bordered)
-    .tint(isCurrent ? theme.linkColor : theme.secondaryColor)
-    .accessibilityAddTraits(isCurrent ? .isSelected : [])
-  }
-
+  /// The chip itself lives in `PresetChipView`, shared with the EQ section
   @ViewBuilder
   private func quickSpeedButton(speed: Double) -> some View {
     Button {

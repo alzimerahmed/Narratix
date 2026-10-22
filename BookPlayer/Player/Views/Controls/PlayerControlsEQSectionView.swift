@@ -31,7 +31,12 @@ struct PlayerControlsEQSectionView: View {
       ScrollView(.horizontal, showsIndicators: false) {
         HStack(spacing: Spacing.S3) {
           ForEach(EQPreset.allCases) { preset in
-            presetChip(preset)
+            PresetChipView(
+              title: preset.titleKey.localized,
+              isCurrent: selectedPreset == preset
+            ) {
+              handlePresetChange(preset)
+            }
           }
         }
       }
@@ -42,8 +47,12 @@ struct PlayerControlsEQSectionView: View {
         .foregroundStyle(theme.primaryColor)
         .tint(theme.linkColor)
         /// Voice boost stacks on a preset chain — `.off` renders nothing, so
-        /// the toggle is disabled there rather than implying it acts alone
+        /// the toggle is disabled there rather than implying it acts alone;
+        /// the hint says WHY, a disabled control can't
         .disabled(selectedPreset == .off)
+        .accessibilityHint(
+          selectedPreset == .off ? "settings_voiceboost_disabled_hint" : ""
+        )
 
       Text("settings_voiceboost_description")
         .bpFont(.caption)
@@ -53,23 +62,6 @@ struct PlayerControlsEQSectionView: View {
     }
   }
 
-  /// A preset chip: the active preset is marked, for eyes and VoiceOver alike
-  @ViewBuilder
-  private func presetChip(_ preset: EQPreset) -> some View {
-    let isCurrent = selectedPreset == preset
-    Button {
-      handlePresetChange(preset)
-    } label: {
-      Text(preset.titleKey.localized)
-        .bpFont(.subheadline)
-        .fontWeight(isCurrent ? .bold : .regular)
-        .padding(.horizontal, Spacing.S3)
-        .frame(minWidth: 44, minHeight: 44)
-    }
-    .buttonStyle(.bordered)
-    .tint(isCurrent ? theme.linkColor : theme.secondaryColor)
-    .accessibilityAddTraits(isCurrent ? .isSelected : [])
-  }
 }
 
 #Preview {
