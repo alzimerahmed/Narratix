@@ -88,14 +88,14 @@ final class ListeningStateFilterTests: XCTestCase {
   }
 
   private func filterPaths(for state: ListeningState) -> [String] {
-    sut.filterContents(
+    (sut.filterContents(
       at: nil,
-      query: "",
-      scope: .all,
+      query: nil,
+      scope: nil,
       listeningState: state,
       limit: nil,
       offset: nil
-    ).map(\.relativePath)
+    ) ?? []).map(\.relativePath)
   }
 
   func testListeningStateFiltersPartitionTheLibrary() {

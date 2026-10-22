@@ -26,7 +26,7 @@ final class ListeningQueueServiceTests: XCTestCase {
     libraryService.setup(dataManager: dataManager, audioMetadataService: AudioMetadataService())
     _ = libraryService.getLibrary()
     sut = ListeningQueueService()
-    sut.setup(dataManager: dataManager, libraryService: libraryService)
+    sut.setup(dataManager: dataManager)
   }
 
   private func addBook(_ title: String) -> Book {
