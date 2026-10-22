@@ -332,6 +332,13 @@ final class StorageViewModel: StorageViewModelProtocol, BPLogger {
           ? simpleItem.map { self.syncService.getDownloadState(for: $0) }
           : nil
 
+        /// Offload needs evidence of a copy to come back to — `.downloaded`
+        /// alone only proves the file is local. A synced item carries the
+        /// file's remote URL; a media-server item streams from its link
+        let hasRemoteCopy =
+          simpleItem?.remoteURL != nil
+          || simpleItem?.externalResources?.streamingResource != nil
+
         let storageItem = StorageItem(
           title: bookTitle,
           fileURL: fileURL,
@@ -339,7 +346,7 @@ final class StorageViewModel: StorageViewModelProtocol, BPLogger {
           size: fileAttributes[FileAttributeKey.size] as? Int64 ?? 0,
           showWarning: fetchedTitle == nil && self.shouldShowWarning(for: currentRelativePath),
           downloadState: downloadState,
-          canOffload: downloadState == .downloaded
+          canOffload: downloadState == .downloaded && hasRemoteCopy
         )
 
         items.append(storageItem)
