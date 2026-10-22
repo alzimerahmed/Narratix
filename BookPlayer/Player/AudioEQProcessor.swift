@@ -240,7 +240,7 @@ enum EQTap {
     let specs = UnsafeMutablePointer<EQBandSpec>.allocate(capacity: bands.count)
     specs.initialize(from: bands, count: bands.count)
     let coefficients = UnsafeMutablePointer<EQBiquadCoefficients>.allocate(capacity: bands.count)
-    coefficients.initialize(repeating: .identity, count: bands.count)
+    coefficients.initialize(repeating: EQBiquad.identity, count: bands.count)
     let states = UnsafeMutablePointer<EQBiquadState>.allocate(capacity: bands.count * eqMaxChannels)
     states.initialize(repeating: EQBiquadState(s1: 0, s2: 0), count: bands.count * eqMaxChannels)
     let context = UnsafeMutablePointer<EQTapContext>.allocate(capacity: 1)
@@ -253,16 +253,17 @@ enum EQTap {
       states: states
     ))
 
-    var callbacks = MTAudioProcessingTapCallbacks()
-    callbacks.version = kMTAudioProcessingTapCallbacksVersion_0
-    callbacks.clientInfo = UnsafeMutableRawPointer(context)
-    callbacks.`init` = eqTapInit
-    callbacks.finalize = eqTapFinalize
-    callbacks.prepare = eqTapPrepare
-    callbacks.unprepare = eqTapUnprepare
-    callbacks.process = eqTapProcess
+    var callbacks = MTAudioProcessingTapCallbacks(
+      version: kMTAudioProcessingTapCallbacksVersion_0,
+      clientInfo: UnsafeMutableRawPointer(context),
+      init: eqTapInit,
+      finalize: eqTapFinalize,
+      prepare: eqTapPrepare,
+      unprepare: eqTapUnprepare,
+      process: eqTapProcess
+    )
 
-    var tapReference: Unmanaged<MTAudioProcessingTap>?
+    var tapReference: MTAudioProcessingTap?
     let status = MTAudioProcessingTapCreate(
       kCFAllocatorDefault,
       &callbacks,
@@ -270,7 +271,7 @@ enum EQTap {
       &tapReference
     )
 
-    guard status == noErr, let tap = tapReference?.takeRetainedValue() else {
+    guard status == noErr, let tap = tapReference else {
       specs.deallocate()
       coefficients.deallocate()
       states.deallocate()
