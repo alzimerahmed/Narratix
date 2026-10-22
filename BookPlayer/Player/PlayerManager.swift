@@ -40,10 +40,12 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   private let audioEQProcessor: AudioEQProcessing
   /// In-flight `applyAudioEffects` rebuild — a new settings change cancels the
   /// pending one so last-tap-wins, never last-task-completes
+  @MainActor
   private var audioEffectsTask: Task<Void, Never>?
   /// Bumped on every `applyAudioEffects`: `loadPlayerItem` attaches the mix it
   /// built only when the counter is unchanged, so a mid-load settings change
   /// can't be overwritten by the load's now-stale build
+  @MainActor
   private var audioEffectsGeneration = 0
   /// Last time the user touched a transport action, the position they were at,
   /// and which item it was on: "when did I fall asleep" data for the pause-time
@@ -1604,6 +1606,7 @@ extension PlayerManager {
   /// (a brief render restart is possible); nil takes EQ back off cleanly.
   /// Not on `PlayerManagerProtocol`: the watch player is a separate class and
   /// EQ is iOS-only.
+  @MainActor
   func applyAudioEffects() {
     guard let playerItem else { return }
     /// Invalidates any mix build `loadPlayerItem` still has in flight — the
