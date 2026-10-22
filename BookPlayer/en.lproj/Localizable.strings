@@ -598,6 +598,8 @@
 "transfer_server_web_queue_empty" = "Waiting for files…";
 "transfer_server_web_skipped" = "Skipped unsupported files: %d";
 "transfer_title" = "Transfer from Computer";
+"transfer_first_run_title" = "A server on this phone";
+"transfer_first_run_description" = "This screen starts a temporary web server on this phone — nothing leaves your Wi-Fi network. Open the address it shows in a browser on a computer on the same network; it listens on port 80, or 8080 when 80 is taken. Drop your book files there, and keep this screen open until they arrive.";
 "transfer_instructions" = "On a computer on the same network, open this address in a browser:";
 "transfer_no_address" = "Connect to Wi‑Fi to receive files from a computer.";
 "transfer_footer" = "Keep this screen open while uploading.";

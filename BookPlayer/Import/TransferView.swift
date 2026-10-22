@@ -25,6 +25,10 @@ struct TransferView: View {
   @State private var showsCopied = false
   /// Bumped by every Copy, so a second tap within the feedback's two seconds gets its own.
   @State private var copies = 0
+  /// The first-run tip, once: a phone running a web server reads unusual on first contact —
+  /// what it is, which ports it listens on, and that the files never leave the Wi-Fi network
+  @AppStorage(Constants.UserDefaults.transferTipSeen) private var transferTipSeen = false
+  @State private var showsFirstRunTip = false
 
   var body: some View {
     ImportConfirmationView(
@@ -45,6 +49,15 @@ struct TransferView: View {
     }
     .onAppear {
       model.start()
+      if !transferTipSeen {
+        transferTipSeen = true
+        showsFirstRunTip = true
+      }
+    }
+    .alert("transfer_first_run_title", isPresented: $showsFirstRunTip) {
+      Button("ok_button") {}
+    } message: {
+      Text("transfer_first_run_description")
     }
     .onDisappear {
       model.sheetDisappeared()
