@@ -194,7 +194,7 @@ final class LibraryBackupService: BPLogger {
 
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd-HHmmss"
-    let folder = DataManager.getBackupFolderURL()
+    let folder = DataManager.getLibraryBackupFolderURL()
     let url = folder.appendingPathComponent("Narratix-Backup-\(formatter.string(from: Date())).json")
     try data.write(to: url)
     return url
@@ -248,13 +248,16 @@ final class LibraryBackupService: BPLogger {
   /// Write the backup's state onto the current library. Anything that can't be
   /// matched is skipped, not created — restore never invents books.
   @discardableResult
-  func restore(_ backup: LibraryBackup) -> LibraryRestoreReport {
+  func restore(_ backup: LibraryBackup) async -> LibraryRestoreReport {
     var updated = 0
     var bookmarksCreated = 0
     var collectionsRestored = 0
     var skipped = [String]()
 
     for record in backup.library.items {
+      /// The writes go through the viewContext — a big library's restore is a
+      /// long run of saves; yield so the UI keeps breathing between records
+      await Task.yield()
       guard let item = resolveItem(uuid: record.uuid, path: record.relativePath) else {
         skipped.append(record.title)
         continue

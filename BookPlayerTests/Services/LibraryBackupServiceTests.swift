@@ -77,7 +77,7 @@ final class LibraryBackupServiceTests: XCTestCase {
 
   // MARK: - Restore
 
-  func testRestoreAppliesProgressNotesAndCollections() throws {
+  func testRestoreAppliesProgressNotesAndCollections() async throws {
     let book = addBook(title: "Dune", duration: 3600)
 
     let backup = LibraryBackup(
@@ -117,7 +117,7 @@ final class LibraryBackupServiceTests: XCTestCase {
       )
     )
 
-    let report = sut.restore(backup)
+    let report = await sut.restore(backup)
 
     XCTAssertEqual(report.itemsUpdated, 1)
     XCTAssertEqual(report.bookmarksCreated, 1)
@@ -241,7 +241,7 @@ final class LibraryBackupServiceTests: XCTestCase {
       )
     )
 
-    let report = sut.restore(backup)
+    let report = await sut.restore(backup)
 
     XCTAssertEqual(report.itemsUpdated, 1)
     XCTAssertEqual(report.skipped, ["Ghost"])
@@ -252,7 +252,7 @@ final class LibraryBackupServiceTests: XCTestCase {
   }
 
   /// Restoring is idempotent: a second run creates no duplicate bookmark
-  func testRestoreIsIdempotent() throws {
+  func testRestoreIsIdempotent() async throws {
     let book = addBook(title: "Dune", duration: 3600)
     let backup = LibraryBackup(
       formatVersion: 1,
@@ -279,8 +279,8 @@ final class LibraryBackupServiceTests: XCTestCase {
       )
     )
 
-    _ = sut.restore(backup)
-    let second = sut.restore(backup)
+    _ = await sut.restore(backup)
+    let second = await sut.restore(backup)
 
     XCTAssertEqual(second.bookmarksCreated, 0)
     XCTAssertEqual(libraryService.getBookmarks(of: .user, relativePath: book.relativePath)?.count, 1)

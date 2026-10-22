@@ -33,9 +33,11 @@ struct LibraryBackupDocument: FileDocument {
 }
 
 /// Backs `BackupView`: export to Files/share sheet, restore from a picked or
-/// saved backup, and the history of backups written into Documents/Backup.
+/// saved backup, and the history of backups the app keeps on device.
 @MainActor
 final class BackupViewModel: ObservableObject, BPLogger {
+  /// Concrete `LibraryService` in, not the protocol — the backup service is
+  /// app-layer and the indirection bought nothing here
   let service: LibraryBackupService
 
   /// Non-nil while the export sheet is up; the document feeds `.fileExporter`
@@ -102,11 +104,11 @@ final class BackupViewModel: ObservableObject, BPLogger {
     }
   }
 
-  func confirmRestore() {
+  func confirmRestore() async {
     guard let backup = restoreConfirmation else { return }
     restoreConfirmation = nil
     isWorking = true
-    let report = service.restore(backup)
+    let report = await service.restore(backup)
     isWorking = false
     lastReport = report
   }

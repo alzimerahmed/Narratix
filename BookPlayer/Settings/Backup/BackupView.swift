@@ -19,6 +19,7 @@ struct BackupView: View {
   }
 
   @EnvironmentObject private var theme: ThemeViewModel
+  @Environment(\.listState) private var listState
 
   var body: some View {
     Form {
@@ -100,7 +101,13 @@ struct BackupView: View {
       ),
       presenting: viewModel.restoreConfirmation
     ) { _ in
-      Button("backup_restore_button") { viewModel.confirmRestore() }
+      Button("backup_restore_button") {
+        Task {
+          await viewModel.confirmRestore()
+          /// Restored notes/series/collections must show without a relaunch
+          listState.reloadAll()
+        }
+      }
       Button("cancel_button", role: .cancel) {}
     } message: { backup in
       Text(
