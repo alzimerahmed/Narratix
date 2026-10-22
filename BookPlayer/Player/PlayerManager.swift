@@ -1833,7 +1833,11 @@ extension PlayerManager {
 
     currentItem.isFinished = flag
 
-    NotificationCenter.default.post(name: .bookEnd, object: nil, userInfo: nil)
+    /// No `.bookEnd` here: the flag toggle isn't the book ending — the mini
+    /// player can flip it mid-playback, and the notification drives the
+    /// end-of-book UI (and SleepTimer's end). The real end-of-book path in
+    /// `updatePlaybackTime` posts it itself, so this also stopped a double
+    /// post on every natural finish.
   }
 
   func currentSpeedPublisher() -> AnyPublisher<Float, Never> {
