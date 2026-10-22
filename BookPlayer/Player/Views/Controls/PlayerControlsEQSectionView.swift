@@ -60,7 +60,6 @@ struct PlayerControlsEQSectionView: View {
         .frame(minWidth: 160, alignment: .leading)
     }
   }
-
 }
 
 #Preview {
