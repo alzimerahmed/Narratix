@@ -21,6 +21,7 @@ struct BookView: View {
   @Environment(\.playingItemParentPath) private var playingItemParentPath
   @Environment(\.playerState) private var playerState
   @Environment(\.listState) private var listState
+  @Environment(\.editMode) private var editMode
   @EnvironmentObject private var theme: ThemeViewModel
 
   /// Set from `LibraryOptionsView`. When true (and the item has one), the row
@@ -71,7 +72,11 @@ struct BookView: View {
       }
       .padding(.leading, Spacing.S)
       Spacer()
-      if let resumeTap, item.percentCompleted > 0, !item.isFinished {
+      /// Hidden in edit mode like the row's guarded VoiceOver resume action
+      if let resumeTap,
+         item.percentCompleted > 0,
+         !item.isFinished,
+         editMode?.wrappedValue.isEditing != true {
         Button(action: resumeTap) {
           Image(systemName: "play.fill")
             .bpFont(.subheadline)
