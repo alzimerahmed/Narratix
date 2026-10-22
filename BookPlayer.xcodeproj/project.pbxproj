@@ -1029,6 +1029,9 @@
 		F9FA95F9A4AE359006A85B88 /* PreferencesAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E6918C51C370C2E89B24F9 /* PreferencesAPI.swift */; };
 		FAE65B9ED5048BF9DD783BEF /* AudiobookShelfOIDCFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75010F6AB433BBEEB7FA9376 /* AudiobookShelfOIDCFlow.swift */; };
 		FBE2B360883B414695A54628 /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C80A51B636D4C7381529505 /* ReviewPromptService.swift */; };
+		C1D0C0E1F2A3B4C5D6E7F823 /* LibraryBackupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D0C0E1F2A3B4C5D6E7F822 /* LibraryBackupService.swift */; };
+		C1D0C0E1F2A3B4C5D6E7F825 /* BackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D0C0E1F2A3B4C5D6E7F824 /* BackupView.swift */; };
+		C1D0C0E1F2A3B4C5D6E7F827 /* BackupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D0C0E1F2A3B4C5D6E7F826 /* BackupViewModel.swift */; };
 		FED52673ACD975949EF9E219 /* PreferencesSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA09FE5A35CEA0B87F83EF3 /* PreferencesSyncServiceTests.swift */; };
 		FED6216CFABF04A613866335 /* WebAuthenticating.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C4C967D9AE1D471C2207C /* WebAuthenticating.swift */; };
 		FEEDBABE0000000000000002 /* SharedWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDBABE0000000000000001 /* SharedWidgetStore.swift */; };
@@ -1253,6 +1256,9 @@
 		377C4C967D9AE1D471C2207C /* WebAuthenticating.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WebAuthenticating.swift; sourceTree = "<group>"; };
 		3ACFA02FA31A0CB0438C5228 /* BPFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPFont.swift; sourceTree = "<group>"; };
 		3C80A51B636D4C7381529505 /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
+		C1D0C0E1F2A3B4C5D6E7F822 /* LibraryBackupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryBackupService.swift; sourceTree = "<group>"; };
+		C1D0C0E1F2A3B4C5D6E7F824 /* BackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupView.swift; sourceTree = "<group>"; };
+		C1D0C0E1F2A3B4C5D6E7F826 /* BackupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupViewModel.swift; sourceTree = "<group>"; };
 		3F6640892E162ABF00356522 /* AudioMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMetadataService.swift; sourceTree = "<group>"; };
 		3F66408C2E172DF500356522 /* MappingModel_v9_to_v10.xcmappingmodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcmappingmodel; path = MappingModel_v9_to_v10.xcmappingmodel; sourceTree = "<group>"; };
 		3F6640932E17386400356522 /* DeleteUserBookData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeleteUserBookData.swift; sourceTree = "<group>"; };
@@ -2453,6 +2459,15 @@
 			path = Storage;
 			sourceTree = "<group>";
 		};
+		C1D0C0E1F2A3B4C5D6E7F821 /* Backup */ = {
+			isa = PBXGroup;
+			children = (
+				C1D0C0E1F2A3B4C5D6E7F824 /* BackupView.swift */,
+				C1D0C0E1F2A3B4C5D6E7F826 /* BackupViewModel.swift */,
+			);
+			path = Backup;
+			sourceTree = "<group>";
+		};
 		4138CE1A26E5B4020014F11E /* Bookmarks */ = {
 			isa = PBXGroup;
 			children = (
@@ -3543,6 +3558,7 @@
 				F65D0F365EDB42F091630D99 /* PlaybackHistoryService.swift */,
 				69343D322133844D000C425E /* VoiceOverService.swift */,
 				3C80A51B636D4C7381529505 /* ReviewPromptService.swift */,
+				C1D0C0E1F2A3B4C5D6E7F822 /* LibraryBackupService.swift */,
 				419723FF21874D5F00AB1190 /* UserActivityManager.swift */,
 				41D39D40215F177D00B65290 /* BookActivityItemProvider.swift */,
 				41B30A32230232D200025D69 /* CarPlayManager.swift */,
@@ -4125,6 +4141,7 @@
 			isa = PBXGroup;
 			children = (
 				41B2A5DF21CCC1F400917584 /* Themes */,
+				C1D0C0E1F2A3B4C5D6E7F821 /* Backup */,
 				41AD3D96221C700100DC41E1 /* Icons */,
 				4124121B26CF289B00B099DB /* Storage */,
 				6304CF682B4C2AB000055285 /* Autoplay */,
@@ -5371,6 +5388,9 @@
 				6356F9C52AC86D9200B7A027 /* BPAppShortcuts.swift in Sources */,
 				69343D332133844D000C425E /* VoiceOverService.swift in Sources */,
 				FBE2B360883B414695A54628 /* ReviewPromptService.swift in Sources */,
+				C1D0C0E1F2A3B4C5D6E7F823 /* LibraryBackupService.swift in Sources */,
+				C1D0C0E1F2A3B4C5D6E7F825 /* BackupView.swift in Sources */,
+				C1D0C0E1F2A3B4C5D6E7F827 /* BackupViewModel.swift in Sources */,
 				6304CF672B4B595400055285 /* SettingsAutoplayViewModel.swift in Sources */,
 				63B4A2FD2E91828B00784A22 /* ItemListView+Sheets.swift in Sources */,
 				DAC6C57CE8A4C436886FFFD6 /* ItemListView+Grid.swift in Sources */,
