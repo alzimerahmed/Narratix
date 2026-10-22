@@ -324,8 +324,8 @@ extension ThinTrackSlider {
     }
   }
 
-  /// The chapters rotor is offered whenever the item has markers, even with the scrubber
-  /// scoped to one chapter — its entries are book-level jumps, not slider positions
+  /// The chapters rotor is offered while the scrubber carries markers — book context only;
+  /// the callers pass none in chapter context, where the track spans a single chapter
   override var accessibilityCustomRotors: [UIAccessibilityCustomRotor]? {
     get {
       guard !chapterMarkers.isEmpty else { return super.accessibilityCustomRotors }
