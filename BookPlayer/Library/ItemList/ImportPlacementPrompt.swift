@@ -257,11 +257,14 @@ struct ImportPlacementPrompt: ViewModifier {
     }
 
     /// The last folder the prompt placed an import into. Skipped when it IS the folder the
-    /// import landed in ("Current playlist" covers that) or one of the imported items — a
-    /// folder can't move into itself
+    /// import landed in ("Current playlist" covers that), one of the imported items, or
+    /// inside one of them — a folder can't move into itself or its own descendant
     if let lastFolder = model.lastPlacementFolder(),
        lastFolder.uuid != placement.node.uuid,
-       !placement.itemUuids.contains(lastFolder.uuid) {
+       !placement.itemUuids.contains(lastFolder.uuid),
+       !model.items(of: placement).contains(where: {
+         lastFolder.relativePath.hasPrefix($0.relativePath + "/")
+       }) {
       Button(String(format: "import_last_folder_button".localized, lastFolder.title)) {
         perform(on: placement) { try model.move(placement, into: lastFolder) }
       }
