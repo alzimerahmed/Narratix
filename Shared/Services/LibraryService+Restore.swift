@@ -163,7 +163,7 @@ extension LibraryService {
       floored
     )
     fetchRequest.fetchLimit = 1
-    if let existing = try? context.fetch(fetchRequest).first, let existing {
+    if let existing = try? context.fetch(fetchRequest).first {
       if let note, existing.note != note {
         existing.note = note
       }
