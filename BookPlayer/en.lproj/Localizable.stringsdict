@@ -140,7 +140,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>zero</key>
         <string>0 days</string>
@@ -169,7 +169,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d bookmark</string>
@@ -180,7 +180,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d collection</string>
@@ -196,7 +196,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d item</string>
@@ -207,7 +207,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d bookmark</string>
@@ -218,7 +218,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d collection</string>
@@ -234,7 +234,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</string>
+        <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>one</key>
         <string>%d record didn't match anything in your library</string>
