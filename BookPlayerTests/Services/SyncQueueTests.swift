@@ -1595,3 +1595,80 @@ extension SyncQueueTests {
     }
   }
 }
+
+// MARK: - User lane holds (Queued Tasks)
+
+extension SyncQueueTests {
+  /// `setLanePaused` writes `UserDefaults.standard`: restore whatever was there so the
+  /// tests never leave a hold behind
+  private func withPreservedPausedLanes(_ work: () async throws -> Void) async rethrows {
+    let key = Constants.UserDefaults.pausedSyncLanes
+    let previous = UserDefaults.standard.stringArray(forKey: key)
+    defer {
+      if let previous {
+        UserDefaults.standard.set(previous, forKey: key)
+      } else {
+        UserDefaults.standard.removeObject(forKey: key)
+      }
+    }
+    try await work()
+  }
+
+  /// A held lane keeps its tasks but must read idle — `handleAppRefresh`'s `laneDrained`
+  /// waits on `isIdle`, and the holds fold into the engine's counts over the store's (the
+  /// store only knows parked tasks)
+  func testQueueCounts_isIdle_underAUserPausedLane() async throws {
+    let service = makeGatedEngine()
+    try await repository.storeTask(parameters: uploadFileParams(id: "u1"))
+
+    try await withPreservedPausedLanes {
+      service.setLanePaused(TaskQueueKey.uploadFile, paused: true)
+      defer { service.setLanePaused(TaskQueueKey.uploadFile, paused: false) }
+
+      let counts = try await awaitCounts(from: service.observeQueueCounts()) {
+        $0.isUserPaused(TaskQueueKey.uploadFile)
+      }
+      XCTAssertEqual(counts.count(in: TaskQueueKey.uploadFile), 1)
+      XCTAssertTrue(counts.isIdle(TaskQueueKey.uploadFile))
+      XCTAssertFalse(counts.isBlocked(TaskQueueKey.uploadFile), "a hold is not a fault")
+    }
+  }
+
+  /// Pause persists and retires the lane's worker (its tasks stay, none parked); resume
+  /// releases the store and runs the lane again
+  func testSetLanePaused_holdsTheLane_andResumeRunsIt() async throws {
+    let service = makeGatedEngine()
+    var params = uploadFileParams(id: "held-1")
+    params["filePath"] = URL(fileURLWithPath: "/nonexistent/\(UUID().uuidString).m4b").absoluteString
+    try await repository.storeTask(parameters: params)
+
+    try await withPreservedPausedLanes {
+      XCTAssertFalse(service.isLanePaused(TaskQueueKey.uploadFile))
+
+      service.setLanePaused(TaskQueueKey.uploadFile, paused: true)
+      XCTAssertTrue(service.isLanePaused(TaskQueueKey.uploadFile))
+      XCTAssertEqual(
+        UserDefaults.standard.stringArray(forKey: Constants.UserDefaults.pausedSyncLanes),
+        [TaskQueueKey.uploadFile]
+      )
+      // A repeat hold is a no-op, not a second entry
+      service.setLanePaused(TaskQueueKey.uploadFile, paused: true)
+      XCTAssertEqual(
+        UserDefaults.standard.stringArray(forKey: Constants.UserDefaults.pausedSyncLanes),
+        [TaskQueueKey.uploadFile]
+      )
+
+      service.setServerLanesEnabled(true)
+      service.wakeUpWorkers()
+      try await Task.sleep(for: .milliseconds(400))
+      let held = await repository.getAllTasks()
+      XCTAssertEqual(held.count, 1, "a held lane must neither run nor drop its tasks")
+      XCTAssertNil(held.first?.pause, "a hold is not a park")
+
+      service.setLanePaused(TaskQueueKey.uploadFile, paused: false)
+      XCTAssertFalse(service.isLanePaused(TaskQueueKey.uploadFile))
+      try await waitForEmptyQueue()
+      service.setServerLanesEnabled(false)
+    }
+  }
+}
