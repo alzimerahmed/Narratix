@@ -232,12 +232,17 @@ final class ListeningStatsService {
     let context = dataManager.getContext()
     let calendar = Calendar.current
 
-    let records: [SimplePlaybackRecord] = context.performAndWait {
-      let fetch = PlaybackRecord.fetchRequest()
+    /// Dictionary fetch of just the date column — a full PlaybackRecord read
+    /// would materialize every row ever recorded to answer "which days"
+    let dates: [Date] = context.performAndWait {
+      let fetch = NSFetchRequest<NSDictionary>(entityName: "PlaybackRecord")
+      fetch.resultType = .dictionaryResultType
+      fetch.propertiesToFetch = ["date"]
       fetch.predicate = NSPredicate(format: "time > 0")
-      return (try? context.fetch(fetch))?.map { SimplePlaybackRecord(from: $0) } ?? []
+      return (try? context.fetch(fetch) as? [[String: Any]])?
+        .compactMap { $0["date"] as? Date } ?? []
     }
 
-    return Array(Set(records.map { calendar.startOfDay(for: $0.date) })).sorted()
+    return Array(Set(dates.map { calendar.startOfDay(for: $0) })).sorted()
   }
 }
