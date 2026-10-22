@@ -16,6 +16,9 @@ import SwiftUI
 /// panel beside the player) provides the navigation stack and the way out.
 struct PlaybackHistoryView: View {
   @StateObject private var model: Self.Model
+  /// Deliberately NOT the ambient theme: this sheet can present from player
+  /// contexts where the environment theme is cover-scoped — its own source
+  /// keeps the timeline on the app theme
   @StateObject private var theme = ThemeViewModel()
 
   /// Called after a session is picked, e.g. to close the sheet the list is in

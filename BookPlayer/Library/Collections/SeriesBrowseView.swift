@@ -19,7 +19,8 @@ struct SeriesBrowseView: View {
   }
 
   @StateObject private var model: Self.Model
-  @StateObject private var theme = ThemeViewModel()
+  /// Ambient — the browse sheet's environment already carries it
+  @EnvironmentObject private var theme: ThemeViewModel
   @State private var segment: Segment = .series
 
   @Environment(\.loadingState) private var loadingState
@@ -67,7 +68,6 @@ struct SeriesBrowseView: View {
         }
       }
     }
-    .environmentObject(theme)
     .background(theme.systemBackgroundColor)
     .navigationTitle("browse_title")
     .navigationBarTitleDisplayMode(.inline)
@@ -85,7 +85,7 @@ struct SeriesBrowseView: View {
           Image(systemName: "xmark")
             .foregroundStyle(theme.linkColor)
         }
-        .accessibilityLabel("done_title")
+        .accessibilityLabel("close_title")
       }
     }
     .task {

@@ -16,7 +16,8 @@ import SwiftUI
 struct ItemGroupDetailView: View {
   let group: SimpleItemGroup
   @StateObject private var model: Self.Model
-  @StateObject private var theme = ThemeViewModel()
+  /// Ambient — pushed inside the browse sheet, which carries the theme
+  @EnvironmentObject private var theme: ThemeViewModel
 
   @Environment(\.loadingState) private var loadingState
 
@@ -34,7 +35,6 @@ struct ItemGroupDetailView: View {
       }
       .listRowBackground(theme.secondarySystemBackgroundColor)
     }
-    .environmentObject(theme)
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle(group.name)
     .navigationBarTitleDisplayMode(.inline)

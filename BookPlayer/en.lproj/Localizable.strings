@@ -115,6 +115,8 @@
 "eq_preset_treble" = "Treble";
 "settings_voiceboost_title" = "Voice boost";
 "settings_voiceboost_description" = "Emphasizes speech frequencies so quiet or muffled narrators stay clear.";
+/* used in: player equalizer; why the voice-boost toggle is greyed out */
+"settings_voiceboost_disabled_hint" = "Voice boost stacks on an equalizer preset — pick a preset other than Off to use it";
 "player_volume_title" = "Volume";
 "player_sleep_title" = "Pause playback";
 "sleep_chapter_option_title" = "End of current chapter";
@@ -632,6 +634,8 @@
 "clear_did_not_finish_title" = "Clear did not finish";
 "notes_title" = "Notes";
 "note_placeholder" = "Notes about this book";
+/* used in: item details; VoiceOver hint for the notes text field */
+"note_editor_hint" = "Free-form notes about this book, saved with its details";
 "queue_title" = "Up Next";
 "queue_empty_title" = "Nothing queued";
 "queue_empty_description" = "Add books from a book's options menu to plan what plays next.";

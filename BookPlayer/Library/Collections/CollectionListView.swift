@@ -16,7 +16,9 @@ import SwiftUI
 /// Same contract as `ListeningQueueView`.
 struct CollectionListView: View {
   @StateObject private var model: Self.Model
-  @StateObject private var theme = ThemeViewModel()
+  /// Ambient: the presenting sheet's environment already carries it —
+  /// a second source here would fork the theme
+  @EnvironmentObject private var theme: ThemeViewModel
 
   /// "New collection" name input — its own alert, on its own binding
   @State private var showingCreateAlert = false
@@ -55,7 +57,6 @@ struct CollectionListView: View {
       }
       .listRowBackground(theme.secondarySystemBackgroundColor)
     }
-    .environmentObject(theme)
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("collections_title")
     .navigationBarTitleDisplayMode(.inline)
@@ -112,7 +113,7 @@ struct CollectionListView: View {
           Image(systemName: "xmark")
             .foregroundStyle(theme.linkColor)
         }
-        .accessibilityLabel("done_title")
+        .accessibilityLabel("close_title")
       }
       ToolbarItem(placement: .primaryAction) {
         Button {

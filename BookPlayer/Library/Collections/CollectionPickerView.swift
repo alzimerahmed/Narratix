@@ -16,7 +16,8 @@ import SwiftUI
 /// "New Collection" creates the shelf AND adds the selection in one step.
 struct CollectionPickerView: View {
   @StateObject private var model: Self.Model
-  @StateObject private var theme = ThemeViewModel()
+  /// Ambient — the picker's sheet carries the environment's theme already
+  @EnvironmentObject private var theme: ThemeViewModel
 
   @State private var showingCreateAlert = false
   @State private var createName = ""
@@ -66,7 +67,6 @@ struct CollectionPickerView: View {
       }
       .listRowBackground(theme.secondarySystemBackgroundColor)
     }
-    .environmentObject(theme)
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle("collection_picker_title")
     .navigationBarTitleDisplayMode(.inline)

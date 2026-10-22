@@ -86,6 +86,8 @@ struct ItemDetailsView: View {
             .frame(minHeight: Spacing.M * 4)
             .foregroundStyle(theme.primaryColor)
             .accessibilityLabel(Text("notes_title"))
+            /// What the field is for — the visual placeholder is hidden
+            .accessibilityHint("note_editor_hint")
         }
       } header: {
         Text("notes_title")

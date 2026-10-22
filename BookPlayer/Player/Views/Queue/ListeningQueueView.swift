@@ -15,6 +15,9 @@ import SwiftUI
 /// `BookmarksView`.
 struct ListeningQueueView: View {
   @StateObject private var model: Self.Model
+  /// Deliberately NOT the ambient theme: this sheet can present from player
+  /// contexts where the environment theme is cover-scoped — its own source
+  /// keeps the queue on the app theme
   @StateObject private var theme = ThemeViewModel()
 
   /// Reordering needs the list's edit mode; swipe-to-remove works without it

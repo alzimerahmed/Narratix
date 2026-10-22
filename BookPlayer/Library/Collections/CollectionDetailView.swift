@@ -16,7 +16,8 @@ import SwiftUI
 struct CollectionDetailView: View {
   let collection: SimpleCollection
   @StateObject private var model: Self.Model
-  @StateObject private var theme = ThemeViewModel()
+  /// Ambient — pushed inside the collections sheet, which carries the theme
+  @EnvironmentObject private var theme: ThemeViewModel
 
   @Environment(\.loadingState) private var loadingState
 
@@ -43,7 +44,6 @@ struct CollectionDetailView: View {
       }
       .listRowBackground(theme.secondarySystemBackgroundColor)
     }
-    .environmentObject(theme)
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
     .navigationTitle(collection.title)
     .navigationBarTitleDisplayMode(.inline)
