@@ -259,7 +259,11 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
 
       var failed = 0
       for (index, file) in plan.enumerated() {
-        if Task.isCancelled { break }
+        /// A dismiss deletes staging — without this check the create below
+        /// recreates it for a batch the user already cancelled
+        if Task.isCancelled || !FileManager.default.fileExists(atPath: holding.path) {
+          break
+        }
         let destination = holding.appendingPathComponent(file.relativePath)
         do {
           try FileManager.default.createDirectory(
@@ -291,6 +295,18 @@ final class WebDAVBrowserViewModel: ObservableObject, BPLogger {
           failed += 1
           Self.logger.error("WebDAV download failed for \(name): \(error.localizedDescription)")
         }
+      }
+
+      /// Cancelled mid-batch, or staging deleted under the loop: the partial
+      /// files never reach the import — clean up and stay in the browser
+      guard !Task.isCancelled,
+        FileManager.default.fileExists(atPath: holding.path)
+      else {
+        try? FileManager.default.removeItem(at: holding)
+        self.stagingRoot = nil
+        self.phase = .browse
+        self.downloadProgress = nil
+        return
       }
 
       /// Nothing got down — report and stay in the browser
