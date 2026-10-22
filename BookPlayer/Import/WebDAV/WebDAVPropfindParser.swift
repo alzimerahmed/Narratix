@@ -38,6 +38,8 @@ final class WebDAVPropfindParser: NSObject, XMLParserDelegate {
     let parser = XMLParser(data: data)
     parser.delegate = self
     parser.shouldProcessNamespaces = false
+    /// Untrusted server XML — never resolve external entities
+    parser.externalEntityResolvingPolicy = .never
     parser.parse()
     return entries
   }
@@ -113,14 +115,18 @@ final class WebDAVPropfindParser: NSObject, XMLParserDelegate {
       entryPath != basePath + "/"
     else { return }
 
-    let name = currentDisplayName
+    /// Server-controlled text becomes a path component under the staging
+    /// folder — take only its last segment so a `displayname` can't carry
+    /// separators or `..` into the filesystem
+    let displayName = currentDisplayName
       ?? url.lastPathComponent.removingPercentEncoding
       ?? url.lastPathComponent
+    let name = (displayName as NSString).lastPathComponent
 
     entries.append(
       WebDAVEntry(
         url: url,
-        name: name,
+        name: name.isEmpty || name == "." || name == ".." ? url.lastPathComponent : name,
         isCollection: currentIsCollection,
         contentLength: currentContentLength
       )

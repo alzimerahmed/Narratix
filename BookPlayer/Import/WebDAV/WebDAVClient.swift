@@ -33,6 +33,9 @@ enum WebDAVError: LocalizedError {
   case notFound
   case serverError(Int)
   case notWebDAV
+  /// The PROPFIND body exceeded the size cap — a listing is one directory's
+  /// metadata; a huge body isn't a listing worth holding or parsing
+  case listingTooLarge
 
   var errorDescription: String? {
     switch self {
@@ -46,6 +49,8 @@ enum WebDAVError: LocalizedError {
       return String.localizedStringWithFormat("webdav_error_server".localized, code)
     case .notWebDAV:
       return "webdav_error_not_webdav".localized
+    case .listingTooLarge:
+      return "webdav_error_too_large".localized
     }
   }
 }
@@ -146,6 +151,10 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
 
   // MARK: - Listing
 
+  /// A Depth:1 listing is one directory's metadata — a body past this cap is
+  /// dropped, not parsed
+  private static let maxListingSize = 16 * 1024 * 1024
+
   /// PROPFIND Depth:1 — the entries inside `url`, excluding the collection itself
   func listDirectory(at url: URL) async throws -> [WebDAVEntry] {
     var directory = url
@@ -160,9 +169,9 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
       body: Self.propfindBody.data(using: .utf8)
     )
 
-    let (data, response): (Data, URLResponse)
+    let (bytes, response): (URLSession.AsyncBytes, URLResponse)
     do {
-      (data, response) = try await session.data(for: request)
+      (bytes, response) = try await session.bytes(for: request)
     } catch {
       throw BookPlayerError.networkError(error.localizedDescription)
     }
@@ -181,6 +190,25 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
       throw WebDAVError.serverError(http.statusCode)
     default:
       throw WebDAVError.notWebDAV
+    }
+
+    /// The declared size is checked up front; a chunked/understated body hits
+    /// the cap below mid-read instead of filling memory first
+    guard http.expectedContentLength <= Int64(Self.maxListingSize) else {
+      throw WebDAVError.listingTooLarge
+    }
+
+    var data = Data()
+    do {
+      for try await byte in bytes {
+        data.append(byte)
+        if data.count > Self.maxListingSize { break }
+      }
+    } catch {
+      throw BookPlayerError.networkError(error.localizedDescription)
+    }
+    guard data.count <= Self.maxListingSize else {
+      throw WebDAVError.listingTooLarge
     }
 
     let parser = WebDAVPropfindParser(baseURL: directory)
