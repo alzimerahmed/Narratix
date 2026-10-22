@@ -499,7 +499,9 @@ public final class LibraryService: LibraryServiceProtocol, BPLogger, @unchecked 
         lastPlayDate: dictionary["lastPlayDate"] as? Date,
         type: type,
         uuid: uuid,
-        externalResources: externalResources?.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) })
+        externalResources: externalResources?.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) }),
+        didNotFinish: dictionary["didNotFinish"] as? Bool ?? false,
+        note: dictionary["note"] as? String
       )
     })
   }
@@ -541,7 +543,8 @@ public final class LibraryService: LibraryServiceProtocol, BPLogger, @unchecked 
   private func buildFilterPredicate(
     relativePath: String?,
     query: String?,
-    scope: SimpleItemType?
+    scope: SimpleItemType?,
+    listeningState: ListeningState? = nil
   ) -> NSPredicate {
     var predicates = [NSPredicate]()
 
@@ -581,6 +584,73 @@ public final class LibraryService: LibraryServiceProtocol, BPLogger, @unchecked 
       predicates.append(
         NSPredicate(format: "%K BEGINSWITH %@", #keyPath(LibraryItem.relativePath), relativePath + "/")
       )
+    }
+
+    /// Listening-state filter (library "New/Started/Finished/DNF" triage). Optional
+    /// booleans are NULL on pre-v13 rows, so "not marked" has to accept nil AND false —
+    /// `x != YES` would drop NULL rows in SQLite.
+    switch listeningState {
+    case .didNotFinish:
+      predicates.append(
+        NSPredicate(format: "%K == YES", #keyPath(LibraryItem.didNotFinish))
+      )
+    case .finished:
+      predicates.append(
+        NSPredicate(format: "%K == YES", #keyPath(LibraryItem.isFinished))
+      )
+      predicates.append(
+        NSPredicate(
+          format: "%K == NO OR %K == nil",
+          #keyPath(LibraryItem.didNotFinish),
+          #keyPath(LibraryItem.didNotFinish)
+        )
+      )
+    case .inProgress:
+      predicates.append(
+        NSPredicate(
+          format: "%K == NO OR %K == nil",
+          #keyPath(LibraryItem.didNotFinish),
+          #keyPath(LibraryItem.didNotFinish)
+        )
+      )
+      predicates.append(
+        NSPredicate(
+          format: "%K == NO OR %K == nil",
+          #keyPath(LibraryItem.isFinished),
+          #keyPath(LibraryItem.isFinished)
+        )
+      )
+      predicates.append(
+        NSPredicate(
+          format: "%K > 0 OR %K > 0",
+          #keyPath(LibraryItem.currentTime),
+          #keyPath(LibraryItem.percentCompleted)
+        )
+      )
+    case .notStarted:
+      predicates.append(
+        NSPredicate(
+          format: "%K == NO OR %K == nil",
+          #keyPath(LibraryItem.didNotFinish),
+          #keyPath(LibraryItem.didNotFinish)
+        )
+      )
+      predicates.append(
+        NSPredicate(
+          format: "%K == NO OR %K == nil",
+          #keyPath(LibraryItem.isFinished),
+          #keyPath(LibraryItem.isFinished)
+        )
+      )
+      predicates.append(
+        NSPredicate(
+          format: "%K == 0 AND %K == 0",
+          #keyPath(LibraryItem.currentTime),
+          #keyPath(LibraryItem.percentCompleted)
+        )
+      )
+    case .none:
+      break
     }
 
     return NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
@@ -1901,6 +1971,44 @@ extension LibraryService {
     return parseFetchedItems(from: results, context: context)
   }
 
+  /// `filterContents` with a listening-state filter (New/Started/Finished/DNF
+  /// triage). Not on `LibraryServiceProtocol` — extending the protocol would
+  /// invalidate the generated mock — so this stays a concrete-type API.
+  public func filterContents(
+    at relativePath: String?,
+    query: String?,
+    scope: SimpleItemType?,
+    listeningState: ListeningState?,
+    limit: Int?,
+    offset: Int?
+  ) -> [SimpleLibraryItem]? {
+    let fetchRequest: NSFetchRequest<NSDictionary> = NSFetchRequest<NSDictionary>(entityName: "LibraryItem")
+    fetchRequest.propertiesToFetch = SimpleLibraryItem.fetchRequestProperties
+    fetchRequest.resultType = .dictionaryResultType
+    fetchRequest.predicate = buildFilterPredicate(
+      relativePath: relativePath,
+      query: query,
+      scope: scope,
+      listeningState: listeningState
+    )
+
+    let sort = NSSortDescriptor(key: #keyPath(LibraryItem.lastPlayDate), ascending: false)
+    fetchRequest.sortDescriptors = [sort]
+
+    if let limit = limit {
+      fetchRequest.fetchLimit = limit
+    }
+
+    if let offset = offset {
+      fetchRequest.fetchOffset = offset
+    }
+
+    let context = dataManager.getContext()
+    let results = try? context.fetch(fetchRequest) as? [[String: Any]]
+
+    return parseFetchedItems(from: results, context: context)
+  }
+
   public func searchAllBooks(
     query: String?,
     limit: Int?,
@@ -2955,6 +3063,10 @@ extension LibraryService {
     ]
 
     book.isFinished = flag
+    /// Finished and abandoned are exclusive: an explicit "finished" clears DNF
+    if flag {
+      book.didNotFinish = false
+    }
     // To avoid progress display side-effects
     if !flag,
       book.currentTime.rounded(.up) == book.duration.rounded(.up)
@@ -2972,6 +3084,10 @@ extension LibraryService {
 
   func markAsFinished(flag: Bool, folder: Folder) {
     folder.isFinished = flag
+    /// Finished and abandoned are exclusive: an explicit "finished" clears DNF
+    if flag {
+      folder.didNotFinish = false
+    }
 
     metadataPassthroughPublisher.send([
       #keyPath(LibraryItem.uuid): folder.uuid,
@@ -2982,6 +3098,68 @@ extension LibraryService {
     guard let itemIdentifiers = getItemIdentifiers(in: folder.relativePath) else { return }
 
     itemIdentifiers.forEach({ self.markAsFinished(flag: flag, relativePath: $0) })
+  }
+
+  /// User-marked "did not finish" — triage for abandoned items, kept apart from
+  /// `isFinished` so the upstream binary state and its sync payloads stay untouched.
+  /// Concrete-type API like the listening-state `filterContents` overload.
+  public func markAsDidNotFinish(flag: Bool, relativePath: String) {
+    guard let item = self.getItem(with: relativePath) else { return }
+
+    switch item {
+    case let folder as Folder:
+      self.markAsDidNotFinish(flag: flag, folder: folder)
+    case let book as Book:
+      self.markAsDidNotFinish(flag: flag, book: book)
+    default:
+      break
+    }
+  }
+
+  func markAsDidNotFinish(flag: Bool, book: Book) {
+    book.didNotFinish = flag
+    /// DNF and finished are exclusive from the DNF side too: abandoning a book
+    /// previously marked finished takes it out of the finished group
+    if flag {
+      book.isFinished = false
+    }
+
+    metadataPassthroughPublisher.send([
+      #keyPath(LibraryItem.relativePath): book.relativePath!,
+      #keyPath(LibraryItem.isFinished): book.isFinished,
+      #keyPath(LibraryItem.didNotFinish): book.didNotFinish,
+      #keyPath(LibraryItem.uuid): book.uuid,
+    ])
+
+    self.dataManager.saveContext()
+  }
+
+  func markAsDidNotFinish(flag: Bool, folder: Folder) {
+    folder.didNotFinish = flag
+    if flag {
+      folder.isFinished = false
+    }
+
+    metadataPassthroughPublisher.send([
+      #keyPath(LibraryItem.relativePath): folder.relativePath!,
+      #keyPath(LibraryItem.isFinished): folder.isFinished,
+      #keyPath(LibraryItem.didNotFinish): folder.didNotFinish,
+      #keyPath(LibraryItem.uuid): folder.uuid,
+    ])
+
+    guard let itemIdentifiers = getItemIdentifiers(in: folder.relativePath) else { return }
+
+    itemIdentifiers.forEach({ self.markAsDidNotFinish(flag: flag, relativePath: $0) })
+  }
+
+  /// The item's free-form note (book-level memo; `nil` clears it)
+  public func updateNote(_ note: String?, at relativePath: String) {
+    guard let item = self.getItem(with: relativePath) else { return }
+
+    let cleaned = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+    item.note = (cleaned?.isEmpty == false) ? cleaned : nil
+
+    self.dataManager.saveContext()
   }
 
   public func jumpToStart(relativePath: String) {

@@ -39,7 +39,11 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
   /// ignoreLibraryItem (resources held HERE carry libraryItem == nil) — preserve that
   /// invariant when constructing snapshots.
   public let externalResources: [SimpleExternalResource]?
-  
+  /// User-marked "did not finish" — a triage state distinct from `isFinished`
+  public let didNotFinish: Bool
+  /// Free-form note attached to the item itself (unlike `SimpleBookmark.note`)
+  public let note: String?
+
   public var progress: Double {
     if type == .folder,
        duration == 0 {
@@ -59,6 +63,7 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     && lhs.details == rhs.details
     && lhs.percentCompleted == rhs.percentCompleted
     && lhs.isFinished == rhs.isFinished
+    && lhs.didNotFinish == rhs.didNotFinish
     && lhs.type.rawValue == rhs.type.rawValue
     && lhs.orderRank == rhs.orderRank
     && lhs.uuid == rhs.uuid
@@ -86,7 +91,9 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     "originalFileName",
     "lastPlayDate",
     "type",
-    "uuid"
+    "uuid",
+    "didNotFinish",
+    "note"
   ]
 
   public func hash(into hasher: inout Hasher) {
@@ -114,7 +121,9 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     lastPlayDate: Date?,
     type: SimpleItemType,
     uuid: String,
-    externalResources: [SimpleExternalResource]? = nil
+    externalResources: [SimpleExternalResource]? = nil,
+    didNotFinish: Bool = false,
+    note: String? = nil
   ) {
     self.title = title
     self.details = details
@@ -134,6 +143,8 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     self.type = type
     self.uuid = uuid
     self.externalResources = externalResources
+    self.didNotFinish = didNotFinish
+    self.note = note
   }
 }
 
@@ -155,6 +166,8 @@ extension SimpleLibraryItem {
     self.originalFileName = item.originalFileName
     self.lastPlayDate = item.lastPlayDate
     self.uuid = item.uuid
+    self.didNotFinish = item.didNotFinish
+    self.note = item.note
 
     self.externalResources = item.resourcesArray.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) })
 

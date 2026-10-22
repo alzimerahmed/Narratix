@@ -36,6 +36,52 @@ extension LibraryItem {
   @NSManaged public var type: ItemType
   @NSManaged public var hardcoverBook: HardcoverBook?
   @NSManaged public var externalResources: NSSet?
+  /// User-marked "did not finish" — distinct from `isFinished`, and independent
+  /// of progress: an abandoned book keeps its position. Reads false on pre-v13 rows.
+  @NSManaged public var didNotFinish: Bool
+  /// Free-form note about the item (book-level memo, unlike the time-anchored
+  /// `Bookmark.note`)
+  @NSManaged public var note: String?
+  @NSManaged public var playbackSessions: NSSet?
+  @NSManaged public var listeningQueueItems: NSSet?
+}
+
+// MARK: Generated accessors for playbackSessions
+extension LibraryItem {
+  @objc(addPlaybackSessionsObject:)
+  @NSManaged public func addToPlaybackSessions(_ value: PlaybackSession)
+
+  @objc(removePlaybackSessionsObject:)
+  @NSManaged public func removeFromPlaybackSessions(_ value: PlaybackSession)
+
+  @objc(addPlaybackSessions:)
+  @NSManaged public func addToPlaybackSessions(_ values: NSSet)
+
+  @objc(removePlaybackSessions:)
+  @NSManaged public func removeFromPlaybackSessions(_ values: NSSet)
+
+  public var sessionsArray: [PlaybackSession] {
+    return playbackSessions?.allObjects as? [PlaybackSession] ?? []
+  }
+}
+
+// MARK: Generated accessors for listeningQueueItems
+extension LibraryItem {
+  @objc(addListeningQueueItemsObject:)
+  @NSManaged public func addToListeningQueueItems(_ value: ListeningQueueItem)
+
+  @objc(removeListeningQueueItemsObject:)
+  @NSManaged public func removeFromListeningQueueItems(_ value: ListeningQueueItem)
+
+  @objc(addListeningQueueItems:)
+  @NSManaged public func addToListeningQueueItems(_ values: NSSet)
+
+  @objc(removeListeningQueueItems:)
+  @NSManaged public func removeFromListeningQueueItems(_ values: NSSet)
+
+  public var queueItemsArray: [ListeningQueueItem] {
+    return listeningQueueItems?.allObjects as? [ListeningQueueItem] ?? []
+  }
 }
 
 // MARK: Generated accessors for externalResources
