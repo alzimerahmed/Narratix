@@ -379,7 +379,8 @@ extension ThinTrackSlider {
       let position = maximumValue > minimumValue
         ? Double((value - minimumValue) / (maximumValue - minimumValue))
         : 0
-      switch predicate.direction {
+      // Renamed on the iOS 26 SDK (was `direction`)
+      switch predicate.searchDirection {
       case .next:
         // One before the target, so the step below lands on the first chapter past it
         currentIndex = elements.lastIndex { $0.marker.fraction <= position } ?? -1
@@ -392,7 +393,7 @@ extension ThinTrackSlider {
     }
 
     let index: Int
-    switch predicate.direction {
+    switch predicate.searchDirection {
     case .next: index = min(currentIndex + 1, elements.count - 1)
     case .previous: index = max(currentIndex - 1, 0)
     @unknown default: index = currentIndex
