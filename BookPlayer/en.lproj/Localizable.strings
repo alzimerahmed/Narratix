@@ -734,10 +734,11 @@
 "backup_saved_title" = "On this device";
 "backup_saved_restore_hint" = "Restores from this backup";
 "backup_restore_confirm_title" = "Restore this backup?";
-"backup_restore_confirm_description" = "This applies %d items, %d bookmarks and %d collections to your library. Items the backup knows but your library doesn't are skipped.";
+/* Positional args shadowed by the stringsdict plurals (items/bookmarks/collections) */
+"backup_restore_confirm_description" = "This applies %1$d items, %2$d bookmarks and %3$d collections to your library. Items the backup knows but your library doesn't are skipped.";
 "backup_report_title" = "Restore finished";
-"backup_report_description" = "Updated %d items, created %d bookmarks, restored %d collections.";
-"backup_report_skipped" = " %d records didn't match anything in your library (for example: %@).";
+"backup_report_description" = "Updated %1$d items, created %2$d bookmarks, restored %3$d collections.";
+"backup_report_skipped" = "%d records didn't match anything in your library (for example: %@).";
 "backup_error_empty" = "There's nothing in the library to back up yet.";
 "backup_error_version" = "This backup was made by a newer app version (format %d) and can't be read.";
 "backup_error_unreadable" = "That file isn't a readable library backup.";

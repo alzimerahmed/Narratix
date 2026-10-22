@@ -140,7 +140,7 @@
       <dict>
         <key>NSStringFormatSpecTypeKey</key>
         <string>NSStringPluralRuleType</string>
-        <key>NSStringFormatValueTypeKey</key>
+        <key>NSStringFormatValueTypeKey</string>
         <string>d</string>
         <key>zero</key>
         <string>0 days</string>
@@ -148,6 +148,98 @@
         <string>1 day</string>
         <key>other</key>
         <string>%d days</string>
+      </dict>
+    </dict>
+    <key>backup_restore_confirm_description</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>This applies %#@items@, %#@bookmarks@ and %#@collections@ to your library. Items the backup knows but your library doesn't are skipped.</string>
+      <key>items</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>d</string>
+        <key>one</key>
+        <string>%d item</string>
+        <key>other</key>
+        <string>%d items</string>
+      </dict>
+      <key>bookmarks</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d bookmark</string>
+        <key>other</key>
+        <string>%d bookmarks</string>
+      </dict>
+      <key>collections</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d collection</string>
+        <key>other</key>
+        <string>%d collections</string>
+      </dict>
+    </dict>
+    <key>backup_report_description</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>Updated %#@items@, created %#@bookmarks@, restored %#@collections@.</string>
+      <key>items</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d item</string>
+        <key>other</key>
+        <string>%d items</string>
+      </dict>
+      <key>bookmarks</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d bookmark</string>
+        <key>other</key>
+        <string>%d bookmarks</string>
+      </dict>
+      <key>collections</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d collection</string>
+        <key>other</key>
+        <string>%d collections</string>
+      </dict>
+    </dict>
+    <key>backup_report_skipped</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@skipped@ (for example: %@).</string>
+      <key>skipped</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</string>
+        <string>d</string>
+        <key>one</key>
+        <string>%d record didn't match anything in your library</string>
+        <key>other</key>
+        <string>%d records didn't match anything in your library</string>
       </dict>
     </dict>
   </dict>
