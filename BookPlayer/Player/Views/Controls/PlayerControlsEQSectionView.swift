@@ -42,14 +42,12 @@ struct PlayerControlsEQSectionView: View {
         /// Voice boost stacks on a preset chain — `.off` renders nothing, so
         /// the toggle is disabled there rather than implying it acts alone
         .disabled(selectedPreset == .off)
-        .accessibilityHint("settings_voiceboost_description")
 
       Text("settings_voiceboost_description")
         .bpFont(.caption)
         .foregroundStyle(theme.secondaryColor)
         .fixedSize(horizontal: false, vertical: true)
         .frame(minWidth: 160, alignment: .leading)
-        .accessibilityHidden(true)
     }
   }
 
