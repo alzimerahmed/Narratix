@@ -493,6 +493,9 @@ struct ItemListView: View {
     Button("media_servers_title".localized, systemImage: "server.rack") {
       listState.activeLibrarySheet = .mediaServers
     }
+    Button("webdav_title".localized, systemImage: "externaldrive.connected.to.line.below") {
+      listState.activeLibrarySheet = .webdav
+    }
     /// Files dropped into Documents (or straight into the library folder) via
     /// the Files app or iTunes File Sharing: picks them up like the watchers do
     Button("rescan_library_title", systemImage: "arrow.clockwise") {

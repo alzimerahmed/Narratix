@@ -191,6 +191,11 @@
 		41A1B12A226F88C500EA0400 /* Folder+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A1B11C226F88C500EA0400 /* Folder+CoreDataProperties.swift */; };
 		41A1B12D226FC7E500EA0400 /* ImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 416B63A72146354B007D04B1 /* ImportManager.swift */; };
 		09AA37BB263AAADA48B7F3BA /* TransferViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2392E1F755DEABAFE3962A17 /* TransferViewModel.swift */; };
+		B1D0C0E1F2A3B4C5D6E7F813 /* WebDAVClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0C0E1F2A3B4C5D6E7F812 /* WebDAVClient.swift */; };
+		B1D0C0E1F2A3B4C5D6E7F815 /* WebDAVPropfindParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0C0E1F2A3B4C5D6E7F814 /* WebDAVPropfindParser.swift */; };
+		B1D0C0E1F2A3B4C5D6E7F817 /* WebDAVBrowserViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0C0E1F2A3B4C5D6E7F816 /* WebDAVBrowserViewModel.swift */; };
+		B1D0C0E1F2A3B4C5D6E7F819 /* WebDAVBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0C0E1F2A3B4C5D6E7F818 /* WebDAVBrowserView.swift */; };
+		B1D0C0E1F2A3B4C5D6E7F81B /* WebDAVConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0C0E1F2A3B4C5D6E7F81A /* WebDAVConnection.swift */; };
 		A48D1FB2F61ADBDC9C38A836 /* TransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D49775FED3EBB3AF0030613 /* TransferView.swift */; };
 		6D464C6A588947878DCF1DB4 /* ImportConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00DA9C0FECB434386459560 /* ImportConfirmationView.swift */; };
 		41A1B12E226FC7E500EA0400 /* ImportOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41E34E4F2138EA8200A3997C /* ImportOperation.swift */; };
@@ -1365,6 +1370,11 @@
 		416AAC3223F51031005AD04F /* LocalizableButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizableButton.swift; sourceTree = "<group>"; };
 		416B63A72146354B007D04B1 /* ImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportManager.swift; sourceTree = "<group>"; };
 		2392E1F755DEABAFE3962A17 /* TransferViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferViewModel.swift; sourceTree = "<group>"; };
+		B1D0C0E1F2A3B4C5D6E7F812 /* WebDAVClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVClient.swift; sourceTree = "<group>"; };
+		B1D0C0E1F2A3B4C5D6E7F814 /* WebDAVPropfindParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVPropfindParser.swift; sourceTree = "<group>"; };
+		B1D0C0E1F2A3B4C5D6E7F816 /* WebDAVBrowserViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVBrowserViewModel.swift; sourceTree = "<group>"; };
+		B1D0C0E1F2A3B4C5D6E7F818 /* WebDAVBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVBrowserView.swift; sourceTree = "<group>"; };
+		B1D0C0E1F2A3B4C5D6E7F81A /* WebDAVConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebDAVConnection.swift; sourceTree = "<group>"; };
 		1D49775FED3EBB3AF0030613 /* TransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransferView.swift; sourceTree = "<group>"; };
 		E00DA9C0FECB434386459560 /* ImportConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportConfirmationView.swift; sourceTree = "<group>"; };
 		416B640C1E72F362000E955A /* Notification+BookPlayer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Notification+BookPlayer.swift"; sourceTree = "<group>"; };
@@ -2752,6 +2762,7 @@
 		41C8ABCF26836F03003B67D1 /* Import */ = {
 			isa = PBXGroup;
 			children = (
+				B1D0C0E1F2A3B4C5D6E7F811 /* WebDAV */,
 				99F3C21D2F69D09A00AC91A2 /* ExternalSource */,
 				62793612272CC19E0097837D /* Models */,
 				62793613272CC9D50097837D /* Views */,
@@ -2763,6 +2774,18 @@
 				41C8ABD026836F50003B67D1 /* ImportViewModel.swift */,
 			);
 			path = Import;
+			sourceTree = "<group>";
+		};
+		B1D0C0E1F2A3B4C5D6E7F811 /* WebDAV */ = {
+			isa = PBXGroup;
+			children = (
+				B1D0C0E1F2A3B4C5D6E7F812 /* WebDAVClient.swift */,
+				B1D0C0E1F2A3B4C5D6E7F814 /* WebDAVPropfindParser.swift */,
+				B1D0C0E1F2A3B4C5D6E7F816 /* WebDAVBrowserViewModel.swift */,
+				B1D0C0E1F2A3B4C5D6E7F818 /* WebDAVBrowserView.swift */,
+				B1D0C0E1F2A3B4C5D6E7F81A /* WebDAVConnection.swift */,
+			);
+			path = WebDAV;
 			sourceTree = "<group>";
 		};
 		41D20DBC25D5F72300AAEE30 /* Migrations */ = {
@@ -5416,6 +5439,11 @@
 				6338C78F2E4AA327008016E5 /* BookView.swift in Sources */,
 				41A1B12D226FC7E500EA0400 /* ImportManager.swift in Sources */,
 				09AA37BB263AAADA48B7F3BA /* TransferViewModel.swift in Sources */,
+				B1D0C0E1F2A3B4C5D6E7F813 /* WebDAVClient.swift in Sources */,
+				B1D0C0E1F2A3B4C5D6E7F815 /* WebDAVPropfindParser.swift in Sources */,
+				B1D0C0E1F2A3B4C5D6E7F817 /* WebDAVBrowserViewModel.swift in Sources */,
+				B1D0C0E1F2A3B4C5D6E7F819 /* WebDAVBrowserView.swift in Sources */,
+				B1D0C0E1F2A3B4C5D6E7F81B /* WebDAVConnection.swift in Sources */,
 				A48D1FB2F61ADBDC9C38A836 /* TransferView.swift in Sources */,
 				6D464C6A588947878DCF1DB4 /* ImportConfirmationView.swift in Sources */,
 				6370434C2E2C046F005353D1 /* SettingsPrivacySectionView.swift in Sources */,

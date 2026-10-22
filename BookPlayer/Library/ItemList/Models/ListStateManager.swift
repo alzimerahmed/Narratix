@@ -26,9 +26,11 @@ final class ListStateManager {
   /// `mediaServers`: MediaServersView is the unified entry point — per-integration libraries
   /// are pushed on top of it as sub-sheets when the user taps a server row.
   /// `transferFromComputer`: the add menu's upload from a computer's browser (not an integration).
+  /// `webdav`: the add menu's import from a WebDAV server (not an integration either).
   enum LibrarySheet: String, Identifiable {
     case mediaServers
     case transferFromComputer
+    case webdav
     var id: String { rawValue }
   }
   var activeLibrarySheet: LibrarySheet?
@@ -37,6 +39,7 @@ final class ListStateManager {
   enum Cover: Hashable {
     case mediaServers
     case transferFromComputer
+    case webdav
     case player
   }
 

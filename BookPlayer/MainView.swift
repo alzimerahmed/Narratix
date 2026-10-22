@@ -65,6 +65,7 @@ struct MainView: View {
     .sheet(item: $listState.activeLibrarySheet, onDismiss: {
       listState.coversOnScreen.remove(.mediaServers)
       listState.coversOnScreen.remove(.transferFromComputer)
+      listState.coversOnScreen.remove(.webdav)
     }) { sheet in
       switch sheet {
       case .mediaServers:
@@ -82,6 +83,11 @@ struct MainView: View {
           TransferViewModel(importManager: importManager, libraryService: libraryService)
         }
         .onAppear { listState.coversOnScreen.insert(.transferFromComputer) }
+      case .webdav:
+        WebDAVBrowserView {
+          WebDAVBrowserViewModel(importManager: importManager, libraryService: libraryService)
+        }
+        .onAppear { listState.coversOnScreen.insert(.webdav) }
       }
     }
     .fullScreenCover(isPresented: playerState.isShowingPlayerBinding, onDismiss: {
