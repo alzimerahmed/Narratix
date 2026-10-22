@@ -118,6 +118,8 @@ final class AppServices: BPLogger {
       let playbackHistoryService = PlaybackHistoryService()
       playbackHistoryService.setup(dataManager: dataManager)
       playbackHistoryService.observePlayback()
+      let listeningStatsService = ListeningStatsService()
+      listeningStatsService.setup(dataManager: dataManager)
       let playerManager = PlayerManager(
         libraryService: libraryService,
         playbackService: playbackService,
@@ -172,7 +174,8 @@ final class AppServices: BPLogger {
         mediaServerChapterService: mediaServerChapterService,
         watchService: watchService,
         listeningQueueService: listeningQueueService,
-        playbackHistoryService: playbackHistoryService
+        playbackHistoryService: playbackHistoryService,
+        listeningStatsService: listeningStatsService
       )
 
       self.coreServices = coreServices

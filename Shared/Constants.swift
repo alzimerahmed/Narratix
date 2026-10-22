@@ -140,6 +140,10 @@ public enum Constants {
     /// Transfer from Computer: the first-run help tip only shows once
     public static let transferTipSeen = "transfer:tipSeen"
 
+    /// Listening stats: daily goal in minutes; 0 = no goal (device-local — a
+    /// preference, not library data, so it lives in standard UserDefaults)
+    public static let dailyGoalMinutes = "listeningStats:dailyGoalMinutes"
+
     /// Prefix used to enumerate / sync library display preferences
     public static let libraryDisplayPrefix = "library_display:"
 

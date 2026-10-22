@@ -26,4 +26,6 @@ struct CoreServices {
   let listeningQueueService: ListeningQueueService
   /// Per-session playback history + position restore (Phase 3a)
   let playbackHistoryService: PlaybackHistoryService
+  /// Profile listening stats: streaks, daily goal, per-book time (Phase 3f)
+  let listeningStatsService: ListeningStatsService
 }

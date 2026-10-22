@@ -36,6 +36,8 @@ extension EnvironmentValues {
   @Entry var listeningQueueService: ListeningQueueService = .init()
   /// Playback session history; the placeholder no-ops until `setup` runs
   @Entry var playbackHistoryService: PlaybackHistoryService = .init()
+  /// Profile listening stats; the placeholder returns empty stats until `setup` runs
+  @Entry var listeningStatsService: ListeningStatsService = .init()
 }
 
 extension EnvironmentValues {
