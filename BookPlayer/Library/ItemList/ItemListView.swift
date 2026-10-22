@@ -509,6 +509,12 @@ struct ItemListView: View {
     }
 
     ToolbarItem(placement: .topBarTrailing) {
+      listeningFilterMenu
+    }
+
+    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+    ToolbarItem(placement: .topBarTrailing) {
       libraryOptionsButton
     }
 
@@ -529,6 +535,35 @@ struct ItemListView: View {
         .foregroundStyle(theme.linkColor)
         .accessibilityLabel("import_preparing_title")
     }
+  }
+
+  /// Listening-state triage (New/Started/Finished/DNF). The filled icon marks an
+  /// active filter so the state is visible after the menu closes
+  @ViewBuilder
+  private var listeningFilterMenu: some View {
+    Menu {
+      ForEach(ItemListeningFilter.allCases) { filter in
+        Button {
+          model.listeningFilter = filter
+        } label: {
+          Label {
+            Text(filter.title)
+          } icon: {
+            if model.listeningFilter == filter {
+              Image(systemName: "checkmark")
+            }
+          }
+        }
+      }
+    } label: {
+      Label(
+        "filter_title",
+        systemImage: model.listeningFilter == .all
+          ? "line.3.horizontal.decrease.circle"
+          : "line.3.horizontal.decrease.circle.fill"
+      )
+    }
+    .accessibilityLabel("filter_title".localized)
   }
 
   @ViewBuilder
@@ -708,6 +743,8 @@ extension ItemListView {
     shareOption(for: items, forMenu: false)
     jumpToStartOption(for: items, forMenu: false)
     markFinishedOption(for: items, forMenu: false)
+    markDidNotFinishOption(for: items, forMenu: false)
+    queueOptions(for: items, forMenu: false)
     boundBooksOption(for: items, forMenu: false)
     downloadOption(for: items, forMenu: false)
     deleteOption(for: items, forMenu: false)
@@ -720,6 +757,8 @@ extension ItemListView {
     deleteOption(for: items, forMenu: true)
     downloadOption(for: items, forMenu: true)
     boundBooksOption(for: items, forMenu: true)
+    queueOptions(for: items, forMenu: true)
+    markDidNotFinishOption(for: items, forMenu: true)
     markFinishedOption(for: items, forMenu: true)
     jumpToStartOption(for: items, forMenu: true)
     shareOption(for: items, forMenu: true)
@@ -738,6 +777,8 @@ extension ItemListView {
     shareOption(for: items, forMenu: false)
     jumpToStartOption(for: items, forMenu: false)
     markFinishedOption(for: items, forMenu: false)
+    markDidNotFinishOption(for: items, forMenu: false)
+    queueOptions(for: items, forMenu: false)
     boundBooksOption(for: items, forMenu: false)
     downloadOption(for: items, forMenu: false)
     Divider()
@@ -822,6 +863,59 @@ extension ItemListView {
       Label(markTitle, systemImage: markIcon)
     }
     .menuTint(theme.primaryColor, enabled: forMenu)
+  }
+
+  /// "Did not finish" triage — a flag distinct from finished (an abandoned book
+  /// keeps its progress). Toggles when everything selected is already DNF
+  @ViewBuilder
+  private func markDidNotFinishOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let areAllDidNotFinish = items.allSatisfy { $0.didNotFinish }
+    let markTitle =
+      areAllDidNotFinish
+      ? "clear_did_not_finish_title".localized
+      : "mark_did_not_finish_title".localized
+    let markIcon = areAllDidNotFinish ? "flag" : "flag.slash"
+
+    Button {
+      select(items)
+      model.handleMarkAsDidNotFinish(flag: !areAllDidNotFinish)
+    } label: {
+      Label(markTitle, systemImage: markIcon)
+    }
+    .menuTint(theme.primaryColor, enabled: forMenu)
+  }
+
+  /// Up Next queueing — Play Next inserts at the head, Add to Queue at the tail;
+  /// a fully-queued selection offers removal instead
+  @ViewBuilder
+  private func queueOptions(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let allQueued = items.allSatisfy { model.isQueued($0) }
+
+    if allQueued {
+      Button {
+        select(items)
+        model.handleDequeue()
+      } label: {
+        Label("queue_remove_title", systemImage: "text.badge.minus")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+    } else {
+      Button {
+        select(items)
+        model.handleEnqueueNext()
+      } label: {
+        Label("queue_play_next_title", systemImage: "text.insert")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+
+      Button {
+        select(items)
+        model.handleEnqueue()
+      } label: {
+        Label("queue_add_title", systemImage: "text.append")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+    }
   }
 
   @ViewBuilder

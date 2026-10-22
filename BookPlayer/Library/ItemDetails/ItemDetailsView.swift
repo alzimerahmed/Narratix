@@ -60,6 +60,26 @@ struct ItemDetailsView: View {
         )
       }
 
+      /// The book-level memo — free-form notes saved with the rest of the form
+      /// (bookmark notes stay the time-anchored kind)
+      Section {
+        ZStack(alignment: .topLeading) {
+          if viewModel.note.isEmpty {
+            Text("note_placeholder")
+              .foregroundStyle(theme.secondaryColor)
+              .padding(.top, Spacing.S2)
+              .padding(.leading, Spacing.S4)
+              .accessibilityHidden(true)
+          }
+          TextEditor(text: $viewModel.note)
+            .frame(minHeight: Spacing.M * 4)
+            .foregroundStyle(theme.primaryColor)
+        }
+      } header: {
+        Text("notes_title")
+          .foregroundStyle(theme.primaryColor)
+      }
+
       ItemDetailsFooterSectionView(
         originalFileName: viewModel.originalFileName,
         progress: viewModel.progress,

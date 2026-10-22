@@ -599,3 +599,27 @@
 "transfer_web_unsupported" = "File type not supported";
 "transfer_web_done_hint" = "When you’re done, confirm in BookPlayer to import the files.";
 "transfer_web_load_error" = "Can’t reach BookPlayer. Check that its Transfer screen is still open.";
+
+/* Phase 3a: Regret & Queue */
+"filter_title" = "Filter";
+"filter_all_title" = "All";
+"filter_new_title" = "New";
+"filter_started_title" = "Started";
+"filter_finished_title" = "Finished";
+"filter_did_not_finish_title" = "Did Not Finish";
+"mark_did_not_finish_title" = "Mark as Did Not Finish";
+"clear_did_not_finish_title" = "Clear Did Not Finish";
+"notes_title" = "Notes";
+"note_placeholder" = "Notes about this book";
+"queue_title" = "Up Next";
+"queue_empty_title" = "Nothing queued";
+"queue_empty_description" = "Add books from a book's options menu to plan what plays next.";
+"queue_add_title" = "Add to Queue";
+"queue_play_next_title" = "Play Next";
+"queue_remove_title" = "Remove from Queue";
+"queue_row_play_hint" = "Plays this item now";
+"history_title" = "Playback History";
+"history_empty_title" = "No listening sessions yet";
+"history_empty_description" = "Each time you play and pause, a session appears here with the position you left it at.";
+"history_row_restore_hint" = "Plays this book from that position";
+"history_session_played_format" = "Listened %@";

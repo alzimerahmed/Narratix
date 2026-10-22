@@ -127,6 +127,9 @@ public protocol LibraryServiceProtocol: AnyObject {
   func renameFolder(at relativePath: String, with newTitle: String) throws -> String
   /// Update item details
   func updateDetails(at relativePath: String, details: String)
+
+  /// The item's free-form note (book-level memo; `nil` clears it)
+  func updateNote(_ note: String?, at relativePath: String)
   /// Apply a sort to the list at the given path: persists the sticky preference
   /// for resolvable locations (order is derived at query time); performs a
   /// one-shot rank materialization for `.unresolved` locations

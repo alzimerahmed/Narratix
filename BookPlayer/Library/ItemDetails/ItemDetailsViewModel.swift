@@ -44,6 +44,9 @@ final class ItemDetailsViewModel: ObservableObject {
   @Published var title: String
   /// Author of the item (applies for books and volumes)
   @Published var author: String
+  /// The item's free-form note (book-level memo; `Bookmark.note` is the
+  /// time-anchored cousin — this one lives on the item)
+  @Published var note: String
   /// Artwork image
   @Published var selectedImage: UIImage?
   /// Last played date
@@ -101,6 +104,7 @@ final class ItemDetailsViewModel: ObservableObject {
     self.originalFileName = item.originalFileName
     self.title = item.title
     self.author = item.details
+    self.note = item.note ?? ""
     self.selectedImage = UIImage(contentsOfFile: cachedImageURL.path)
     self.lastPlayedDate = playedDate
 
@@ -250,6 +254,10 @@ final class ItemDetailsViewModel: ObservableObject {
         updateAuthor(author, relativePath: item.relativePath)
       }
 
+      /// cacheKey is the post-rename path when a folder title changed — the note
+      /// has to write to the item's current identity
+      updateNote(note, relativePath: cacheKey)
+
       if let pickerViewModel = hardcoverSectionViewModel?.pickerViewModel,
         pickerViewModel.selected?.id != hardcoverBook?.id
       {
@@ -337,6 +345,16 @@ final class ItemDetailsViewModel: ObservableObject {
     guard storedDetails != cleanedAuthor else { return }
 
     libraryService.updateDetails(at: relativePath, details: cleanedAuthor)
+  }
+
+  /// Persist the item's note only when it actually changed (`nil` clears a
+  /// whitespace-only input)
+  func updateNote(_ newNote: String, relativePath: String) {
+    let cleanedNote = newNote.trimmingCharacters(in: .whitespacesAndNewlines)
+
+    guard cleanedNote != (item.note ?? "") else { return }
+
+    libraryService.updateNote(cleanedNote.isEmpty ? nil : cleanedNote, at: relativePath)
   }
 
   func assignNewSelection(

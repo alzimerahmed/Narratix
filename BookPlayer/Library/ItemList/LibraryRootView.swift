@@ -48,6 +48,7 @@ struct LibraryRootView: View {
   @Environment(\.playbackService) private var playbackService
   @Environment(\.syncService) private var syncService
   @Environment(\.hardcoverService) private var hardcoverService
+  @Environment(\.listeningQueueService) private var listeningQueueService
   @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
@@ -62,7 +63,8 @@ struct LibraryRootView: View {
           listSyncRefreshService: listSyncRefreshService,
           loadingState: loadingState,
           listState: listState,
-          singleFileDownloadService: singleFileDownloadService
+          singleFileDownloadService: singleFileDownloadService,
+          listeningQueueService: listeningQueueService
         )
       }
       .navigationDestination(for: LibraryNode.self) { node in
@@ -76,7 +78,8 @@ struct LibraryRootView: View {
             listSyncRefreshService: listSyncRefreshService,
             loadingState: loadingState,
             listState: listState,
-            singleFileDownloadService: singleFileDownloadService
+            singleFileDownloadService: singleFileDownloadService,
+            listeningQueueService: listeningQueueService
           )
         }
         .navigationBarTitleDisplayMode(.inline)

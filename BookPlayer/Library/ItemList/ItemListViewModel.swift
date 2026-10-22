@@ -23,6 +23,7 @@ final class ItemListViewModel: ObservableObject, BPLogger {
   }
   private let listState: ListStateManager
   let singleFileDownloadService: SingleFileDownloadService
+  private let listeningQueueService: ListeningQueueService
   /// Reference to ongoing library fetch task
   var contentsFetchTask: Task<(), Error>?
   
@@ -46,7 +47,9 @@ final class ItemListViewModel: ObservableObject, BPLogger {
 
   /// True when the list should show database-filtered results instead of the paginated browse.
   var isFiltering: Bool {
-    !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || scope != .all
+    !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      || scope != .all
+      || listeningFilter != .all
   }
 
   var isListEmpty: Bool {
@@ -87,6 +90,13 @@ final class ItemListViewModel: ObservableObject, BPLogger {
       scheduleSearch()
     }
   }
+  /// Listening-state triage (New/Started/Finished/DNF); `.all` shows everything
+  @Published var listeningFilter: ItemListeningFilter = .all {
+    didSet {
+      guard oldValue != listeningFilter else { return }
+      scheduleSearch()
+    }
+  }
   @Published var isSearchFocused: Bool = false {
     didSet {
       listState.isSearching = isSearchFocused
@@ -111,7 +121,8 @@ final class ItemListViewModel: ObservableObject, BPLogger {
     listSyncRefreshService: ListSyncRefreshService,
     loadingState: LoadingOverlayState,
     listState: ListStateManager,
-    singleFileDownloadService: SingleFileDownloadService
+    singleFileDownloadService: SingleFileDownloadService,
+    listeningQueueService: ListeningQueueService
   ) {
     self.libraryNode = libraryNode
     self.libraryService = libraryService
@@ -122,6 +133,7 @@ final class ItemListViewModel: ObservableObject, BPLogger {
     self.loadingState = loadingState
     self.listState = listState
     self.singleFileDownloadService = singleFileDownloadService
+    self.listeningQueueService = listeningQueueService
 
     if libraryNode == .root {
       playerManager.syncProgressDelegate = self
@@ -193,20 +205,22 @@ final class ItemListViewModel: ObservableObject, BPLogger {
 
     let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
     let scope = self.scope.itemTypeScope
+    let listeningState = listeningFilter.listeningState
 
     searchTask = Task { [weak self] in
       try? await Task.sleep(nanoseconds: 300_000_000)
       guard !Task.isCancelled, let self else { return }
-      self.runSearch(query: trimmedQuery.isEmpty ? nil : trimmedQuery, scope: scope)
+      self.runSearch(query: trimmedQuery.isEmpty ? nil : trimmedQuery, scope: scope, listeningState: listeningState)
     }
   }
 
-  private func runSearch(query: String?, scope: SimpleItemType?) {
+  private func runSearch(query: String?, scope: SimpleItemType?, listeningState: ListeningState?) {
     let results =
       libraryService.filterContents(
         at: libraryNode.folderRelativePath,
         query: query,
         scope: scope,
+        listeningState: listeningState,
         limit: nil,
         offset: nil
       ) ?? []
@@ -446,6 +460,45 @@ extension ItemListViewModel {
     }
 
     listState.reloadAll()
+    editMode = .inactive
+  }
+
+  /// Marks the selection "did not finish" (or clears it) — triage state separate
+  /// from `isFinished`; an abandoned book keeps its progress for resume
+  func handleMarkAsDidNotFinish(flag: Bool) {
+    selectedItems.forEach {
+      libraryService.markAsDidNotFinish(flag: flag, relativePath: $0.relativePath)
+    }
+
+    listState.reloadAll()
+    editMode = .inactive
+  }
+
+  /// Appends the selection at the queue's tail
+  func handleEnqueue() {
+    selectedItems.forEach {
+      listeningQueueService.enqueue($0.relativePath)
+    }
+    editMode = .inactive
+  }
+
+  /// Inserts the selection at the queue's head
+  func handleEnqueueNext() {
+    /// Last-in ends up last of the inserted run, so walk the selection backwards
+    /// to keep its order
+    for item in selectedItems.reversed() {
+      listeningQueueService.enqueueNext(item.relativePath)
+    }
+    editMode = .inactive
+  }
+
+  func isQueued(_ item: SimpleLibraryItem) -> Bool {
+    listeningQueueService.isQueued(relativePath: item.relativePath)
+  }
+
+  /// Removes the selection from the queue (their positions close up)
+  func handleDequeue() {
+    listeningQueueService.removeAll(selectedItems.map(\.relativePath))
     editMode = .inactive
   }
 
