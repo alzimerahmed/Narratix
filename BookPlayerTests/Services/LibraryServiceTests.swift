@@ -2915,7 +2915,7 @@ class LibraryServiceExternalResourceTests: XCTestCase {
     let atRoot = makeBook("root-book")
     // Structure first, on the view context; the links after, on the background context.
     // No merge policy is set anywhere, so a view-context save over a row the background
-    // context just changed is a hard crash, not a conflict to resolve (CLAUDE.md hotlist #1).
+    // context just changed is a hard crash, not a conflict to resolve.
     let folder = try sut.createFolder(with: "Series", inside: nil)
     try sut.moveItems([LibraryItemRef(relativePath: inFolder.relativePath, uuid: inFolder.uuid)], inside: folder.relativePath)
     _ = await sut.setExternalResource(providerName: "jellyfin", providerId: "in-folder", for: inFolder.uuid)

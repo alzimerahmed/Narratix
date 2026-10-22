@@ -10,15 +10,15 @@ Narratix = open-source audiobook player for **iOS + watchOS** (Swift), forked fr
 
 ## Ground Truth (read first)
 
-- **`CLAUDE.md`** (repo root, ~825 lines) is the **architecture & conventions ground truth** — read it before touching code. It is loaded by the automated PR reviewer (`.github/workflows/claude-review.yml` + `.github/claude/review-guide.md`); a stale claim there becomes a bad review. When you change an invariant it describes, update it in the same PR.
-- **`AGENTS.md`** (this file) is the workflow/rules layer — verification policy, .devin orchestration, brand/fork constraints.
-- `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.swiftlint.yml`, `.swiftformat` — upstream-owned process/style configs. Respect them; don't hand-police what tools own.
+- **`docs/architecture.md`** (private knowledge layer) is the **architecture & conventions ground truth** — read it before touching code. It was distilled from upstream's now-removed `CLAUDE.md` plus repo audit; keep it updated when invariants change. `docs/research.md` (ADRs/gotchas) and `docs/CONCEPTS.md` (vocabulary) back it up.
+- **`AGENTS.md`** (this file) is the workflow/rules layer — verification policy, .devin orchestration, brand/fork constraints. It is the only tracked agent doc.
+- `.swiftlint.yml`, `.swiftformat`, `.swift-format`, `.editorconfig` — style is tool-owned; don't hand-police what tools own.
 
 ## How It Works (domain constraints — read before touching the code)
 
-- **Real app source lives under `BookPlayer/`**: `Player/`, `Settings/`, `Profile/`, `Library/`, `Search/`, `Import/`, `Loading/`, `SecondOnboarding/`, `Coordinators/`, `Services/`, `Utils/`, `AppIntents/`, `Jellyfin/`, `AudiobookShelf/`, `Hardcover/`, `MediaServerIntegration/`. (Note: `CLAUDE.md` says "nested `BookPlayer/BookPlayer/`" — that claim is stale; the app folder sits directly at repo root.)
+- **Real app source lives under `BookPlayer/`**: `Player/`, `Settings/`, `Profile/`, `Library/`, `Search/`, `Import/`, `Loading/`, `SecondOnboarding/`, `Coordinators/`, `Services/`, `Utils/`, `AppIntents/`, `Jellyfin/`, `AudiobookShelf/`, `Hardcover/`, `MediaServerIntegration/`. (Upstream docs once described a nested `BookPlayer/BookPlayer/` — stale; the app folder sits directly at repo root.)
 - **`BookPlayerKit`/`BookPlayerWatchKit` compile the top-level `Shared/` folder.** Every file in `Shared/` has **two** `PBXBuildFile` entries (iOS + watchOS) — adding to only one target breaks the watch build. `Shared/` must never import app-layer types.
-- **Legacy trap:** `CLAUDE.md` still describes top-level `Player/`, `Services/`, `Coordinators/`, `Library/` stub dirs — they no longer exist at repo root; if feature-named dirs ever (re)appear at top level, never add files there. `BookPlayer/RootViewController.swift` is dead code (references missing base classes) — ignore it.
+- **Legacy trap:** upstream docs describe top-level `Player/`, `Services/`, `Coordinators/`, `Library/` stub dirs — they no longer exist at repo root; if feature-named dirs ever (re)appear at top level, never add files there. `BookPlayer/RootViewController.swift` is dead code (references missing base classes) — ignore it.
 - **Architecture:** hybrid UIKit-coordinators (boot: `AppDelegate` → `SceneDelegate` → `LoadingCoordinator` → `MainCoordinator` → SwiftUI `MainView` TabView) + SwiftUI MVVM (`@MainActor` VMs next to their views, `BPTransition<Routes>` navigation). The `SceneDelegate → LoadingCoordinator → MainCoordinator` strong-retain chain must never be severed.
 - **DI:** `AppServices.shared` → `CoreServices` struct of exactly 12 services, **two-step `init()` + `setup(...)`** pattern. SwiftUI gets services via `.environmentObject`/`.environment(\.key)` — each `@Entry` default is a non-functional placeholder. App Intents resolve through `AppDependencyManager` (extensions) or `awaitCoreServices()` (app).
 - **Persistence is TWO stores:** CoreData (library — `Shared/CoreData/`, manual staged migrations v1…v12, store in the **App Group** container, no merge policy → write conflicts crash) and SwiftData (sync task queue — `Shared/SwiftData/`, store in app-support dir, versioned `SchemaV1→V3`, `SyncQueueRepository: ModelActor` is the only accessor). Never pass `NSManagedObject`s across contexts — use the `Simple*`/`Playable*` snapshots.
@@ -57,6 +57,7 @@ Narratix = open-source audiobook player for **iOS + watchOS** (Swift), forked fr
 - Nothing stripped yet — the fork is a clean upstream checkout. Do not remove upstream copyright, license, terms files, or RevenueCat/BookPlayer-Pro monetization (GPLv3 + the product's business model).
 - Realm is gone upstream (→ SwiftData). `DataManager.getSyncTasksRealmURL()` is dead code; don't reintroduce Realm.
 - SiriKit custom intents were replaced by App Intents — don't add NEW `.intentdefinition` entries, but **keep the existing tracked `BookPlayer/Intents.intentdefinition`** (its PlayMedia `mediaContainer`-only combination is the opt-in for `INPlayMediaIntent` media suggestions — deleting it silently kills Siri/lock-screen suggestions).
+- Upstream community/ownership files were removed in the fork sweep (legal `.md`s, CONTRIBUTING/CODE_OF_CONDUCT, `.github` templates/FUNDING, claude-review + release-signal workflows, `CLAUDE.md`, `Crashlytics.framework`) — don't restore them; Narratix legal/ASO docs are a Release-phase deliverable.
 
 ## Gotchas
 
@@ -92,7 +93,7 @@ Default **caveman-lite** (lightly compressed, readable, technically accurate). `
 
 ## Key References
 
-> `docs/` is the private knowledge layer — **fully gitignored**, local workspace only. `CLAUDE.md` and upstream docs are tracked.
+> `docs/` is the private knowledge layer — **fully gitignored**, local workspace only. `AGENTS.md` is the only tracked agent doc.
 
 - `docs/toolset.md` — intent map (task type → skills, sub-agents, rules)
 - `docs/plan.md` — phased plan + status
@@ -102,4 +103,4 @@ Default **caveman-lite** (lightly compressed, readable, technically accurate). `
 - `docs/research.md` — research, ADRs, gotchas, open questions
 - `docs/idea.md` — competitive analysis + Feature Gap List
 - `docs/design/design-system.md` — UI tokens + rules
-- `CLAUDE.md` — tracked upstream architecture ground truth
+- `docs/architecture.md` — architecture ground truth (distilled from removed upstream `CLAUDE.md`)

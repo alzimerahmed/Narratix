@@ -1239,7 +1239,6 @@
 		41188D3026ED715D0017124E /* SimpleLibraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleLibraryItem.swift; sourceTree = "<group>"; };
 		4124122726D19A8600B099DB /* StorageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageViewModel.swift; sourceTree = "<group>"; };
 		4124122926D19B9100B099DB /* StorageItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageItem.swift; sourceTree = "<group>"; };
-		412451821D489204008AC0E5 /* Crashlytics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Crashlytics.framework; sourceTree = "<group>"; };
 		4124AACC25DF62DD0007C839 /* Audiobook Player 3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Audiobook Player 3.xcdatamodel"; sourceTree = "<group>"; };
 		4124AB1625DFE07E0007C839 /* DataMigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataMigrationManager.swift; sourceTree = "<group>"; };
 		4124AB2025DFE1A60007C839 /* CoreDataStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
@@ -2622,7 +2621,6 @@
 				4165EE0D20A7AEC600616EDF /* SwiftReorder.framework */,
 				C318DDBE20A4DC7500C3A17B /* DeviceKit.framework */,
 				C30CD2A22097C49F00258B09 /* ColorCube.framework */,
-				412451821D489204008AC0E5 /* Crashlytics.framework */,
 				41CE449322712E0F00C900AF /* NotificationCenter.framework */,
 				41640A1F24416774004FB97B /* IntentsUI.framework */,
 				416A29A42569658100605395 /* WidgetKit.framework */,

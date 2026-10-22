@@ -341,8 +341,8 @@ private struct SyncPauseReportShare: Identifiable {
 }
 
 // MARK: - Preview
-// Environment defaults are un-setup() placeholders whose count methods trap (see
-// CLAUDE.md's DI section) — previews must construct + setup() + inject, same as
+// Environment defaults are un-setup() placeholders whose count methods trap —
+// previews must construct + setup() + inject, same as
 // ProfileSyncTasksSectionView's preview.
 #Preview {
   @Previewable var syncQueueService: SyncQueueService = {

@@ -148,8 +148,8 @@ struct ProfileSyncTasksSectionView: View {
   }
 }
 
-// Environment defaults are un-setup() placeholders whose count methods trap (see
-// CLAUDE.md's DI section) — previews must construct + setup() + inject.
+// Environment defaults are un-setup() placeholders whose count methods trap —
+// previews must construct + setup() + inject.
 #Preview {
   @Previewable var syncQueueService: SyncQueueService = {
     let dataManager = DataManager(coreDataStack: CoreDataStack(testPath: ""))
