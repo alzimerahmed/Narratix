@@ -184,6 +184,8 @@ final class AppServices: BPLogger {
 
       // Wire up accountService for Watch auth transfer
       watchService.setAccountService(accountService)
+      /// And syncService for the watch's download-management requests
+      watchService.setSyncService(syncService)
 
       return coreServices
     }

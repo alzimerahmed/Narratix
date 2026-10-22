@@ -21,10 +21,23 @@ struct ItemListView: View {
         } label: {
           Text("watchapp_refresh_data_title")
         }
+        NavigationLink {
+          PhoneLibraryView()
+        } label: {
+          Text("watchapp_browse_library_title")
+        }
         Spacer()
       }
     } else {
       List {
+        Section {
+          NavigationLink {
+            PhoneLibraryView()
+          } label: {
+            Label("watchapp_browse_library_title", systemImage: "books.vertical")
+          }
+        }
+
         ForEach(contextManager.items) { item in
           Button {
             contextManager.handleItemSelected(item)
