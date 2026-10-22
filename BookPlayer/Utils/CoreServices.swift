@@ -22,4 +22,8 @@ struct CoreServices {
   let syncQueueService: SyncQueueService
   let mediaServerChapterService: MediaServerChapterRefreshService
   let watchService: PhoneWatchConnectivityService
+  /// The user-managed Up Next queue (Phase 3a)
+  let listeningQueueService: ListeningQueueService
+  /// Per-session playback history + position restore (Phase 3a)
+  let playbackHistoryService: PlaybackHistoryService
 }

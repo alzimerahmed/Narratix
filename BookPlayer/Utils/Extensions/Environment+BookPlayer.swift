@@ -32,6 +32,10 @@ extension EnvironmentValues {
   /// instance is injected by `MainCoordinator` after `AppServices` calls
   /// `setup(...)` on it.
   @Entry var preferencesService: PreferencesSyncService = .init()
+  /// Up Next queue; the placeholder no-ops until `setup(dataManager:)` runs
+  @Entry var listeningQueueService: ListeningQueueService = .init()
+  /// Playback session history; the placeholder no-ops until `setup` runs
+  @Entry var playbackHistoryService: PlaybackHistoryService = .init()
 }
 
 extension EnvironmentValues {

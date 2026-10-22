@@ -1044,6 +1044,12 @@
 		4DBE3A297251493F9D1A0E8B /* ListeningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6094CD1DB96647A3AD959066 /* ListeningState.swift */; };
 		D7EEE576434249CE93BC5605 /* SimplePlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470FB9B3756449BBCFCC7DE /* SimplePlaybackSession.swift */; };
 		96B79D1A00B34DC7995FDFFD /* SimplePlaybackSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A470FB9B3756449BBCFCC7DE /* SimplePlaybackSession.swift */; };
+		E0C52CF670AC4752BDB2C974 /* ListeningQueueService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD75E1D9B9646A1A67D0833 /* ListeningQueueService.swift */; };
+		C44E018933BF4DAB98402234 /* PlaybackHistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65D0F365EDB42F091630D99 /* PlaybackHistoryService.swift */; };
+		28037D6537EE47118BA64A60 /* ListeningQueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498E76F5312E41588497D4F1 /* ListeningQueueView.swift */; };
+		BDCA49ECD1E84BE8A96C968D /* ListeningQueueViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44C2814F0ED64B79BFABD073 /* ListeningQueueViewModel.swift */; };
+		18E2E3A2D0E04BA5B253D8C4 /* PlaybackHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2AC5572EDB4604971D91D2 /* PlaybackHistoryView.swift */; };
+		6F9255106F424FC385C8F9C7 /* PlaybackHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA4C2AE0BE0D45858D5AD0CB /* PlaybackHistoryViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2079,6 +2085,12 @@
 		6094CD1DB96647A3AD959066 /* ListeningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ListeningState.swift"; sourceTree = "<group>"; };
 		A470FB9B3756449BBCFCC7DE /* SimplePlaybackSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SimplePlaybackSession.swift"; sourceTree = "<group>"; };
 		1C5A85CC0AC240E483C4DEB9 /* Audiobook Player 13.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Audiobook Player 13.xcdatamodel"; sourceTree = "<group>"; };
+		AAD75E1D9B9646A1A67D0833 /* ListeningQueueService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningQueueService.swift; sourceTree = "<group>"; };
+		F65D0F365EDB42F091630D99 /* PlaybackHistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryService.swift; sourceTree = "<group>"; };
+		498E76F5312E41588497D4F1 /* ListeningQueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningQueueView.swift; sourceTree = "<group>"; };
+		44C2814F0ED64B79BFABD073 /* ListeningQueueViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningQueueViewModel.swift; sourceTree = "<group>"; };
+		4F2AC5572EDB4604971D91D2 /* PlaybackHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryView.swift; sourceTree = "<group>"; };
+		EA4C2AE0BE0D45858D5AD0CB /* PlaybackHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackHistoryViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3443,6 +3455,8 @@
 		69343D3121338440000C425E /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				AAD75E1D9B9646A1A67D0833 /* ListeningQueueService.swift */,
+				F65D0F365EDB42F091630D99 /* PlaybackHistoryService.swift */,
 				69343D322133844D000C425E /* VoiceOverService.swift */,
 				3C80A51B636D4C7381529505 /* ReviewPromptService.swift */,
 				419723FF21874D5F00AB1190 /* UserActivityManager.swift */,
@@ -3596,6 +3610,8 @@
 		99329DB22F3A9B9C003F8E73 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				2285020D86EB451483892B68 /* Queue */,
+				E00B2323B989445B88FEEB77 /* History */,
 				410D00FC26DDD26000D11A45 /* Chapters */,
 				4138CE1A26E5B4020014F11E /* Bookmarks */,
 				9F64C6222793C37C00B2493C /* Controls */,
@@ -4185,6 +4201,24 @@
 				F6F0D505E060FDAEB6DB68E3 /* IntegrationLibraryListView.swift */,
 			);
 			path = ListLayout;
+			sourceTree = "<group>";
+		};
+		2285020D86EB451483892B68 /* Queue */ = {
+			isa = PBXGroup;
+			children = (
+				498E76F5312E41588497D4F1 /* ListeningQueueView.swift */,
+				44C2814F0ED64B79BFABD073 /* ListeningQueueViewModel.swift */,
+			);
+			path = Queue;
+			sourceTree = "<group>";
+		};
+		E00B2323B989445B88FEEB77 /* History */ = {
+			isa = PBXGroup;
+			children = (
+				4F2AC5572EDB4604971D91D2 /* PlaybackHistoryView.swift */,
+				EA4C2AE0BE0D45858D5AD0CB /* PlaybackHistoryViewModel.swift */,
+			);
+			path = History;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -5013,6 +5047,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E0C52CF670AC4752BDB2C974 /* ListeningQueueService.swift in Sources */,
+				C44E018933BF4DAB98402234 /* PlaybackHistoryService.swift in Sources */,
+				28037D6537EE47118BA64A60 /* ListeningQueueView.swift in Sources */,
+				BDCA49ECD1E84BE8A96C968D /* ListeningQueueViewModel.swift in Sources */,
+				18E2E3A2D0E04BA5B253D8C4 /* PlaybackHistoryView.swift in Sources */,
+				6F9255106F424FC385C8F9C7 /* PlaybackHistoryViewModel.swift in Sources */,
 				C451596D6866C856F3E5F7D1 /* IntegrationConnectionView.swift in Sources */,
 				C86098383F7FC099EED24AF7 /* IntegrationQuickConnectViews.swift in Sources */,
 				B14881000000000000000001 /* IntegrationCustomHeadersSectionView.swift in Sources */,

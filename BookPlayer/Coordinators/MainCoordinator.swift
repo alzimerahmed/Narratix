@@ -32,6 +32,8 @@ class MainCoordinator: NSObject {
   let syncQueueService: SyncQueueService
   let hardcoverService: HardcoverService
   let preferencesService: PreferencesSyncService
+  let listeningQueueService: ListeningQueueService
+  let playbackHistoryService: PlaybackHistoryService
 
   var playerState: PlayerState { AppServices.shared.playerState }
 
@@ -73,6 +75,8 @@ class MainCoordinator: NSObject {
 
     self.hardcoverService = coreServices.hardcoverService
     self.preferencesService = coreServices.preferencesService
+    self.listeningQueueService = coreServices.listeningQueueService
+    self.playbackHistoryService = coreServices.playbackHistoryService
 
     ThemeManager.shared.libraryService = libraryService
 
@@ -113,6 +117,8 @@ class MainCoordinator: NSObject {
       .environment(\.preferencesService, preferencesService)
       .environment(\.syncQueueService, syncQueueService)
       .environment(\.uploadContinuation, AppServices.shared.uploadContinuation)
+      .environment(\.listeningQueueService, listeningQueueService)
+      .environment(\.playbackHistoryService, playbackHistoryService)
     )
     vc.modalPresentationStyle = .fullScreen
     vc.modalTransitionStyle = .crossDissolve

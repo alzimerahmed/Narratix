@@ -9,17 +9,37 @@
 import BookPlayerKit
 import SwiftUI
 
-/// The chapters and bookmarks beside or below the player, when the screen has room for both, like
-/// an open iPhone Duo (beside in landscape, below in portrait)
+/// The chapters, bookmarks, queue and history beside or below the player, when
+/// the screen has room for both, like an open iPhone Duo (beside in landscape,
+/// below in portrait)
 struct PlayerListPanel: View {
-  typealias DisplayOption = ListOptionsSectionView.DisplayOption
+  /// The panel's own picker — a superset of `ListOptionsSectionView.DisplayOption`.
+  /// That enum backs the "the player's list button opens" setting with a two-way
+  /// bool pref; queue and history are panel-only so the setting stays binary.
+  enum PanelList: String, Identifiable, CaseIterable {
+    var id: Self { self }
+    case chapters, bookmarks, queue, history
+
+    var title: LocalizedStringKey {
+      switch self {
+      case .chapters: "chapters_title"
+      case .bookmarks: "bookmarks_title"
+      case .queue: "queue_title"
+      case .history: "history_title"
+      }
+    }
+  }
 
   let playerManager: PlayerManager
   let libraryService: LibraryServiceProtocol
   let syncService: SyncServiceProtocol
+  let listeningQueueService: ListeningQueueService
+  let playbackHistoryService: PlaybackHistoryService
+  let playerLoaderService: PlayerLoaderService
+  let loadingState: LoadingOverlayState
 
   /// Starts on the list the player's list button opens (Player Controls › Opens)
-  @State private var list: DisplayOption =
+  @State private var list: PanelList =
     UserDefaults.standard.bool(forKey: Constants.UserDefaults.playerListPrefersBookmarks)
     ? .bookmarks
     : .chapters
@@ -41,6 +61,23 @@ struct PlayerListPanel: View {
               syncService: syncService
             )
           }
+        case .queue:
+          ListeningQueueView {
+            ListeningQueueViewModel(
+              queueService: listeningQueueService,
+              playerLoaderService: playerLoaderService,
+              loadingState: loadingState
+            )
+          }
+        case .history:
+          PlaybackHistoryView {
+            PlaybackHistoryViewModel(
+              historyService: playbackHistoryService,
+              playerManager: playerManager,
+              playerLoaderService: playerLoaderService,
+              loadingState: loadingState
+            )
+          }
         }
       }
       /// The player's buttons are plain, which in a list leaves only a row's text tappable;
@@ -48,9 +85,9 @@ struct PlayerListPanel: View {
       .buttonStyle(.automatic)
       .toolbar {
         ToolbarItem(placement: .principal) {
-          /// No label: VoiceOver reads the segments, "Chapters" and "Bookmarks"
+          /// No label: VoiceOver reads the segments
           Picker(selection: $list) {
-            ForEach(DisplayOption.allCases) { option in
+            ForEach(PanelList.allCases) { option in
               Text(option.title)
                 .tag(option)
             }
@@ -71,13 +108,21 @@ extension View {
   func playerListPanel(
     playerManager: PlayerManager,
     libraryService: LibraryServiceProtocol,
-    syncService: SyncServiceProtocol
+    syncService: SyncServiceProtocol,
+    listeningQueueService: ListeningQueueService,
+    playbackHistoryService: PlaybackHistoryService,
+    playerLoaderService: PlayerLoaderService,
+    loadingState: LoadingOverlayState
   ) -> some View {
     modifier(
       PlayerListPanelModifier(
         playerManager: playerManager,
         libraryService: libraryService,
-        syncService: syncService
+        syncService: syncService,
+        listeningQueueService: listeningQueueService,
+        playbackHistoryService: playbackHistoryService,
+        playerLoaderService: playerLoaderService,
+        loadingState: loadingState
       )
     )
   }
@@ -95,6 +140,10 @@ private struct PlayerListPanelModifier: ViewModifier {
   let playerManager: PlayerManager
   let libraryService: LibraryServiceProtocol
   let syncService: SyncServiceProtocol
+  let listeningQueueService: ListeningQueueService
+  let playbackHistoryService: PlaybackHistoryService
+  let playerLoaderService: PlayerLoaderService
+  let loadingState: LoadingOverlayState
 
   func body(content: Content) -> some View {
     if #available(iOS 27.1, *) {
@@ -107,7 +156,11 @@ private struct PlayerListPanelModifier: ViewModifier {
         PlayerListPanel(
           playerManager: playerManager,
           libraryService: libraryService,
-          syncService: syncService
+          syncService: syncService,
+          listeningQueueService: listeningQueueService,
+          playbackHistoryService: playbackHistoryService,
+          playerLoaderService: playerLoaderService,
+          loadingState: loadingState
         )
       }
       /// Across a fold, the lists go below it; otherwise only beside the player: flat in portrait

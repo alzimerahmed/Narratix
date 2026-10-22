@@ -14,6 +14,8 @@ enum PlayerSheetStyle: String, Identifiable {
     case chapters
     case controls
     case bookmark
+    case queue
+    case history
 
     var id: String { self.rawValue }
 }
@@ -676,6 +678,21 @@ final class PlayerViewModel: ObservableObject {
       )
     )
     
+    /// Up Next and history are sheets like chapters and bookmarks
+    actions.append(
+      BPActionItem(
+        title: "queue_title".localized,
+        handler: { [weak self] in self?.displaySheet(style: .queue) }
+      )
+    )
+
+    actions.append(
+      BPActionItem(
+        title: "history_title".localized,
+        handler: { [weak self] in self?.displaySheet(style: .history) }
+      )
+    )
+
     actions.append(
       BPActionItem(
         title: "jump_start_title".localized,

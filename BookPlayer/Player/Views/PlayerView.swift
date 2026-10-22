@@ -15,6 +15,10 @@ struct PlayerView: View {
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
   /// The whole screen's: inside the split beside the lists, each side gets its own
   @Environment(\.verticalSizeClass) private var verticalSizeClass
+  @Environment(\.listeningQueueService) private var listeningQueueService
+  @Environment(\.playbackHistoryService) private var playbackHistoryService
+  @Environment(\.playerLoaderService) private var playerLoaderService
+  @Environment(\.loadingState) private var loadingState
 
   @StateObject private var viewModel: PlayerViewModel
   @StateObject private var theme = ThemeViewModel()
@@ -35,7 +39,11 @@ struct PlayerView: View {
       .playerListPanel(
         playerManager: viewModel.playerManager,
         libraryService: viewModel.libraryService,
-        syncService: viewModel.syncService
+        syncService: viewModel.syncService,
+        listeningQueueService: listeningQueueService,
+        playbackHistoryService: playbackHistoryService,
+        playerLoaderService: playerLoaderService,
+        loadingState: loadingState
       )
       /// Behind the panel too when it shows
       .background(
@@ -101,6 +109,29 @@ struct PlayerView: View {
                 playerManager: viewModel.playerManager,
                 libraryService: viewModel.libraryService,
                 syncService: viewModel.syncService
+              )
+            }
+          }
+          .environmentObject(theme)
+        case .queue:
+          PlayerListSheet { close in
+            ListeningQueueView(onSelect: close) {
+              ListeningQueueViewModel(
+                queueService: listeningQueueService,
+                playerLoaderService: playerLoaderService,
+                loadingState: loadingState
+              )
+            }
+          }
+          .environmentObject(theme)
+        case .history:
+          PlayerListSheet { close in
+            PlaybackHistoryView(onSelect: close) {
+              PlaybackHistoryViewModel(
+                historyService: playbackHistoryService,
+                playerManager: viewModel.playerManager,
+                playerLoaderService: playerLoaderService,
+                loadingState: loadingState
               )
             }
           }

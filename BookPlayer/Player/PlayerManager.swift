@@ -30,6 +30,15 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   private let userActivityManager: UserActivityManager
   private let shakeMotionService: ShakeMotionServiceProtocol
   private let widgetReloadService: WidgetReloadServiceProtocol
+  /// Consumes and returns the head of the user-managed listening queue (nil
+  /// when empty or not wired — the default keeps tests and isolated instances
+  /// queue-free)
+  private let dequeueNextQueuedItem: () -> SimpleLibraryItem?
+  /// Last time the user touched a transport action, and the position they were
+  /// at: "when did I fall asleep" data for the pause-time `.sleep` bookmark
+  private var lastPlaybackInteraction: (date: Date, position: TimeInterval)?
+  /// Playback running this long without a touch marks the pause as drift-off
+  private static let sleepDriftThreshold: TimeInterval = 15 * 60
 
   private var audioPlayer = AVPlayer()
 
@@ -109,7 +118,8 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     widgetReloadService: WidgetReloadServiceProtocol,
     hasStreamingEnabled: @escaping () -> Bool,
     presentFailure: @escaping (PlaybackFailure) -> Void,
-    streamLookup: ExternalStreamLooking = AudiobookShelfStreamLookup()
+    streamLookup: ExternalStreamLooking = AudiobookShelfStreamLookup(),
+    dequeueNextQueuedItem: @escaping () -> SimpleLibraryItem? = { nil }
   ) {
     self.libraryService = libraryService
     self.playbackService = playbackService
@@ -121,6 +131,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
     self.hasStreamingEnabled = hasStreamingEnabled
     self.presentFailure = presentFailure
     self.streamLookup = streamLookup
+    self.dequeueNextQueuedItem = dequeueNextQueuedItem
     super.init()
 
     setupPlayerInstance()
@@ -1126,6 +1137,7 @@ extension PlayerManager {
   }
 
   func jumpTo(_ time: Double, recordBookmark: Bool = true) {
+    notePlaybackInteraction()
     guard let currentItem = self.currentItem else { return }
 
     if recordBookmark {
@@ -1180,6 +1192,7 @@ extension PlayerManager {
   }
 
   func skipToNextChapter() {
+    notePlaybackInteraction()
     if let currentChapter = currentItem?.currentChapter,
       let nextChapter = currentItem?.nextChapter(after: currentChapter)
     {
@@ -1191,6 +1204,7 @@ extension PlayerManager {
   }
 
   func skipToPreviousChapter() {
+    notePlaybackInteraction()
     defer { NotificationCenter.default.post(name: .listeningProgressChanged, object: nil) }
 
     guard let currentItem,
@@ -1295,6 +1309,7 @@ extension PlayerManager {
   }
 
   func play() {
+    notePlaybackInteraction()
     play(autoPlayed: false)
   }
 
@@ -1633,6 +1648,22 @@ extension PlayerManager {
   func pause(removeInterruptObserver: Bool) {
     guard self.currentItem != nil else { return }
 
+    /// Falling-asleep recovery: when playback ran long without a touch, mark
+    /// where the user was last active — that's about where they drifted off.
+    /// Reuses the existing `.sleep` auto-bookmark infrastructure.
+    if self.isPlaying,
+      let interaction = lastPlaybackInteraction,
+      let currentItem = self.currentItem,
+      Date().timeIntervalSince(interaction.date) >= Self.sleepDriftThreshold
+    {
+      createOrUpdateAutomaticBookmark(
+        at: min(interaction.position, currentItem.currentTime),
+        relativePath: currentItem.relativePath,
+        uuid: currentItem.uuid,
+        type: .sleep
+      )
+    }
+
     self.observeStatus = false
 
     self.userActivityManager.stopPlaybackActivity()
@@ -1706,6 +1737,11 @@ extension PlayerManager {
     )
   }
 
+  /// Transport actions the user touches while awake reset the drift clock
+  private func notePlaybackInteraction() {
+    lastPlaybackInteraction = (Date(), self.currentItem?.currentTime ?? 0)
+  }
+
   func markAsCompleted(_ flag: Bool) {
     guard let currentItem = self.currentItem else { return }
 
@@ -1750,6 +1786,18 @@ extension PlayerManager {
     }
 
     let restartFinished = UserDefaults.standard.bool(forKey: Constants.UserDefaults.autoplayRestartEnabled)
+
+    /// An explicitly queued item always wins over the folder's next sibling —
+    /// the listening queue is user ordering, folder chaining is implicit.
+    /// `dequeueNext` consumes the entry: an item that fails to resolve is
+    /// dropped and the next head is tried.
+    while let queued = dequeueNextQueuedItem(),
+      let queuedBook = try? playbackService.getPlayableItem(from: queued)
+    {
+      load(queuedBook, autoplay: shouldAutoplay)
+      libraryService.setLibraryLastBook(with: queuedBook.relativePath)
+      return
+    }
 
     guard
       let currentItem = self.currentItem,
@@ -1970,6 +2018,9 @@ extension PlayerManager {
   }
 
   private func handleSleepTimerTurnedOnEvent() {
+    /// Arming a sleep timer is a wake interaction too — it marks "still awake"
+    /// for the pause-time drift bookmark
+    notePlaybackInteraction()
     guard let currentItem else { return }
 
     createOrUpdateAutomaticBookmark(

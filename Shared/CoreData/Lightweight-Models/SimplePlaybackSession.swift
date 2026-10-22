@@ -7,6 +7,7 @@
 //
 //
 
+import CoreData
 import Foundation
 
 /// Snapshot of one continuous listening session: when it started, where in the

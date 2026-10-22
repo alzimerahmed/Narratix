@@ -113,6 +113,11 @@ final class AppServices: BPLogger {
         syncQueueService: syncQueueService
       )
       let playbackService = makePlaybackService(libraryService: libraryService)
+      let listeningQueueService = ListeningQueueService()
+      listeningQueueService.setup(dataManager: dataManager)
+      let playbackHistoryService = PlaybackHistoryService()
+      playbackHistoryService.setup(dataManager: dataManager)
+      playbackHistoryService.observePlayback()
       let playerManager = PlayerManager(
         libraryService: libraryService,
         playbackService: playbackService,
@@ -124,6 +129,9 @@ final class AppServices: BPLogger {
         /// Already on main: `PlayerManager` routes every failure through `presentOnMain`.
         presentFailure: { [promptSurfaceArbiter] failure in
           promptSurfaceArbiter.routeFailure(failure)
+        },
+        dequeueNextQueuedItem: { [listeningQueueService] in
+          listeningQueueService.dequeueNext()
         }
       )
       let watchService = PhoneWatchConnectivityService(
@@ -162,7 +170,9 @@ final class AppServices: BPLogger {
         syncService: syncService,
         syncQueueService: syncQueueService,
         mediaServerChapterService: mediaServerChapterService,
-        watchService: watchService
+        watchService: watchService,
+        listeningQueueService: listeningQueueService,
+        playbackHistoryService: playbackHistoryService
       )
 
       self.coreServices = coreServices
