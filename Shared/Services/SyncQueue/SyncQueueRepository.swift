@@ -674,19 +674,22 @@ public actor SyncQueueRepository: SyncQueueRepositoryProtocol, BPLogger {
   /// can lead to a book file upload.
   public func hasUploadTask(matchingPrefix pathPrefix: String) -> Bool {
     let descendantPrefix = pathPrefix + "/"
-    /// The store filters — every offload check used to pull ALL task
-    /// references into memory just to test a prefix
+    /// The store filters by prefix — every offload check used to pull ALL task
+    /// references into memory just to test one. Boundary + job-type matching
+    /// stay in Swift: compound predicates don't survive the type-checker.
     let descriptor = FetchDescriptor<QueuedTaskReferenceModel>(
       predicate: #Predicate<QueuedTaskReferenceModel> { reference in
-        (reference.jobType == .upload
-          || reference.jobType == .uploadFile
-          || reference.jobType == .externalResourceToDownload)
-          && (reference.relativePath == pathPrefix
-            || reference.relativePath.starts(with: descendantPrefix))
+        reference.relativePath.starts(with: pathPrefix)
       }
     )
     guard let references = try? modelContext.fetch(descriptor) else { return false }
-    return !references.isEmpty
+    return references.contains {
+      ($0.jobType == .upload
+        || $0.jobType == .uploadFile
+        || $0.jobType == .externalResourceToDownload)
+        && ($0.relativePath == pathPrefix
+          || $0.relativePath.hasPrefix(descendantPrefix))
+    }
   }
 
   /// Rewrites task reference and task model uuids for each conflict returned by `matchUuid`.
