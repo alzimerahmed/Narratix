@@ -143,7 +143,7 @@
         <key>NSStringFormatValueTypeKey</key>
         <string>d</string>
         <key>zero</key>
-        <string>No days</string>
+        <string>0 days</string>
         <key>one</key>
         <string>1 day</string>
         <key>other</key>

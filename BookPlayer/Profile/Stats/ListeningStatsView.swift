@@ -24,13 +24,25 @@ struct ListeningStatsView: View {
 
   var body: some View {
     List {
-      todaySection
-      streakSection
-      chartSection
-      goalSection
-      if !model.itemTotals.isEmpty {
-        perBookSection
+      if model.hasData {
+        todaySection
+        streakSection
+        chartSection
+        if !model.itemTotals.isEmpty {
+          perBookSection
+        }
+      } else {
+        ContentUnavailableView(
+          "stats_empty_title",
+          systemImage: "chart.bar",
+          description: Text("stats_empty_description")
+        )
+        /// Not a data row — keep the section background out from under it
+        .listRowBackground(Color.clear)
       }
+      /// The daily goal needs no listening history — it stays reachable
+      /// outside the empty gate (an overlay would swallow the picker too)
+      goalSection
     }
     .listStyle(.sidebar)
     .applyListStyle(with: theme, background: theme.systemBackgroundColor)
@@ -38,15 +50,6 @@ struct ListeningStatsView: View {
     .navigationBarTitleDisplayMode(.inline)
     .task {
       model.reload()
-    }
-    .overlay {
-      if !model.hasData {
-        ContentUnavailableView(
-          "stats_empty_title",
-          systemImage: "chart.bar",
-          description: Text("stats_empty_description")
-        )
-      }
     }
   }
 
