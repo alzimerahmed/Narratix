@@ -34,9 +34,10 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   /// when empty or not wired — the default keeps tests and isolated instances
   /// queue-free)
   private let dequeueNextQueuedItem: () -> SimpleLibraryItem?
-  /// Last time the user touched a transport action, and the position they were
-  /// at: "when did I fall asleep" data for the pause-time `.sleep` bookmark
-  private var lastPlaybackInteraction: (date: Date, position: TimeInterval)?
+  /// Last time the user touched a transport action, the position they were at,
+  /// and which item it was on: "when did I fall asleep" data for the pause-time
+  /// `.sleep` bookmark. The path guards against a stamp carried over an item swap.
+  private var lastPlaybackInteraction: (date: Date, position: TimeInterval, relativePath: String?)?
   /// Playback running this long without a touch marks the pause as drift-off
   private static let sleepDriftThreshold: TimeInterval = 15 * 60
 
@@ -1654,6 +1655,7 @@ extension PlayerManager {
     if self.isPlaying,
       let interaction = lastPlaybackInteraction,
       let currentItem = self.currentItem,
+      interaction.relativePath == currentItem.relativePath,
       Date().timeIntervalSince(interaction.date) >= Self.sleepDriftThreshold
     {
       createOrUpdateAutomaticBookmark(
@@ -1739,7 +1741,7 @@ extension PlayerManager {
 
   /// Transport actions the user touches while awake reset the drift clock
   private func notePlaybackInteraction() {
-    lastPlaybackInteraction = (Date(), self.currentItem?.currentTime ?? 0)
+    lastPlaybackInteraction = (Date(), self.currentItem?.currentTime ?? 0, self.currentItem?.relativePath)
   }
 
   func markAsCompleted(_ flag: Bool) {
