@@ -165,8 +165,12 @@ struct PhoneLibraryView: View {
     }
     .overlay {
       if items.isEmpty {
-        Text("watchapp_browse_empty_title")
-          .foregroundStyle(.secondary)
+        VStack(spacing: 4) {
+          Text("watchapp_browse_empty_title")
+          Text("watchapp_browse_empty_description")
+            .font(.footnote)
+        }
+        .foregroundStyle(.secondary)
       }
     }
   }
