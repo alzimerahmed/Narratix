@@ -41,6 +41,10 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   /// In-flight `applyAudioEffects` rebuild — a new settings change cancels the
   /// pending one so last-tap-wins, never last-task-completes
   private var audioEffectsTask: Task<Void, Never>?
+  /// Bumped on every `applyAudioEffects`: `loadPlayerItem` attaches the mix it
+  /// built only when the counter is unchanged, so a mid-load settings change
+  /// can't be overwritten by the load's now-stale build
+  private var audioEffectsGeneration = 0
   /// Last time the user touched a transport action, the position they were at,
   /// and which item it was on: "when did I fall asleep" data for the pause-time
   /// `.sleep` bookmark. The path guards against a stamp carried over an item swap.
@@ -372,14 +376,22 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
       self.hasObserverRegistered = false
     }
 
-    self.playerItem = AVPlayerItem(asset: asset)
+    let newItem = AVPlayerItem(asset: asset)
+    self.playerItem = newItem
     self.playerItemRelativePath = chapter.relativePath
-    self.playerItem?.audioTimePitchAlgorithm = .timeDomain
+    newItem.audioTimePitchAlgorithm = .timeDomain
     /// EQ rides the item's audioMix — nil whenever the feature is off or the tap
     /// can't be built (the await loads the asset's tracks: instant locally, a
     /// header read for streams). `audioTimePitchAlgorithm` is untouched, so
     /// per-book speed keeps working through the processed path.
-    self.playerItem?.audioMix = await audioEQProcessor.audioMixIfEnabled(for: asset)
+    let audioEffectsGeneration = self.audioEffectsGeneration
+    let audioMix = await audioEQProcessor.audioMixIfEnabled(for: asset)
+    /// The build suspended: a mid-load `applyAudioEffects` already attached a
+    /// newer mix (generation bump), and a newer load may own the item — the
+    /// stale build must not land last, or the wrong preset sticks for the item
+    if self.audioEffectsGeneration == audioEffectsGeneration, self.playerItem === newItem {
+      newItem.audioMix = audioMix
+    }
 
     /// The mix build awaits: a load started after this one owns the item again
     guard !Task.isCancelled else {
@@ -1594,6 +1606,9 @@ extension PlayerManager {
   /// EQ is iOS-only.
   func applyAudioEffects() {
     guard let playerItem else { return }
+    /// Invalidates any mix build `loadPlayerItem` still has in flight — the
+    /// settings snapshot it reads is stale now, and this task owns the attach
+    audioEffectsGeneration += 1
     audioEffectsTask?.cancel()
     audioEffectsTask = Task { @MainActor [weak self] in
       let mix = await self?.audioEQProcessor.audioMixIfEnabled(for: playerItem.asset)
