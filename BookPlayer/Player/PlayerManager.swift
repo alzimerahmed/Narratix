@@ -107,8 +107,9 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
   @Published var currentSpeed: Float = 1.0
   /// The current chapter is playing its cloud copy because its media server couldn't serve
   /// it — surfaced in the player so a pause for buffering or a changed file isn't a mystery.
-  /// Set only in the streamed-chapter branch of `loadPlayerItem`; cleared on the next
-  /// successful server stream, an item swap and stop
+  /// Set only in the streamed-chapter branch of `loadPlayerItem`; cleared on every
+  /// chapter load, an item swap and stop, so a local chapter after a fallback one
+  /// doesn't keep the badge
   @Published private(set) var playingCloudFallback = false
 
   var nowPlayingInfo = [String: Any]()
@@ -310,6 +311,7 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
 
   @MainActor
   func loadPlayerItem(for chapter: PlayableChapter, forceRefreshURL: Bool) async throws -> PlayableChapter {
+    playingCloudFallback = false
     let fileURL = DataManager.getProcessedFolderURL().appendingPathComponent(chapter.relativePath)
     let isMissingLocally = !FileManager.default.fileExists(atPath: fileURL.path)
 
@@ -323,7 +325,6 @@ final class PlayerManager: NSObject, PlayerManagerProtocol, ObservableObject {
       // nothing server-side can gate it.
       switch try await streamURL(for: chapter, forceRefresh: forceRefreshURL) {
       case .success(let streamURL):
-        playingCloudFallback = false
         // No metadata is loaded here: the length comes from the server at import time
         // (`VirtualImportPipeline` refuses an item without one), so there is nothing a round
         // trip to the stream could add. `AVURLAssetHTTPHeaderFieldsKey` is undocumented, but it
