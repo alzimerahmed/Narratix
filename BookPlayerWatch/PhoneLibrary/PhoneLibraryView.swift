@@ -197,7 +197,7 @@ struct PhoneLibraryView: View {
   @ViewBuilder
   private func actionButtons(for item: WatchLibraryItem) -> some View {
     switch item.downloadState {
-    case "notDownloaded":
+    case .notDownloaded:
       Button {
         requestDownload(for: item)
       } label: {
@@ -205,7 +205,7 @@ struct PhoneLibraryView: View {
           .imageScale(.large)
       }
       .accessibilityLabel("download_title".localized)
-    case "downloaded" where item.canOffload:
+    case .downloaded where item.canOffload:
       Button {
         itemPendingOffload = item
       } label: {
@@ -249,7 +249,7 @@ struct PhoneLibraryView: View {
       switch result {
       case .success:
         showDownloadStarted = true
-        updateState(of: item, to: "downloading", canOffload: false)
+        updateState(of: item, to: .downloading, canOffload: false)
       case .failure(let commandError):
         error = CommandError(kind: commandError)
       }
@@ -260,7 +260,7 @@ struct PhoneLibraryView: View {
     contextManager.requestPhoneItemRemoveDownload(relativePath: item.relativePath) { result in
       switch result {
       case .success:
-        updateState(of: item, to: "notDownloaded", canOffload: false)
+        updateState(of: item, to: .notDownloaded, canOffload: false)
       case .failure(let commandError):
         error = CommandError(kind: commandError)
       }
@@ -269,7 +269,7 @@ struct PhoneLibraryView: View {
 
   /// Patch the row's download state after an accepted command — the page
   /// would say the same thing on the next reload
-  private func updateState(of item: WatchLibraryItem, to state: String, canOffload: Bool) {
+  private func updateState(of item: WatchLibraryItem, to state: WatchLibraryItem.DownloadState, canOffload: Bool) {
     guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
     items[index] = WatchLibraryItem(
       relativePath: item.relativePath,
@@ -304,28 +304,36 @@ private struct PhoneLibraryCell: View {
       }
       Spacer()
       if item.isFolder {
+        /// Pure affordance — the NavigationLink already reads as a link
         Image(systemName: "chevron.forward")
+          .accessibilityHidden(true)
       }
     }
   }
 
+  /// The storage glyph's spoken + visible counterpart: VoiceOver would read
+  /// the SF Symbol's name, so the glyph hides and a state word carries it —
+  /// the same words the phone's storage screen uses
   @ViewBuilder
   private var stateLine: some View {
-    switch item.downloadState {
-    case "downloading":
-      Text(Image(systemName: "icloud.and.arrow.down.fill"))
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    case "downloaded":
-      Text(Image(systemName: "iphone"))
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    case "notDownloaded":
-      Text(Image(systemName: "icloud.fill"))
-        .font(.caption2)
-        .foregroundStyle(.secondary)
-    default:
-      EmptyView()
+    let state: (icon: String, labelKey: String)? = switch item.downloadState {
+    case .downloading:
+      ("icloud.and.arrow.down.fill", "storage_state_downloading")
+    case .downloaded:
+      ("iphone", "storage_state_backed_up")
+    case .notDownloaded:
+      ("icloud.fill", "storage_state_in_cloud")
+    case nil:
+      nil
+    }
+    if let state {
+      HStack(spacing: 4) {
+        Image(systemName: state.icon)
+          .accessibilityHidden(true)
+        Text(state.labelKey.localized)
+      }
+      .font(.caption2)
+      .foregroundStyle(.secondary)
     }
   }
 }
