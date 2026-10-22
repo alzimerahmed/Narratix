@@ -100,5 +100,21 @@
         <string>%d books</string>
       </dict>
     </dict>
+    <key>rescan_found_items_description</key>
+    <dict>
+      <key>NSStringLocalizedFormatKey</key>
+      <string>%#@format@</string>
+      <key>format</key>
+      <dict>
+        <key>NSStringFormatSpecTypeKey</key>
+        <string>NSStringPluralRuleType</string>
+        <key>NSStringFormatValueTypeKey</key>
+        <string>d</string>
+        <key>one</key>
+        <string>Found %d file that wasn't in your library and added it.</string>
+        <key>other</key>
+        <string>Found %d files that weren't in your library and added them.</string>
+      </dict>
+    </dict>
   </dict>
 </plist>

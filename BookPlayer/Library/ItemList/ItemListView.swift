@@ -493,6 +493,11 @@ struct ItemListView: View {
     Button("media_servers_title".localized, systemImage: "server.rack") {
       listState.activeLibrarySheet = .mediaServers
     }
+    /// Files dropped into Documents (or straight into the library folder) via
+    /// the Files app or iTunes File Sharing: picks them up like the watchers do
+    Button("rescan_library_title", systemImage: "arrow.clockwise") {
+      rescanLibrary()
+    }
     Button("create_playlist_button", systemImage: "folder.badge.plus") {
       /// Clean up just in case due to how List(selection:) works under the hood
       model.selectedSetItems.removeAll()
@@ -780,6 +785,29 @@ struct ItemListView: View {
         playerState.showPlayerBinding.wrappedValue = true
       } catch {
         loadingState.error = error
+      }
+    }
+  }
+
+  /// "Rescan library": pending files take over through `observeFiles` → the
+  /// import screen; the alert reports only what the Processed pass registered,
+  /// since a pending import already explains itself
+  private func rescanLibrary() {
+    Task { @MainActor in
+      importOperationState.isOperationActive = true
+      importOperationState.processingTitle = "rescan_in_progress_title".localized
+
+      let result = await importManager.rescanLibrary()
+
+      importOperationState.isOperationActive = false
+      importOperationState.processingTitle = ""
+
+      if result.registeredItems > 0 {
+        listState.reloadAll(padding: result.registeredItems)
+      }
+
+      if result.pendingImports == 0 {
+        activeAlert = .rescanResult(registered: result.registeredItems)
       }
     }
   }

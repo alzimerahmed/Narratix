@@ -19,7 +19,9 @@ enum ItemListAlert: Identifiable, Equatable {
   case cancelDownload(SimpleLibraryItem)
   case warningOffload(SimpleLibraryItem)
   case downloadURL(String)
-  
+  /// Manual rescan outcome — how many orphaned files got their records back
+  case rescanResult(registered: Int)
+
   var id: String {
     switch self {
     case .queuedTasks:
@@ -34,6 +36,8 @@ enum ItemListAlert: Identifiable, Equatable {
       return "warningOffload-\(item.id)"
     case .downloadURL:
       return "downloadURL"
+    case .rescanResult:
+      return "rescanResult"
     }
   }
   

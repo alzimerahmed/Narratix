@@ -664,3 +664,8 @@
 "collection_picker_empty_description" = "Create a collection to shelve this selection on it.";
 "collection_detail_empty_title" = "This shelf is empty";
 "collection_detail_empty_description" = "Add books from a book's options menu — Add to Collection.";
+
+/* Phase 3d: Storage & Import */
+"rescan_library_title" = "Rescan library";
+"rescan_in_progress_title" = "Scanning for new files";
+"rescan_up_to_date_description" = "No new files were found. Your library is up to date.";
