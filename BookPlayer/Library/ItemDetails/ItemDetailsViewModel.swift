@@ -258,13 +258,14 @@ final class ItemDetailsViewModel: ObservableObject {
 
       if showAuthor {
         updateAuthor(author, relativePath: item.relativePath)
+        /// Same rename rule as the note below: series metadata follows the
+        /// item's current path
+        updateSeries(name: seriesName, orderText: seriesOrder, relativePath: cacheKey)
       }
 
       /// cacheKey is the post-rename path when a folder title changed — the note
       /// has to write to the item's current identity
       updateNote(note, relativePath: cacheKey)
-      /// Same rename rule: series metadata follows the item's current path
-      updateSeries(name: seriesName, orderText: seriesOrder, relativePath: cacheKey)
 
       if let pickerViewModel = hardcoverSectionViewModel?.pickerViewModel,
         pickerViewModel.selected?.id != hardcoverBook?.id
