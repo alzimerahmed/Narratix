@@ -288,7 +288,9 @@ struct ItemListView: View {
       for await counts in syncQueueService.observeQueueCounts().values {
         // Blocked too: an account-level pause from an upload holds this lane with none of its
         // own tasks parked
-        syncLanePaused = counts.isBlocked(TaskQueueKey.sync) || counts.pausedCount(in: TaskQueueKey.sync) > 0
+        syncLanePaused = counts.isBlocked(TaskQueueKey.sync)
+          || counts.isUserPaused(TaskQueueKey.sync)
+          || counts.pausedCount(in: TaskQueueKey.sync) > 0
       }
     }
     .onReceive(

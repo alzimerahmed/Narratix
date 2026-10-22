@@ -165,6 +165,14 @@ public class SyncQueueService: SyncQueueServiceProtocol, BPLogger {
   /// before SyncService is set up, and a lapsed account's persisted tasks must never
   /// reach the server. Guarded by `stateLock`, together with `activeQueueKeys`.
   private var _serverLanesEnabled = false
+  /// Lanes the user held from Queued Tasks — checked before every pop like
+  /// `_serverLanesEnabled`, so a worker already looping when the hold lands retires
+  /// after its current task instead of draining the lane. Guarded by `stateLock`;
+  /// persisted (a hold survives a relaunch)
+  private var _pausedLaneKeys: Set<String> = []
+  /// Replays the holds and publishes every change: `observeQueueCounts` folds them in so
+  /// a held lane reads idle to `handleAppRefresh`'s `laneDrained`
+  private let pausedLanesSubject = CurrentValueSubject<Set<String>, Never>([])
   /// Whether coded failures park (kept, visible, retryable) or are dropped. Off on the
   /// watch, which has no Queued Tasks screen to show or retry them from. Set before `setup`.
   public var parkingEnabled = true
@@ -229,6 +237,12 @@ public class SyncQueueService: SyncQueueServiceProtocol, BPLogger {
     self.dataManager = dataManager
     self.taskContainer = SyncQueueRepository(tasksDataManager: tasksDataManager)
     self.tasksDataManager = tasksDataManager
+    /// Restore the user's lane holds before workers can wake: a persisted hold must be in
+    /// place before the first pop, or the lane would run until this read landed
+    _pausedLaneKeys = Set(
+      UserDefaults.standard.stringArray(forKey: Constants.UserDefaults.pausedSyncLanes) ?? []
+    )
+    pausedLanesSubject.send(_pausedLaneKeys)
     startListeningForNewTasks()
     bindObservers()
     // Policy BEFORE workers: createOperation consults accessPolicy to decide whether a
@@ -317,7 +331,45 @@ public class SyncQueueService: SyncQueueServiceProtocol, BPLogger {
   }
 
   public func observeQueueCounts() -> AnyPublisher<QueueCounts, Never> {
+    /// `pausedLanesSubject` folds the user's lane holds in: the data manager's snapshot
+    /// only knows parked tasks, and a held lane must read idle to `handleAppRefresh`'s
+    /// `laneDrained` (its pending tasks stay — a hold isn't a blocked drain)
     return tasksDataManager.observeQueueCounts()
+      .combineLatest(pausedLanesSubject)
+      .map { counts, paused in
+        QueueCounts(
+          byQueueKey: counts.byQueueKey,
+          pausedByQueueKey: counts.pausedByQueueKey,
+          blockedQueueKeys: counts.blockedQueueKeys,
+          userPausedQueueKeys: paused
+        )
+      }
+      .eraseToAnyPublisher()
+  }
+
+  /// Whether the user held this lane in Queued Tasks
+  public func isLanePaused(_ queueKey: String) -> Bool {
+    stateLock.withLock { _pausedLaneKeys.contains(queueKey) }
+  }
+
+  /// The user's hold on a lane from Queued Tasks. Pause stops the lane at its next pop —
+  /// nothing is parked or cancelled and the running task finishes; resume wakes the lane
+  /// (its worker was retired, and a direct wake covers a lane left with no waiters)
+  public func setLanePaused(_ queueKey: String, paused: Bool) {
+    let (changed, lanes) = stateLock.withLock {
+      let changed = paused
+        ? _pausedLaneKeys.insert(queueKey).inserted
+        : _pausedLaneKeys.remove(queueKey) != nil
+      return (changed, _pausedLaneKeys)
+    }
+    guard changed else { return }
+
+    UserDefaults.standard.set(lanes.sorted(), forKey: Constants.UserDefaults.pausedSyncLanes)
+    pausedLanesSubject.send(lanes)
+
+    if !paused {
+      Task { await startWorkerLoop(for: queueKey) }
+    }
   }
 
   public var serverLanesEnabled: Bool {
@@ -337,17 +389,18 @@ public class SyncQueueService: SyncQueueServiceProtocol, BPLogger {
 
   private func enqueueNextTask(for queueKey: String) async {
     // Checked before every pop, not just at wake-up, so a worker already looping when
-    // sync turns off stops after its current task instead of draining the lane
-    if TaskQueueKey.isServerLane(queueKey) {
-      let retired = stateLock.withLock {
-        guard !_serverLanesEnabled else { return false }
-        activeQueueKeys.remove(queueKey)
-        return true
-      }
-      // Checking the flag and retiring under one lock means an enable either happened
-      // before (we keep going) or will see this key inactive and wake a fresh worker
-      if retired { return }
+    // the hold lands stops after its current task instead of draining the lane. Covers a
+    // user-held lane (Queued Tasks) and a BookPlayer-server lane while sync is off
+    let laneHeld = stateLock.withLock {
+      guard _pausedLaneKeys.contains(queueKey)
+              || (TaskQueueKey.isServerLane(queueKey) && !_serverLanesEnabled)
+      else { return false }
+      activeQueueKeys.remove(queueKey)
+      return true
     }
+    // Checking the holds and retiring under one lock means a resume (or an enable) either
+    // happened before — we keep going — or will see this key inactive and wake a fresh worker
+    if laneHeld { return }
 
     // 1. AWAIT the actor to safely fetch the next task
     guard let nextTask = await taskContainer.getNextTask(for: queueKey) else {
@@ -604,7 +657,9 @@ public class SyncQueueService: SyncQueueServiceProtocol, BPLogger {
   public func settleUploads() async {
     // Bounded: the caller also times out, but a lane that never starts mustn't spin here
     for _ in 0..<100 {
-      guard serverLanesEnabled else { return }
+      /// A lane the user held still HAS a runnable task — no worker pops it, and the loop
+      /// would sit the full window out
+      guard serverLanesEnabled, !isLanePaused(TaskQueueKey.uploadFile) else { return }
       let running = operationQueue.operations.first {
         $0 is FileUploadOperation && $0.isExecuting && !$0.isCancelled
       } as? FileUploadOperation

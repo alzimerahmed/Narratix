@@ -160,6 +160,7 @@ struct QueuedTasksView: View, BPLogger {
 
   private func laneHeaderRow(_ queueKey: String, continueLabel: ContinueLabel?) -> some View {
     let isBlocked = counts.isBlocked(queueKey)
+    let isUserPaused = counts.isUserPaused(queueKey)
     return HStack(spacing: Spacing.S1) {
       HStack(spacing: Spacing.S1) {
         Image(systemName: isBlocked ? "exclamationmark.triangle.fill" : QueueDisplay.imageName(for: queueKey))
@@ -173,20 +174,31 @@ struct QueuedTasksView: View, BPLogger {
             Text("sync_paused_lane_title")
               .bpFont(.caption)
               .foregroundStyle(.red)
+          } else if isUserPaused {
+            /// A user hold, not a fault — kept quiet, the icon says which control undoes it
+            Text("paused_title")
+              .bpFont(.caption)
+              .foregroundStyle(theme.secondaryColor)
           }
           if queueKey == TaskQueueKey.uploadFile {
             backgroundUploadStatus
           }
         }
         Spacer()
+        laneHoldButton(queueKey, paused: isUserPaused)
         Text("\(counts.count(in: queueKey))")
           .bpFont(.subheadline)
           .foregroundStyle(theme.secondaryColor)
       }
       .accessibilityElement(children: .combine)
-      // The button sits inside the lane's disclosure label, which VoiceOver may read as one
-      // element: for VoiceOver the action is offered on the header itself
+      // The buttons sit inside the lane's disclosure label, which VoiceOver may read as one
+      // element: for VoiceOver the actions are offered on the header itself
       .accessibilityActions {
+        if voiceOverEnabled {
+          Button(isUserPaused ? "queue_lane_resume_button" : "queue_lane_pause_button") {
+            syncQueueService.setLanePaused(queueKey, paused: !isUserPaused)
+          }
+        }
         if continueLabel != nil, voiceOverEnabled {
           Button("continue_in_background_button") {
             uploadContinuation.continueInBackground()
@@ -198,6 +210,28 @@ struct QueuedTasksView: View, BPLogger {
       }
     }
     .padding(.vertical, Spacing.S3)
+  }
+
+  /// Holds or releases the lane: its worker retires at the next pop rather than parking
+  /// each task. Borderless — a plain button in the label would toggle the lane instead
+  private func laneHoldButton(_ queueKey: String, paused: Bool) -> some View {
+    Button {
+      syncQueueService.setLanePaused(queueKey, paused: !paused)
+    } label: {
+      Image(systemName: paused ? "play.fill" : "pause.fill")
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.borderless)
+    .bpFont(.subheadline)
+    .foregroundStyle(theme.linkColor)
+    // The 44 pt target reaches into the row's padding instead of growing the header
+    .padding(.vertical, -Spacing.S3)
+    // The lane name is the value: Voice Control gets a name to call, VoiceOver uses the
+    // header's action instead
+    .accessibilityLabel(paused ? "queue_lane_resume_button" : "queue_lane_pause_button")
+    .accessibilityValue(QueueDisplay.name(for: queueKey))
+    .accessibilityHidden(voiceOverEnabled)
   }
 
   /// What the continued task is doing, under the lane title

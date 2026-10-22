@@ -18,15 +18,21 @@ public struct QueueCounts: Equatable {
   /// Lanes that can't make progress until a parked task is resumed: a lane-level pause
   /// at their head, or an account-level pause holding every server lane
   public let blockedQueueKeys: Set<String>
+  /// Lanes the user held from Queued Tasks: no task is parked, but the lane's worker
+  /// retires instead of popping. Folded in by `SyncQueueService.observeQueueCounts` so a
+  /// held lane reads idle to anything waiting on it
+  public let userPausedQueueKeys: Set<String>
 
   public init(
     byQueueKey: [String: Int] = [:],
     pausedByQueueKey: [String: Int] = [:],
-    blockedQueueKeys: Set<String> = []
+    blockedQueueKeys: Set<String> = [],
+    userPausedQueueKeys: Set<String> = []
   ) {
     self.byQueueKey = byQueueKey
     self.pausedByQueueKey = pausedByQueueKey
     self.blockedQueueKeys = blockedQueueKeys
+    self.userPausedQueueKeys = userPausedQueueKeys
   }
 
   /// Every queued task across all lanes
@@ -41,9 +47,16 @@ public struct QueueCounts: Equatable {
 
   public func isBlocked(_ queueKey: String) -> Bool { blockedQueueKeys.contains(queueKey) }
 
-  /// Nothing in the lane can run: it's empty, holds only parked tasks, or is blocked
+  /// The user held this lane in Queued Tasks — a hold, not a fault (`isBlocked` stays
+  /// for lanes waiting on a parked task)
+  public func isUserPaused(_ queueKey: String) -> Bool { userPausedQueueKeys.contains(queueKey) }
+
+  /// Nothing in the lane can run: it's empty, holds only parked tasks, is blocked, or
+  /// the user held it
   public func isIdle(_ queueKey: String) -> Bool {
-    isBlocked(queueKey) || count(in: queueKey) == pausedCount(in: queueKey)
+    isBlocked(queueKey)
+      || isUserPaused(queueKey)
+      || count(in: queueKey) == pausedCount(in: queueKey)
   }
 }
 
