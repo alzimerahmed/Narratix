@@ -21,7 +21,10 @@ struct ListeningProgressView: View {
   var onSliderChange: ((Double) -> Void)?
   var onProgressToggle: (() -> Void)?
   var onRemainingToggle: (() -> Void)?
-  
+  /// Chapter ticks on the track (and the VoiceOver chapter rotor entries)
+  var chapterMarkers: [ChapterMarker] = []
+  var onMarkerActivate: ((ChapterMarker) -> Void)?
+
   var body: some View {
     VStack(spacing: 8) {
       SlickSlider(
@@ -34,7 +37,9 @@ struct ListeningProgressView: View {
           }
         },
         onDragValueChanged: onSliderDragChanged,
-        accentColor: theme.linkColor
+        accentColor: theme.linkColor,
+        chapterMarkers: chapterMarkers,
+        onMarkerActivate: onMarkerActivate
       )
       .frame(height: 18)
       

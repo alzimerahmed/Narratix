@@ -408,6 +408,11 @@ final class PlayerViewModel: ObservableObject {
     self.playerManager.jumpTo(newTime, recordBookmark: true)
   }
 
+  /// A VoiceOver rotor activation: land just inside the chapter's start, like `jumpToChapter`
+  func handleChapterMarker(_ marker: ChapterMarker) {
+    playerManager.jumpTo(marker.start + 0.1, recordBookmark: false)
+  }
+
   func getBookTimeFromSlider(value: Float) -> TimeInterval {
     var newTimeToDisplay = TimeInterval(value) * (self.playerManager.currentItem?.duration ?? 0)
     
@@ -445,7 +450,10 @@ final class PlayerViewModel: ObservableObject {
         )
       sliderValue = Float((currentItem.currentTime - currentChapter.start) / currentChapter.duration)
     } else {
-      progress = "\(Int(round((currentItem?.progressPercentage ?? 0) * 100)))%"
+      let percentage = Int(round((currentItem?.progressPercentage ?? 0) * 100))
+      /// The chapter under the playhead names where that percentage sits
+      progress = currentItem?.currentChapter.map { "\(percentage)% · \($0.title)" }
+        ?? "\(percentage)%"
       sliderValue = Float(currentItem?.progressPercentage ?? 0)
     }
     
@@ -463,6 +471,20 @@ final class PlayerViewModel: ObservableObject {
     }
     self.chapterBeforeSliderValueChange = currentItem?.currentChapter
 
+    /// Ticks and rotor entries are book-level; in chapter context the track spans one
+    /// chapter, where book fractions wouldn't land under their chapters
+    let chapterMarkers: [ChapterMarker]
+    if !prefersChapterContext,
+       let currentItem = currentItem,
+       currentItem.chapters.count > 1,
+       currentItem.duration > 0 {
+      chapterMarkers = currentItem.chapters.map {
+        ChapterMarker(fraction: $0.start / currentItem.duration, title: $0.title, start: $0.start)
+      }
+    } else {
+      chapterMarkers = []
+    }
+
     let newProgressData = ProgressData(
       currentTime: currentTime,
       progress: progress,
@@ -470,7 +492,8 @@ final class PlayerViewModel: ObservableObject {
       sliderValue: Double(sliderValue),
       chapterTitle: currentItem?.currentChapter?.title
         ?? currentItem?.title
-        ?? ""
+        ?? "",
+      chapterMarkers: chapterMarkers
     )
 
     if progressData != newProgressData {

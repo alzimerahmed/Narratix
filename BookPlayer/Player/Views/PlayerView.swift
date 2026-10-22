@@ -262,6 +262,10 @@ private struct PlayerContentView: View {
             },
             onRemainingToggle: {
               viewModel.processToggleMaxTime()
+            },
+            chapterMarkers: viewModel.progressData.chapterMarkers,
+            onMarkerActivate: { marker in
+              viewModel.handleChapterMarker(marker)
             }
           )
 
