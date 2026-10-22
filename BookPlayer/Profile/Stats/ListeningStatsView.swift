@@ -225,7 +225,7 @@ extension ListeningStatsView {
 #Preview {
   NavigationStack {
     ListeningStatsView {
-      let model = Model()
+      let model = ListeningStatsView.Model()
       model.todaySeconds = 1470
       model.goalMinutes = 30
       model.goalSeconds = 1800
