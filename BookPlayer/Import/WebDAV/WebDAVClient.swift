@@ -68,8 +68,14 @@ final class WebDAVClient: NSObject, BPLogger, @unchecked Sendable {
   ]
 
   let connection: WebDAVConnection
+  /// Listing (PROPFIND) traffic only. Downloads can't share it: each GET runs
+  /// on a one-shot delegate session in `download(_:to:progress:)`, which is
+  /// where byte progress is reported and redirects get their Authorization
+  /// header stripped off the connection's origin
   private let session: URLSession
 
+  /// `session:` is the listing session — download sessions are built per file
+  /// (see the property's comment) and are not injectable
   init(connection: WebDAVConnection, session: URLSession = .shared) {
     self.connection = connection
     self.session = session

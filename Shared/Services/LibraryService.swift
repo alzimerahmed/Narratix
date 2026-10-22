@@ -596,9 +596,13 @@ public final class LibraryService: LibraryServiceProtocol, BPLogger, @unchecked 
       )
     }
 
-    /// Listening-state filter (library "New/Started/Finished/DNF" triage). Optional
-    /// booleans are NULL on pre-v13 rows, so "not marked" has to accept nil AND false —
-    /// `x != YES` would drop NULL rows in SQLite.
+    /// Listening-state filter (library "New/Started/Finished/DNF" triage). These
+    /// arms deliberately mirror `ListeningState.init(didNotFinish:...)` — DNF wins
+    /// over finished, progress counts as "started" — but they are NOT the same
+    /// logic: the enum derives from loaded values, this asks the store with
+    /// NULL-tolerant predicates. Keep the two in sync when one changes.
+    /// Optional booleans are NULL on pre-v13 rows, so "not marked" has to accept
+    /// nil AND false — `x != YES` would drop NULL rows in SQLite.
     switch listeningState {
     case .didNotFinish:
       predicates.append(

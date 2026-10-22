@@ -25,6 +25,10 @@ public enum ListeningState: CaseIterable, Hashable {
 }
 
 extension ListeningState {
+  /// Coupled to `LibraryService.buildFilterPredicate(listeningState:)` — that
+  /// predicate asks the store the same questions this init asks of loaded
+  /// values (DNF wins over `isFinished`, any progress counts as started),
+  /// with NULL-tolerant arms on top. Update both when one changes.
   public init(
     didNotFinish: Bool,
     isFinished: Bool,
