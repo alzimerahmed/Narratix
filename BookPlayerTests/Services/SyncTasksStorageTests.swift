@@ -390,8 +390,10 @@ extension SyncTasksRepositoryTests {
   func testHasUploadTask_matchingPrefix_matchesExactAndDescendant() async throws {
     try await appendUploadTask(uuid: "upload-uuid", relativePath: "Folder/Book.mp3")
 
-    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
-    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder"))
+    let exactMatch = await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3")
+    let folderMatch = await repository.hasUploadTask(matchingPrefix: "Folder")
+    XCTAssertTrue(exactMatch)
+    XCTAssertTrue(folderMatch)
   }
 
   /// "Folder2/x" shares the "Folder" character prefix but no path segment —
@@ -399,9 +401,12 @@ extension SyncTasksRepositoryTests {
   func testHasUploadTask_matchingPrefix_rejectsSiblingPrefix() async throws {
     try await appendUploadTask(uuid: "upload-uuid", relativePath: "Folder2/Book.mp3")
 
-    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
-    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
-    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder2"))
+    let siblingMatch = await repository.hasUploadTask(matchingPrefix: "Folder")
+    let leafMatch = await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3")
+    let exactFolderMatch = await repository.hasUploadTask(matchingPrefix: "Folder2")
+    XCTAssertFalse(siblingMatch)
+    XCTAssertFalse(leafMatch)
+    XCTAssertTrue(exactFolderMatch)
   }
 
   /// Non-upload references at the same path don't count — a queued delete or
@@ -409,8 +414,10 @@ extension SyncTasksRepositoryTests {
   func testHasUploadTask_matchingPrefix_ignoresNonUploadJobTypes() async throws {
     try await appendDeleteTask(relativePath: "Folder/Book.mp3")
 
-    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
-    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3"))
+    let folderMatch = await repository.hasUploadTask(matchingPrefix: "Folder")
+    let leafMatch = await repository.hasUploadTask(matchingPrefix: "Folder/Book.mp3")
+    XCTAssertFalse(folderMatch)
+    XCTAssertFalse(leafMatch)
   }
 
   /// The `uploadFile` lane carries the actual bytes — a pending file upload
@@ -418,11 +425,14 @@ extension SyncTasksRepositoryTests {
   func testHasUploadTask_matchingPrefix_matchesUploadFileLane() async throws {
     try await appendUploadFileTask(uuid: "file-uuid", relativePath: "Folder/Streamed.mp3")
 
-    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder"))
-    XCTAssertTrue(await repository.hasUploadTask(matchingPrefix: "Folder/Streamed.mp3"))
+    let folderMatch = await repository.hasUploadTask(matchingPrefix: "Folder")
+    let leafMatch = await repository.hasUploadTask(matchingPrefix: "Folder/Streamed.mp3")
+    XCTAssertTrue(folderMatch)
+    XCTAssertTrue(leafMatch)
   }
 
   func testHasUploadTask_matchingPrefix_emptyStoreIsFalse() async {
-    XCTAssertFalse(await repository.hasUploadTask(matchingPrefix: "Folder"))
+    let match = await repository.hasUploadTask(matchingPrefix: "Folder")
+    XCTAssertFalse(match)
   }
 }
