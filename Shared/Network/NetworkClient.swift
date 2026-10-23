@@ -229,8 +229,62 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
         return emptyValue
       }
 
-      return try self.decoder.decode(T.self, from: data)
+      do {
+        return try self.decoder.decode(T.self, from: data)
+      } catch let error as DecodingError {
+        /// Contract drift between the API response and our models is invisible
+        /// server-side (the request already returned 2xx), so report it here
+        let endpoint = reportableEndpoint(for: request.url)
+        ErrorReporter.report(
+          title: "Response decoding failed: \(endpoint) (\(T.self).\(Self.codingPathDescription(of: error)))",
+          error: error,
+          tags: [
+            "endpoint": endpoint,
+            "response_type": "\(T.self)"
+          ]
+        )
+        throw error
+      }
     }
+  }
+
+  /// Normalized endpoint for reporting: our API routes are static, but
+  /// `request(url:)` can carry presigned storage URLs whose paths embed
+  /// user-specific prefixes — redact those, and collapse any dynamic path
+  /// component so events stay low-cardinality and free of identifiers
+  private func reportableEndpoint(for url: URL?) -> String {
+    guard let url else { return "unknown" }
+    guard url.host == host else { return "external" }
+
+    let components = url.path.split(separator: "/").map { component -> String in
+      let value = String(component)
+      if UUID(uuidString: value) != nil || Int(value) != nil {
+        return ":id"
+      }
+      return value
+    }
+    return "/" + components.joined(separator: "/")
+  }
+
+  private static func codingPathDescription(of error: DecodingError) -> String {
+    let context: DecodingError.Context?
+    switch error {
+    case .typeMismatch(_, let errorContext),
+        .valueNotFound(_, let errorContext),
+        .keyNotFound(_, let errorContext),
+        .dataCorrupted(let errorContext):
+      context = errorContext
+    @unknown default:
+      context = nil
+    }
+
+    guard let context, !context.codingPath.isEmpty else { return "?" }
+
+    /// Collapse array indices ("Index 3") so the same failure at different
+    /// positions groups as one issue
+    return context.codingPath
+      .map { $0.intValue != nil ? "[]" : $0.stringValue }
+      .joined(separator: ".")
   }
 
   func buildURLRequest(
