@@ -6394,7 +6394,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookPlayer.app/BookPlayer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Narratix.app/Narratix";
 			};
 			name = Debug;
 		};
@@ -6421,7 +6421,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Dev XC: *";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookPlayer.app/BookPlayer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Narratix.app/Narratix";
 			};
 			name = Release;
 		};
@@ -6945,7 +6945,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "Dev XC: *";
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BookPlayer.app/BookPlayer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Narratix.app/Narratix";
 			};
 			name = Beta;
 		};
