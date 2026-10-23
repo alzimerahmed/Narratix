@@ -5,7 +5,7 @@
 //  Copyright © 2026 BookPlayer LLC. All rights reserved.
 //
 
-@testable import BookPlayer
+@testable import Narratix
 import XCTest
 
 /// The grid's reorder names items; the library reorders by the offsets the list's `onMove` gives

@@ -11,7 +11,7 @@
 //  rank column must not reorder an automatically-sorted list.
 //
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 import Combine
 import CoreData

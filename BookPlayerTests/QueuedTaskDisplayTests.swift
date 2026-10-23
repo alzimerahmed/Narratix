@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// The sectioned Queued Tasks screen is pure shaping over the engine's task list: lane

@@ -9,7 +9,7 @@
 import Foundation
 import MediaPlayer
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 import Combine
 import XCTest

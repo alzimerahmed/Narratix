@@ -6,7 +6,7 @@
 //  SortLocation routing rules, and logout teardown.
 //
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 import Combine
 import RevenueCat

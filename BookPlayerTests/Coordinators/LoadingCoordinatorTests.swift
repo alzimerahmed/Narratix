@@ -8,7 +8,7 @@
 
 import Foundation
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 import XCTest
 

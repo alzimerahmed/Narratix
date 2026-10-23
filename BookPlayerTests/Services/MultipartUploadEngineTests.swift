@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// The multipart upload engine against a scripted server and a fake part transport:

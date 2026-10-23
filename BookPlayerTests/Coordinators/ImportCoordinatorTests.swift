@@ -8,7 +8,7 @@
 import Combine
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// A fast import (one small file) used to finish while the import screen was still closing, and

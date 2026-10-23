@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// The lock is stored as a device orientation, the format earlier versions saved, so locks set

@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// The placement prompt's options act on the imported items where they are when an option is

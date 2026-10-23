@@ -10,7 +10,7 @@ import Foundation
 import Intents
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// What the controller hands the system

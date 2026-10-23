@@ -9,7 +9,7 @@ import BrowserDrop
 import Combine
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// The Transfer from Computer session, against a real BrowserDrop server on 127.0.0.1.

@@ -8,7 +8,7 @@
 
 import Foundation
 
-@testable import BookPlayer
+@testable import Narratix
 import XCTest
 
 class PlayerTimeSampleTests: XCTestCase {

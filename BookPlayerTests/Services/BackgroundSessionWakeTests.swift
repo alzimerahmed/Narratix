@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// iOS's handler for a background session is called once, and for uploads only after they

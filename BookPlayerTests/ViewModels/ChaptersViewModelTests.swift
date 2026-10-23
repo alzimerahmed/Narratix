@@ -5,7 +5,7 @@
 //  Copyright © 2025 BookPlayer LLC. All rights reserved.
 //
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 import Combine
 import XCTest

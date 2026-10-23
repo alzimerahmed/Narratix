@@ -5,7 +5,7 @@
 //  Copyright © 2026 BookPlayer LLC. All rights reserved.
 //
 
-@testable import BookPlayer
+@testable import Narratix
 import XCTest
 
 /// The grid's columns across a fold: the iPhone Duo's in the book pose, a 40 pt band 439.5 pt into

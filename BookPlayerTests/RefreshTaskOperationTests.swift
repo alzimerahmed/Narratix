@@ -8,7 +8,7 @@
 import Combine
 import XCTest
 
-@testable import BookPlayer
+@testable import Narratix
 @testable import BookPlayerKit
 
 /// First coverage for the background-refresh keep-alive: it must hold the window open
