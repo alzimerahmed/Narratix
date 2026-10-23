@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		048E8DAA13C4530F4419A030 /* MediaServerProvider+Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC45C580EED027394A645B /* MediaServerProvider+Icon.swift */; };
 		02C668174D24A70B4CD6FCB1 /* IntegrationConnectionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 269BB56618B150DCAA2CA5FB /* IntegrationConnectionStoreTests.swift */; };
 		058C840BB5E944B2899BC769 /* ReviewPromptServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F83542FF9A240EC87E55AC8 /* ReviewPromptServiceTests.swift */; };
 		07416E5AD384927D90BFB6EE /* PasskeyCreatingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C084D4BC05BF6B413C86C6F0 /* PasskeyCreatingView.swift */; };
@@ -555,6 +556,7 @@
 		63CD85432CE3105300EDBEA8 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63CD85422CE3105300EDBEA8 /* ProfileView.swift */; };
 		63D561352E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D561342E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift */; };
 		EC60B307AF274AC5AC131AF5 /* NSManagedObjectContext+LibraryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D374B2BE024447797E25881 /* NSManagedObjectContext+LibraryItem.swift */; };
+		EC60B307AF274AC5AC131AF9 /* MediaServerProvider+Icon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D374B2BE024447797E25890 /* MediaServerProvider+Icon.swift */; };
 		63D561372E5A26C800615522 /* ItemArtworkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D561362E5A26C800615522 /* ItemArtworkView.swift */; };
 		63D561392E5A8C9900615522 /* ItemProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D561382E5A8C9900615522 /* ItemProgressView.swift */; };
 		63D561412E5A8C99006155A1 /* PercentageProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D561402E5A8C99006155A1 /* PercentageProgressView.swift */; };
@@ -1159,6 +1161,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		56AC45C580EED027394A645B /* MediaServerProvider+Icon.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "MediaServerProvider+Icon.swift"; sourceTree = "<group>"; };
 		056B7A76F1A44CEC30562382 /* IntegrationQuickConnectViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationQuickConnectViews.swift; sourceTree = "<group>"; };
 		0EA09FE5A35CEA0B87F83EF3 /* PreferencesSyncServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesSyncServiceTests.swift; sourceTree = "<group>"; };
 		0FC8B923A5506F865253B97C /* AppServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServices.swift; sourceTree = "<group>"; };
@@ -1677,6 +1680,7 @@
 		63CD85422CE3105300EDBEA8 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		63D561342E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SimpleLibraryItem+SwiftUI.swift"; sourceTree = "<group>"; };
 		0D374B2BE024447797E25881 /* NSManagedObjectContext+LibraryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSManagedObjectContext+LibraryItem.swift"; sourceTree = "<group>"; };
+		0D374B2BE024447797E25890 /* MediaServerProvider+Icon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaServerProvider+Icon.swift"; sourceTree = "<group>"; };
 		63D561362E5A26C800615522 /* ItemArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemArtworkView.swift; sourceTree = "<group>"; };
 		63D561382E5A8C9900615522 /* ItemProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemProgressView.swift; sourceTree = "<group>"; };
 		63D561402E5A8C99006155A1 /* PercentageProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PercentageProgressView.swift; sourceTree = "<group>"; };
@@ -2569,6 +2573,7 @@
 		41A1B106226E9DCA00EA0400 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				56AC45C580EED027394A645B /* MediaServerProvider+Icon.swift */,
 				5126F120258E9F18009965DC /* URL+BookPlayer.swift */,
 				4160A08E23F2DBD40039166B /* String+BookPlayer.swift */,
 				C30B085E209654E3003F325B /* UIColor+BookPlayer.swift */,
@@ -4080,6 +4085,7 @@
 				63AE5A8C2E4C59FE002531B8 /* AppHostingViewController.swift */,
 				63D561342E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift */,
 				0D374B2BE024447797E25881 /* NSManagedObjectContext+LibraryItem.swift */,
+				0D374B2BE024447797E25890 /* MediaServerProvider+Icon.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -4972,6 +4978,7 @@
 				8AAD8A4F2CEE3650000A4B4B /* View+BookPlayer.swift in Sources */,
 				6370434E2E2C0481005353D1 /* SettingsSupportSectionView.swift in Sources */,
 				63D561372E5A26C800615522 /* ItemArtworkView.swift in Sources */,
+				048E8DAA13C4530F4419A030 /* MediaServerProvider+Icon.swift in Sources */,
 				41B2A5E121CCC21000917584 /* ThemeManager.swift in Sources */,
 				63C48C842E3E66D1005FBB96 /* PurchasesManager.swift in Sources */,
 				8ADD46222CF29A02002E9C50 /* TextFieldFocused.swift in Sources */,
@@ -5160,6 +5167,7 @@
 				634BA5AD2C180F5E0015314D /* StoryViewModel.swift in Sources */,
 				63D561352E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift in Sources */,
 				EC60B307AF274AC5AC131AF5 /* NSManagedObjectContext+LibraryItem.swift in Sources */,
+				EC60B307AF274AC5AC131AF9 /* MediaServerProvider+Icon.swift in Sources */,
 				9F2681B628898A7300359BD3 /* LoginDisclaimerView.swift in Sources */,
 				9FD8D95829DC53750074C2D8 /* CoreServices.swift in Sources */,
 				5163037679ED3EE0D1866A8F /* AppServices.swift in Sources */,
