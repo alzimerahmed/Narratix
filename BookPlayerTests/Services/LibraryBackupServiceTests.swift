@@ -44,13 +44,16 @@ final class LibraryBackupServiceTests: XCTestCase {
 
   // MARK: - Export
 
-  func testExportOnEmptyLibraryThrows() {
-    XCTAssertThrowsError(try sut.export()) { error in
+  func testExportOnEmptyLibraryThrows() async {
+    do {
+      _ = try await sut.export()
+      XCTFail("Expected emptyLibrary error")
+    } catch {
       XCTAssertEqual(error as? LibraryBackupError, .emptyLibrary)
     }
   }
 
-  func testExportCapturesItemState() throws {
+  func testExportCapturesItemState() async throws {
     let book = addBook(title: "Dune", duration: 3600)
     libraryService.markAsFinished(flag: true, relativePath: book.relativePath)
     libraryService.markAsDidNotFinish(flag: true, relativePath: book.relativePath)
@@ -59,7 +62,7 @@ final class LibraryBackupServiceTests: XCTestCase {
     _ = libraryService.createBookmark(at: 60, relativePath: book.relativePath, uuid: "bm1", type: .user)
     libraryService.setLibraryLastBook(with: book.relativePath)
 
-    let backup = try sut.export()
+    let backup = try await sut.export()
 
     XCTAssertEqual(backup.formatVersion, LibraryBackup.currentFormatVersion)
     XCTAssertEqual(backup.library.items.count, 1)
