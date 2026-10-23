@@ -20,6 +20,9 @@ struct PlayerControlsSpeedSectionView: View {
   let minimumSpeed: Double = 0.5
   let maximumSpeed: Double = 4.0
   let speedStep: Double = 0.1
+  /// One-tap speeds, fixed — the three quick buttons below stay user-configurable
+  /// (Settings), these cover the common picks without a detour
+  static let presetSpeeds: [Double] = [0.5, 1, 1.25, 1.5, 2, 2.5]
   @Binding var currentSpeed: Double
   let handleSpeedChange: (Double) -> Void
 
@@ -77,6 +80,19 @@ struct PlayerControlsSpeedSectionView: View {
           .accessibilityHidden(true)
       }
 
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: Spacing.S3) {
+          ForEach(Self.presetSpeeds, id: \.self) { speed in
+            PresetChipView(
+              title: formatSpeed(speed),
+              isCurrent: abs(currentSpeed - speed) < 0.001
+            ) {
+              handleSpeedChange(speed)
+            }
+          }
+        }
+      }
+
       // Speed control buttons
       HStack(spacing: 0) {
         // Decrement button
@@ -91,7 +107,7 @@ struct PlayerControlsSpeedSectionView: View {
         }
         .foregroundStyle(theme.primaryColor)
         .frame(width: 44, height: 44)
-        .accessibilityLabel("➖")
+        .accessibilityLabel("speed_decrease_button")
 
         Spacer()
 
@@ -116,12 +132,13 @@ struct PlayerControlsSpeedSectionView: View {
         }
         .foregroundStyle(theme.primaryColor)
         .frame(width: 44, height: 44)
-        .accessibilityLabel("➕")
+        .accessibilityLabel("speed_increase_button")
       }
       .frame(height: 44)
     }
   }
 
+  /// The chip itself lives in `PresetChipView`, shared with the EQ section
   @ViewBuilder
   private func quickSpeedButton(speed: Double) -> some View {
     Button {

@@ -139,10 +139,20 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
     var request = URLRequest(url: remoteURL)
     request.cachePolicy = .reloadIgnoringLocalCacheData
     request.httpMethod = HTTPMethod.put.rawValue
-
+    
+    // .path only: presigned URLs carry AWS credentials in the query string.
     Self.logger.trace("[Request] PUT \(remoteURL.path)")
-
-    _ = try await URLSession.shared.upload(for: request, from: data)
+    
+    let (responseData, response) = try await URLSession.shared.upload(for: request, from: data)
+    
+    // Cast the response to HTTPURLResponse to check the status code
+    if let httpResponse = response as? HTTPURLResponse {
+      if !(200...299).contains(httpResponse.statusCode) {
+        let errorMessage = String(data: responseData, encoding: .utf8) ?? "No error body"
+        // Typed like the rest of the client, so upload failures surface consistently
+        throw BookPlayerError.networkError("Upload failed (HTTP \(httpResponse.statusCode)): \(errorMessage)")
+      }
+    }
   }
 
   public func uploadTask(
@@ -193,7 +203,11 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
     case 400...499:
       let error = try self.decoder.decode(ErrorResponse.self, from: data)
       if let code = error.error {
-        throw BookPlayerError.networkErrorWithCode(message: error.message, code: code)
+        throw BookPlayerError.networkErrorWithCode(
+          message: error.message,
+          code: code,
+          status: httpURLResponse.statusCode
+        )
       } else {
         throw BookPlayerError.networkError(error.message)
       }
@@ -215,8 +229,62 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
         return emptyValue
       }
 
-      return try self.decoder.decode(T.self, from: data)
+      do {
+        return try self.decoder.decode(T.self, from: data)
+      } catch let error as DecodingError {
+        /// Contract drift between the API response and our models is invisible
+        /// server-side (the request already returned 2xx), so report it here
+        let endpoint = reportableEndpoint(for: request.url)
+        ErrorReporter.report(
+          title: "Response decoding failed: \(endpoint) (\(T.self).\(Self.codingPathDescription(of: error)))",
+          error: error,
+          tags: [
+            "endpoint": endpoint,
+            "response_type": "\(T.self)"
+          ]
+        )
+        throw error
+      }
     }
+  }
+
+  /// Normalized endpoint for reporting: our API routes are static, but
+  /// `request(url:)` can carry presigned storage URLs whose paths embed
+  /// user-specific prefixes — redact those, and collapse any dynamic path
+  /// component so events stay low-cardinality and free of identifiers
+  private func reportableEndpoint(for url: URL?) -> String {
+    guard let url else { return "unknown" }
+    guard url.host == host else { return "external" }
+
+    let components = url.path.split(separator: "/").map { component -> String in
+      let value = String(component)
+      if UUID(uuidString: value) != nil || Int(value) != nil {
+        return ":id"
+      }
+      return value
+    }
+    return "/" + components.joined(separator: "/")
+  }
+
+  private static func codingPathDescription(of error: DecodingError) -> String {
+    let context: DecodingError.Context?
+    switch error {
+    case .typeMismatch(_, let errorContext),
+        .valueNotFound(_, let errorContext),
+        .keyNotFound(_, let errorContext),
+        .dataCorrupted(let errorContext):
+      context = errorContext
+    @unknown default:
+      context = nil
+    }
+
+    guard let context, !context.codingPath.isEmpty else { return "?" }
+
+    /// Collapse array indices ("Index 3") so the same failure at different
+    /// positions groups as one issue
+    return context.codingPath
+      .map { $0.intValue != nil ? "[]" : $0.stringValue }
+      .joined(separator: ".")
   }
 
   func buildURLRequest(
@@ -265,13 +333,19 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
 
     if case .get = method,
        let parameters = parameters {
-      let queryItems = parameters.map({
-        URLQueryItem(
-          name: $0.0,
-          value: "\($0.1)"
-        )
-      })
-      components.queryItems = queryItems
+      // Optionals stored as `Any` interpolate as `Optional("…")`, which is what the
+      // API had been receiving for every GET `uuid` (it silently failed the server's
+      // UUID check and fell back to a path lookup). Unwrap them, and drop absent
+      // values instead of sending the literal string "nil".
+      components.queryItems = parameters.compactMap { key, value in
+        guard let unwrapped = Self.unwrapOptional(value) else { return nil }
+        return URLQueryItem(name: key, value: "\(unwrapped)")
+      }
+      // URLComponents leaves `+` as is, and the API (Express/qs) decodes a literal `+` in
+      // a query value as a space: "A+B.mp3" arrived as "A B.mp3", and an S3 upload id
+      // carrying `+` would be reported as not found
+      components.percentEncodedQuery = components.percentEncodedQuery?
+        .replacingOccurrences(of: "+", with: "%2B")
     }
 
     guard let url = components.url else {
@@ -279,6 +353,13 @@ public class NetworkClient: NetworkClientProtocol, BPLogger {
     }
 
     return try buildURLRequest(url: url, method: method, parameters: parameters)
+  }
+
+  /// `nil` for a nil optional, the wrapped value for a non-nil one, the value itself otherwise.
+  private static func unwrapOptional(_ value: Any) -> Any? {
+    if case Optional<Any>.none = value { return nil }
+    if case Optional<Any>.some(let inner) = value { return inner }
+    return value
   }
 }
 

@@ -26,6 +26,8 @@ extension ItemListView {
       warningOffloadAlert(for: item)
     case .downloadURL(let input):
       downloadURLAlert(input: input)
+    case .rescanResult:
+      rescanResultAlert()
     }
   }
   
@@ -156,12 +158,19 @@ extension ItemListView {
     }
   }
   
+  @ViewBuilder
+  func rescanResultAlert() -> some View {
+    Button("ok_button", role: .cancel) {}
+  }
+
   // MARK: - Alert Titles
-  
+
   func alertTitle(for alert: ItemListAlert) -> String {
     switch alert {
-    case .queuedTasks:
-      return "sync_tasks_inprogress_alert_title".localized
+    case .queuedTasks(let paused):
+      return paused
+        ? "sync_paused_alert_title".localized
+        : "sync_tasks_inprogress_alert_title".localized
     case .moveOptions:
       return "choose_destination_title".localized
     case .delete:
@@ -172,13 +181,19 @@ extension ItemListView {
       return "warning_title".localized
     case .downloadURL:
       return "download_from_url_title".localized
+    case .rescanResult:
+      return "rescan_library_title".localized
     }
   }
-  
+
   func alertMessage(for alert: ItemListAlert) -> String? {
     switch alert {
     case .delete:
       return model.deleteActionDetails()?.message
+    case .rescanResult(let registered):
+      return registered > 0
+        ? String.localizedStringWithFormat("rescan_found_items_description".localized, registered)
+        : "rescan_up_to_date_description".localized
     default:
       return nil
     }

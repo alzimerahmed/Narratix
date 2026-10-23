@@ -15,6 +15,10 @@ public class PhoneWatchConnectivityService: NSObject, WCSessionDelegate {
   let playbackService: PlaybackServiceProtocol
   let playerManager: PlayerManagerProtocol
   var accountService: AccountServiceProtocol?
+  /// Needed only for the watch's download-management requests — optional for
+  /// the same reason as `accountService`: `SyncService` is built beside this
+  /// service at CoreServices setup, not inside it
+  var syncService: SyncServiceProtocol?
   /// Flag to avoid calling activate more than once from outside the service
   var didStartSession = false
   /// Flag used to register observers only once
@@ -36,6 +40,10 @@ public class PhoneWatchConnectivityService: NSObject, WCSessionDelegate {
 
   public func setAccountService(_ accountService: AccountServiceProtocol) {
     self.accountService = accountService
+  }
+
+  public func setSyncService(_ syncService: SyncServiceProtocol) {
+    self.syncService = syncService
   }
 
   func bindObservers() {
@@ -260,6 +268,16 @@ extension PhoneWatchConnectivityService {
 
   /// Only used for refresh command on the phone side
   public func session(_ session: WCSession, didReceiveMessageData messageData: Data, replyHandler: @escaping (Data) -> Void) {
+    /// The watch's library-browse requests answer here (literal command keys —
+    /// see `WatchLibraryCommand`); the playback-sync contract via
+    /// `CommandParser`/`Command` is untouched
+    if let jsonObject = try? JSONSerialization.jsonObject(with: messageData, options: .mutableLeaves) as? [String: Any],
+       let command = jsonObject["command"] as? String,
+       command != Command.refresh.rawValue {
+      handleWatchLibraryRequest(command: command, message: jsonObject, replyHandler: replyHandler)
+      return
+    }
+
     guard
       let jsonObject = try? JSONSerialization.jsonObject(with: messageData, options: .mutableLeaves) as? [String: Any],
       let action = CommandParser.parse(jsonObject),
@@ -274,5 +292,212 @@ extension PhoneWatchConnectivityService {
     guard let applicationContextData = try? JSONEncoder().encode(applicationContext) else { return }
 
     replyHandler(applicationContextData)
+  }
+}
+
+// MARK: - Watch library browse + download management (Phase 3f)
+extension PhoneWatchConnectivityService {
+  /// Page size cap for `requestLibrary` — the reply rides `sendMessageData`,
+  /// whose payload budget is a few hundred KB; 50 compact rows stay well
+  /// inside it even with long titles
+  private static let libraryPageLimit = 50
+
+  private func handleWatchLibraryRequest(
+    command: String,
+    message: [String: Any],
+    replyHandler: @escaping (Data) -> Void
+  ) {
+    switch command {
+    case WatchLibraryCommand.requestLibrary:
+      /// The page build reads the viewContext and walks per-folder contents
+      /// for download state — main-actor work, not the serial delegate queue
+      /// (a 50-row folder listing would otherwise stall every other watch
+      /// message behind it). `replyHandler` runs fine from any thread.
+      Task { @MainActor in
+        replyHandler(self.buildLibraryPage(from: message))
+      }
+    case WatchLibraryCommand.downloadItem:
+      guard let relativePath = message["identifier"] as? String else {
+        reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+      handleDownloadRequest(relativePath: relativePath, replyHandler: replyHandler)
+    case WatchLibraryCommand.removeDownloadItem:
+      guard let relativePath = message["identifier"] as? String else {
+        reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+      handleRemoveDownloadRequest(relativePath: relativePath, replyHandler: replyHandler)
+    default:
+      replyHandler(Data())
+    }
+  }
+
+  private func buildLibraryPage(from message: [String: Any]) -> Data {
+    let path = (message["path"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+    let offset = max((message["offset"] as? Int) ?? 0, 0)
+    let limit = min(max((message["limit"] as? Int) ?? Self.libraryPageLimit, 1), Self.libraryPageLimit)
+
+    let items = libraryService.fetchContents(at: path, limit: limit, offset: offset) ?? []
+    let page = WatchLibraryPage(
+      items: items.map(watchItem(for:)),
+      hasMore: items.count == limit
+    )
+
+    return (try? JSONEncoder().encode(page)) ?? Data()
+  }
+
+  /// Download state + offload eligibility, evaluated the same way the phone's
+  /// storage screen does: a state only exists when the item has somewhere to
+  /// download FROM (sync on, or a media-server stream link), and offloading
+  /// only ever applies to a downloaded item with a remote copy
+  private func watchItem(for item: SimpleLibraryItem) -> WatchLibraryItem {
+    let streamsFromServer = item.externalResources?.streamingResource != nil
+    let remoteBacked = (syncService?.isActive == true) || streamsFromServer
+
+    var watchDownloadState: WatchLibraryItem.DownloadState?
+    var canOffload = false
+    if remoteBacked, let downloadState = syncService?.getDownloadState(for: item) {
+      switch downloadState {
+      case .notDownloaded:
+        watchDownloadState = .notDownloaded
+      case .downloading:
+        watchDownloadState = .downloading
+      case .downloaded:
+        watchDownloadState = .downloaded
+        /// The shared rule (`SyncService.canOffload`): remote-copy evidence
+        /// per leaf under a container, not the container's own metadata
+        canOffload = syncService?.canOffload(item) ?? false
+      }
+    }
+
+    return WatchLibraryItem(
+      relativePath: item.relativePath,
+      title: item.title,
+      details: item.details,
+      type: item.type.rawValue,
+      isFinished: item.isFinished,
+      percentCompleted: item.percentCompleted,
+      duration: item.duration,
+      downloadState: watchDownloadState,
+      canOffload: canOffload
+    )
+  }
+
+  /// Ask the phone to fetch the item's file from the cloud or its media
+  /// server. Replies `ok` once the request is ACCEPTED, then kicks the
+  /// download off — `downloadRemoteFiles` resolves remote URLs over the
+  /// network before returning, and letting the watch wait on it would trip
+  /// the reply timeout and cry "unreachable" while a download runs fine.
+  /// A resolution failure after the ack surfaces on the next page load,
+  /// which reads the real download state.
+  private func handleDownloadRequest(
+    relativePath: String,
+    replyHandler: @escaping (Data) -> Void
+  ) {
+    /// The item lookup reads the main-confined viewContext and the download
+    /// state lives on the main actor — everything runs inside the hop, and
+    /// `replyHandler` is safe to call from there
+    Task { @MainActor in
+      guard
+        let item = libraryService.getSimpleItem(with: relativePath),
+        let syncService
+      else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+
+      /// A download needs somewhere to download FROM (sync on, or a server
+      /// stream link) AND this item must actually hold a remote copy — sync
+      /// being active says nothing about a book that was never uploaded
+      let streamsFromServer = item.externalResources?.streamingResource != nil
+      guard
+        syncService.isActive || streamsFromServer,
+        item.remoteURL != nil || streamsFromServer
+      else {
+        self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
+        return
+      }
+
+      self.reply(response: WatchActionResponse(ok: true), to: replyHandler)
+
+      try? await syncService.downloadRemoteFiles(for: item)
+    }
+  }
+
+  /// Remove the item's local file on the phone — offload, never delete: the
+  /// request is refused unless a remote copy remains to come back to, and a
+  /// queued or running upload keeps the file in place too
+  private func handleRemoveDownloadRequest(
+    relativePath: String,
+    replyHandler: @escaping (Data) -> Void
+  ) {
+    /// Same main-actor hop as the download request: `getSimpleItem` reads the
+    /// viewContext, the offload check reads main-confined download state
+    Task { @MainActor in
+      guard
+        let item = libraryService.getSimpleItem(with: relativePath),
+        let syncService
+      else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notFound"), to: replyHandler)
+        return
+      }
+
+      /// An upload in flight means the remote copy isn't real yet — same
+      /// guard the storage screen applies before offloading. The prefix match
+      /// also catches a child's queued upload under a folder or bound book,
+      /// whose own path is only the container's
+      if await syncService.hasUploadTask(matchingPrefix: relativePath) {
+        self.reply(response: WatchActionResponse(ok: false, error: "uploadInProgress"), to: replyHandler)
+        return
+      }
+
+      /// Never pull the file out from under playback — the target itself,
+      /// or a chapter inside a folder or bound target
+      if let playingPath = playerManager.currentItem?.relativePath,
+         playingPath == relativePath || playingPath.hasPrefix(relativePath + "/") {
+        self.reply(response: WatchActionResponse(ok: false, error: "nowPlaying"), to: replyHandler)
+        return
+      }
+
+      /// Verify offloading here too — the watch only offers the action for
+      /// rows the phone flagged `canOffload`, but a file is never deleted on
+      /// another device's say-so without the remote-copy evidence holding up.
+      /// For a folder or bound book `canOffload` walks the leaves: every
+      /// descendant file needs its own copy — the container's `remoteURL` is
+      /// sync metadata, not proof its children ever uploaded
+      let streamsFromServer = item.externalResources?.streamingResource != nil
+      let remoteBacked = syncService.isActive || streamsFromServer
+      guard remoteBacked, syncService.canOffload(item) else {
+        self.reply(response: WatchActionResponse(ok: false, error: "noRemoteCopy"), to: replyHandler)
+        return
+      }
+      guard syncService.getDownloadState(for: item) == .downloaded else {
+        self.reply(response: WatchActionResponse(ok: false, error: "notDownloaded"), to: replyHandler)
+        return
+      }
+
+      do {
+        let fileURL = item.fileURL
+        try FileManager.default.removeItem(at: fileURL)
+        /// Bound books and folders keep an empty backing folder — same shape
+        /// `handleOffloading` leaves behind
+        if item.type == .bound || item.type == .folder {
+          try FileManager.default.createDirectory(
+            at: fileURL,
+            withIntermediateDirectories: false,
+            attributes: nil
+          )
+        }
+        ArtworkService.artworkUpdatePublisher.send(relativePath)
+        self.reply(response: WatchActionResponse(ok: true), to: replyHandler)
+      } catch {
+        self.reply(response: WatchActionResponse(ok: false, error: "failed"), to: replyHandler)
+      }
+    }
+  }
+
+  private func reply(response: WatchActionResponse, to replyHandler: (Data) -> Void) {
+    replyHandler((try? JSONEncoder().encode(response)) ?? Data())
   }
 }

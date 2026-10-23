@@ -23,6 +23,9 @@ struct StoryViewer: View {
           progress: $viewModel.progress
         )
         .padding([.trailing, .leading, .bottom])
+        /// Off the screen's edge where nothing sits above them, like iPhone Duo open in landscape
+        /// (its status bar moves to the side)
+        .padding(.top, Spacing.S2)
         .accessibilityHidden(true)
       }
       StoryView(
@@ -32,8 +35,7 @@ struct StoryViewer: View {
         onPause: viewModel.pause,
         onResume: viewModel.start,
         onSubscription: viewModel.handleSubscription(option:),
-        onDismiss: viewModel.handleDismiss,
-        onTipJar: viewModel.handleTipJar
+        onDismiss: viewModel.handleDismiss
       )
       .foregroundStyle(Color.white)
       .padding()

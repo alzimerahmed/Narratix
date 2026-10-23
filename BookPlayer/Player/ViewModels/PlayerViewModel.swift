@@ -14,7 +14,8 @@ enum PlayerSheetStyle: String, Identifiable {
     case chapters
     case controls
     case bookmark
-    case sleep
+    case queue
+    case history
 
     var id: String { self.rawValue }
 }
@@ -36,10 +37,13 @@ final class PlayerViewModel: ObservableObject {
   @Published var hasPreviousChapter = false
   @Published var lastBookmark: SimpleBookmark?
   @Published var sheetStyle: PlayerSheetStyle?
+  @Published var showsCustomSleepTimer = false
   @Published var displaySheet = false
   @Published var showButtonFreeScreen = false
   /// Whether the current chapter's file is a video (drives the video surface + fullscreen button)
   @Published var isVideoItem = false
+  /// The chapter plays its cloud copy because its media server couldn't serve it
+  @Published var playingCloudFallback = false
 
   let libraryService: LibraryServiceProtocol
   let playbackService: PlaybackServiceProtocol
@@ -121,6 +125,9 @@ final class PlayerViewModel: ObservableObject {
   }
   
   func bindBookObservers() {
+    // Called on every player appear — drop the previous generation of sinks or each
+    // open appends another copy of every subscription below
+    disposeBag.removeAll()
     bindBookPlayingProgressEvents()
     bindNotificationSubscribers()
     bindBookSharedObservers()
@@ -185,6 +192,15 @@ final class PlayerViewModel: ObservableObject {
         self?.requestReview()
       }
       .store(in: &disposeBag)
+
+    /// The posted chapter swap: while paused nothing else recomputes the label or the
+    /// marker set, so a chapter-jump would read stale until the next play tick
+    NotificationCenter.default.publisher(for: .chapterChange)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in
+        self?.recalculateProgress()
+      }
+      .store(in: &disposeBag)
     
     NotificationCenter.default.publisher(for: UIDevice.batteryStateDidChangeNotification)
       .debounce(for: 1.0, scheduler: DispatchQueue.main)
@@ -195,6 +211,7 @@ final class PlayerViewModel: ObservableObject {
   }
   
   func bindBookPlayingProgressEvents() {
+
     self.playerManager.isPlayingPublisher()
       .removeDuplicates()
       .receive(on: DispatchQueue.main)
@@ -227,6 +244,12 @@ final class PlayerViewModel: ObservableObject {
         self.playbackSpeed = speed
         self.recalculateProgress()
       }
+      .store(in: &disposeBag)
+
+    self.playerManager.$playingCloudFallback
+      .removeDuplicates()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] in self?.playingCloudFallback = $0 }
       .store(in: &disposeBag)
     
     self.playingProgressSubscriber?.cancel()
@@ -402,6 +425,11 @@ final class PlayerViewModel: ObservableObject {
     self.playerManager.jumpTo(newTime, recordBookmark: true)
   }
 
+  /// A VoiceOver rotor activation: land just inside the chapter's start, like `jumpToChapter`
+  func handleChapterMarker(_ marker: ChapterMarker) {
+    playerManager.jumpTo(marker.start + 0.1, recordBookmark: false)
+  }
+
   func getBookTimeFromSlider(value: Float) -> TimeInterval {
     var newTimeToDisplay = TimeInterval(value) * (self.playerManager.currentItem?.duration ?? 0)
     
@@ -439,7 +467,10 @@ final class PlayerViewModel: ObservableObject {
         )
       sliderValue = Float((currentItem.currentTime - currentChapter.start) / currentChapter.duration)
     } else {
-      progress = "\(Int(round((currentItem?.progressPercentage ?? 0) * 100)))%"
+      let percentage = Int(round((currentItem?.progressPercentage ?? 0) * 100))
+      /// The chapter under the playhead names where that percentage sits
+      progress = currentItem?.currentChapter.map { "\(percentage)% · \($0.title)" }
+        ?? "\(percentage)%"
       sliderValue = Float(currentItem?.progressPercentage ?? 0)
     }
     
@@ -457,6 +488,20 @@ final class PlayerViewModel: ObservableObject {
     }
     self.chapterBeforeSliderValueChange = currentItem?.currentChapter
 
+    /// Ticks and rotor entries are book-level; in chapter context the track spans one
+    /// chapter, where book fractions wouldn't land under their chapters
+    let chapterMarkers: [ChapterMarker]
+    if !prefersChapterContext,
+       let currentItem = currentItem,
+       currentItem.chapters.count > 1,
+       currentItem.duration > 0 {
+      chapterMarkers = currentItem.chapters.map {
+        ChapterMarker(fraction: $0.start / currentItem.duration, title: $0.title, start: $0.start)
+      }
+    } else {
+      chapterMarkers = []
+    }
+
     let newProgressData = ProgressData(
       currentTime: currentTime,
       progress: progress,
@@ -464,7 +509,8 @@ final class PlayerViewModel: ObservableObject {
       sliderValue: Double(sliderValue),
       chapterTitle: currentItem?.currentChapter?.title
         ?? currentItem?.title
-        ?? ""
+        ?? "",
+      chapterMarkers: chapterMarkers
     )
 
     if progressData != newProgressData {
@@ -547,7 +593,7 @@ final class PlayerViewModel: ObservableObject {
       BPActionItem(
         title: "sleeptimer_option_custom".localized,
         handler: { [weak self] in
-          self?.displaySheet(style: .sleep)
+          self?.showsCustomSleepTimer = true
         }
       )
     )
@@ -672,6 +718,21 @@ final class PlayerViewModel: ObservableObject {
       )
     )
     
+    /// Up Next and history are sheets like chapters and bookmarks
+    actions.append(
+      BPActionItem(
+        title: "queue_title".localized,
+        handler: { [weak self] in self?.displaySheet(style: .queue) }
+      )
+    )
+
+    actions.append(
+      BPActionItem(
+        title: "history_title".localized,
+        handler: { [weak self] in self?.displaySheet(style: .history) }
+      )
+    )
+
     actions.append(
       BPActionItem(
         title: "jump_start_title".localized,

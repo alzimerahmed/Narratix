@@ -67,7 +67,7 @@ final class StorageCloudDeletedViewModel: StorageCloudDeletedViewModelProtocol {
       return deleteAlert(for: item)
     case .fixAll:
       return fixAllAlert
-    case .none, .fix, .uploadTask:
+    case .none, .fix, .uploadTask, .removeAll:
       return Alert(title: Text(""))
     }
   }

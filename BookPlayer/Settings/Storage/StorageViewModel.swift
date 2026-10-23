@@ -23,6 +23,8 @@ protocol StorageViewModelProtocol: ObservableObject {
   var fixProgress: FixProgress? { get set }
   var alert: Alert { get }
   var fixButtonTitle: String { get }
+  /// Any file safe to offload (remote copy exists): gates the bulk button
+  var canRemoveDownloads: Bool { get }
 
   func getTotalFoldersSize() -> String
   func getArtworkFolderSize() -> String
@@ -39,10 +41,12 @@ enum BPStorageAlert {
   case fix(item: StorageItem)
   case fixAll
   case uploadTask(item: StorageItem)
+  /// Bulk remove-downloads confirmation
+  case removeAll
   case none // to avoid optional
 }
 
-final class StorageViewModel: StorageViewModelProtocol {
+final class StorageViewModel: StorageViewModelProtocol, BPLogger {
   // MARK: - Properties
   let libraryService: LibraryServiceProtocol
   let syncService: SyncServiceProtocol
@@ -84,6 +88,8 @@ final class StorageViewModel: StorageViewModelProtocol {
       return fixAllAlert
     case .uploadTask(let item):
       return uploadTaskAlert(for: item)
+    case .removeAll:
+      return removeAllAlert
     case .none:
       // processing this case to use non-optional var for storageAlert.
       // This case should not happen
@@ -241,6 +247,52 @@ final class StorageViewModel: StorageViewModelProtocol {
     fixProgress = nil
   }
 
+  // MARK: - Remove downloads
+
+  /// Files with a remote copy to come back to: uploaded to the cloud, or
+  /// streamable from a linked media server. Local-only books never qualify —
+  /// removing their file would be data loss
+  var canRemoveDownloads: Bool {
+    publishedFiles.contains { $0.canOffload }
+  }
+
+  /// What "Remove downloads" frees up
+  var offloadableSize: String {
+    let bytes = publishedFiles.filter(\.canOffload).reduce(Int64(0)) { $0 + $1.size }
+    return ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+  }
+
+  /// Removes the local files of backed-up items, keeping every library record,
+  /// bookmark and cloud copy — the items re-download on demand from the library.
+  /// No `scheduleDelete`: nothing here should ever reach the server. Files with
+  /// a queued or running upload are left alone — their copy isn't real yet.
+  func removeAllDownloads() {
+    let targets = publishedFiles.filter(\.canOffload)
+
+    showProgressIndicator = true
+
+    Task { @MainActor in
+      var removed = [String]()
+      for file in targets {
+        guard !Task.isCancelled else { break }
+        if await syncService.hasUploadTask(for: file.path) { continue }
+        do {
+          try FileManager.default.removeItem(at: file.fileURL)
+          ArtworkService.artworkUpdatePublisher.send(file.path)
+          removed.append(file.path)
+        } catch {
+          Self.logger.error("Remove downloads failed for \(file.path): \(error.localizedDescription)")
+        }
+      }
+
+      showProgressIndicator = false
+      if !removed.isEmpty {
+        reloadLibraryItems()
+      }
+      loadItems()
+    }
+  }
+
   // MARK: - Private functions
 
   private func loadItems() {
@@ -271,12 +323,24 @@ final class StorageViewModel: StorageViewModelProtocol {
 
         let bookTitle = fetchedTitle ?? Book.getBookTitle(from: fileURL)
 
+        /// The file's library item, if it has one: drives the download-state
+        /// caption and whether deleting the file is an offload or a loss
+        let simpleItem = self.libraryService.getSimpleItem(with: currentRelativePath)
+        let remoteBacked =
+          self.syncService.isActive || simpleItem?.externalResources?.streamingResource != nil
+        let downloadState = remoteBacked
+          ? simpleItem.map { self.syncService.getDownloadState(for: $0) }
+          : nil
+
         let storageItem = StorageItem(
           title: bookTitle,
           fileURL: fileURL,
           path: fileURL.relativePath(to: processedFolder),
           size: fileAttributes[FileAttributeKey.size] as? Int64 ?? 0,
-          showWarning: fetchedTitle == nil && self.shouldShowWarning(for: currentRelativePath)
+          showWarning: fetchedTitle == nil && self.shouldShowWarning(for: currentRelativePath),
+          downloadState: downloadState,
+          canOffload: downloadState == .downloaded
+            && (simpleItem.map { self.syncService.canOffload($0) } ?? false)
         )
 
         items.append(storageItem)
@@ -445,6 +509,25 @@ final class StorageViewModel: StorageViewModelProtocol {
         action: { [weak self] in
           self?.deleteSelectedItem(item)
         }
+      )
+    )
+  }
+
+  private var removeAllAlert: Alert {
+    Alert(
+      title: Text("storage_remove_downloads_title".localized),
+      message: Text(
+        String.localizedStringWithFormat(
+          "storage_remove_downloads_description".localized,
+          offloadableSize
+        )
+      ),
+      primaryButton: .cancel(
+        Text("cancel_button".localized)
+      ),
+      secondaryButton: .destructive(
+        Text("storage_remove_downloads_button".localized),
+        action: removeAllDownloads
       )
     )
   }

@@ -13,11 +13,15 @@ import SwiftUI
 struct BookView: View {
   let item: SimpleLibraryItem
   let artworkTap: () -> Void
+  /// One-tap resume for a book with saved progress: plays where it left off without
+  /// opening the player
+  var resumeTap: (() -> Void)? = nil
 
   @Environment(\.syncService) private var syncService
   @Environment(\.playingItemParentPath) private var playingItemParentPath
   @Environment(\.playerState) private var playerState
   @Environment(\.listState) private var listState
+  @Environment(\.editMode) private var editMode
   @EnvironmentObject private var theme: ThemeViewModel
 
   /// Set from `LibraryOptionsView`. When true (and the item has one), the row
@@ -68,6 +72,21 @@ struct BookView: View {
       }
       .padding(.leading, Spacing.S)
       Spacer()
+      /// Hidden in edit mode like the row's guarded VoiceOver resume action
+      if let resumeTap,
+         item.percentCompleted > 0,
+         !item.isFinished,
+         editMode?.wrappedValue.isEditing != true {
+        Button(action: resumeTap) {
+          Image(systemName: "play.fill")
+            .bpFont(.subheadline)
+            .foregroundStyle(theme.linkColor)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("voiceover_continue_playback_title")
+      }
       ItemProgressView(
         item: item,
         isHighlighted: isHighlighted
@@ -88,11 +107,21 @@ struct BookView: View {
     libraryService.setup(dataManager: dataManager, audioMetadataService: audioMetadataService)
     let accountService = AccountService()
     accountService.setup(dataManager: dataManager)
+    let tasksDataManager = TasksDataManager()
+    let syncQueueService = SyncQueueService()
+    syncQueueService.setup(
+      libraryService: libraryService,
+      getAccessLevel: { accountService.getAccessLevel() },
+      verifyAccessLevel: { nil },
+      tasksDataManager: tasksDataManager,
+      networkClient: NetworkClient(),
+      dataManager: dataManager
+    )
     syncService.setup(
       isActive: true,
       libraryService: libraryService,
       accountService: accountService,
-      dataManager: dataManager
+      syncQueueService: syncQueueService
     )
 
     return syncService

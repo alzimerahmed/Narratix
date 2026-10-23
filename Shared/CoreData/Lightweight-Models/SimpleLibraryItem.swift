@@ -12,6 +12,11 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
   public var id: String {
     return self.relativePath
   }
+  /// The uuid, or the path for an item without a real one (the same rule as `PlayableItem.id`).
+  /// Unlike `id`, it survives moves and renames
+  public var stableIdentifier: String {
+    Constants.isRealUuid(uuid) ? uuid : relativePath
+  }
   public let title: String
   public let details: String
   public let speed: Double
@@ -29,7 +34,20 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
   public let lastPlayDate: Date?
   public let type: SimpleItemType
   public let uuid: String
-  
+  /// Mutually recursive with SimpleExternalResource.libraryItem. The synthesized
+  /// Equatable/Hashable only terminate because back-pointers are built with
+  /// ignoreLibraryItem (resources held HERE carry libraryItem == nil) — preserve that
+  /// invariant when constructing snapshots.
+  public let externalResources: [SimpleExternalResource]?
+  /// User-marked "did not finish" — a triage state distinct from `isFinished`
+  public let didNotFinish: Bool
+  /// Free-form note attached to the item itself (unlike `SimpleBookmark.note`)
+  public let note: String?
+  /// Series the item belongs to, if any (local-only metadata)
+  public let seriesName: String?
+  /// Book number inside `seriesName` — fractional entries allowed, nil = unordered
+  public let seriesOrder: Double?
+
   public var progress: Double {
     if type == .folder,
        duration == 0 {
@@ -49,9 +67,19 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     && lhs.details == rhs.details
     && lhs.percentCompleted == rhs.percentCompleted
     && lhs.isFinished == rhs.isFinished
+    && lhs.didNotFinish == rhs.didNotFinish
     && lhs.type.rawValue == rhs.type.rawValue
     && lhs.orderRank == rhs.orderRank
     && lhs.uuid == rhs.uuid
+    // Series rows surface the name/number — a metadata write must refresh them
+    && lhs.seriesName == rhs.seriesName
+    && lhs.seriesOrder == rhs.seriesOrder
+    // Rows render provider icons from this — snapshots differing only in their
+    // external resources must not compare equal, or removeDuplicates/onChange
+    // paths skip refreshing a row that just gained or lost a media-server link
+    // As Sets: the source is an unordered NSSet, so array comparison made two
+    // snapshots of the same multi-resource item compare unequal on element order
+    && Set(lhs.externalResources ?? []) == Set(rhs.externalResources ?? [])
   }
 
   static var fetchRequestProperties = [
@@ -71,6 +99,10 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     "lastPlayDate",
     "type",
     "uuid",
+    "didNotFinish",
+    "note",
+    "seriesName",
+    "seriesOrder"
   ]
 
   public func hash(into hasher: inout Hasher) {
@@ -97,7 +129,12 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     originalFileName: String,
     lastPlayDate: Date?,
     type: SimpleItemType,
-    uuid: String
+    uuid: String,
+    externalResources: [SimpleExternalResource]? = nil,
+    didNotFinish: Bool = false,
+    note: String? = nil,
+    seriesName: String? = nil,
+    seriesOrder: Double? = nil
   ) {
     self.title = title
     self.details = details
@@ -116,6 +153,11 @@ public struct SimpleLibraryItem: Identifiable, Hashable, Equatable {
     self.lastPlayDate = lastPlayDate
     self.type = type
     self.uuid = uuid
+    self.externalResources = externalResources
+    self.didNotFinish = didNotFinish
+    self.note = note
+    self.seriesName = seriesName
+    self.seriesOrder = seriesOrder
   }
 }
 
@@ -137,6 +179,12 @@ extension SimpleLibraryItem {
     self.originalFileName = item.originalFileName
     self.lastPlayDate = item.lastPlayDate
     self.uuid = item.uuid
+    self.didNotFinish = item.didNotFinish
+    self.note = item.note
+    self.seriesName = item.seriesName
+    self.seriesOrder = item.seriesOrder?.doubleValue
+
+    self.externalResources = item.resourcesArray.map({ SimpleExternalResource(from: $0, ignoreLibraryItem: true) })
 
     switch item.type {
     case .folder:

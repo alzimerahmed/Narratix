@@ -10,7 +10,7 @@ import BookPlayerKit
 import SwiftUI
 
 @MainActor
-final class ItemListViewModel: ObservableObject {
+final class ItemListViewModel: ObservableObject, BPLogger {
   let libraryNode: LibraryNode
   private let libraryService: LibraryService
   private let playbackService: PlaybackService
@@ -23,10 +23,10 @@ final class ItemListViewModel: ObservableObject {
   }
   private let listState: ListStateManager
   let singleFileDownloadService: SingleFileDownloadService
-
+  private let listeningQueueService: ListeningQueueService
   /// Reference to ongoing library fetch task
   var contentsFetchTask: Task<(), Error>?
-
+  
   @Published var items: [SimpleLibraryItem] = []
   @Published var isLoading: Bool = false
   @Published var canLoadMore: Bool = true
@@ -47,7 +47,9 @@ final class ItemListViewModel: ObservableObject {
 
   /// True when the list should show database-filtered results instead of the paginated browse.
   var isFiltering: Bool {
-    !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || scope != .all
+    !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+      || scope != .all
+      || listeningFilter != .all
   }
 
   var isListEmpty: Bool {
@@ -88,11 +90,22 @@ final class ItemListViewModel: ObservableObject {
       scheduleSearch()
     }
   }
+  /// Listening-state triage (New/Started/Finished/DNF); `.all` shows everything
+  @Published var listeningFilter: ItemListeningFilter = .all {
+    didSet {
+      guard oldValue != listeningFilter else { return }
+      scheduleSearch()
+    }
+  }
   @Published var isSearchFocused: Bool = false {
     didSet {
       listState.isSearching = isSearchFocused
       if isSearchFocused {
         editMode = .inactive
+      } else {
+        /// Closing search clears the text but not the scope, and a scope other than All would keep
+        /// the list filtered with the scope bar hidden
+        scope = .all
       }
     }
   }
@@ -108,7 +121,8 @@ final class ItemListViewModel: ObservableObject {
     listSyncRefreshService: ListSyncRefreshService,
     loadingState: LoadingOverlayState,
     listState: ListStateManager,
-    singleFileDownloadService: SingleFileDownloadService
+    singleFileDownloadService: SingleFileDownloadService,
+    listeningQueueService: ListeningQueueService
   ) {
     self.libraryNode = libraryNode
     self.libraryService = libraryService
@@ -119,6 +133,7 @@ final class ItemListViewModel: ObservableObject {
     self.loadingState = loadingState
     self.listState = listState
     self.singleFileDownloadService = singleFileDownloadService
+    self.listeningQueueService = listeningQueueService
 
     if libraryNode == .root {
       playerManager.syncProgressDelegate = self
@@ -190,20 +205,22 @@ final class ItemListViewModel: ObservableObject {
 
     let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
     let scope = self.scope.itemTypeScope
+    let listeningState = listeningFilter.listeningState
 
     searchTask = Task { [weak self] in
       try? await Task.sleep(nanoseconds: 300_000_000)
       guard !Task.isCancelled, let self else { return }
-      self.runSearch(query: trimmedQuery.isEmpty ? nil : trimmedQuery, scope: scope)
+      self.runSearch(query: trimmedQuery.isEmpty ? nil : trimmedQuery, scope: scope, listeningState: listeningState)
     }
   }
 
-  private func runSearch(query: String?, scope: SimpleItemType?) {
+  private func runSearch(query: String?, scope: SimpleItemType?, listeningState: ListeningState?) {
     let results =
       libraryService.filterContents(
         at: libraryNode.folderRelativePath,
         query: query,
         scope: scope,
+        listeningState: listeningState,
         limit: nil,
         offset: nil
       ) ?? []
@@ -332,6 +349,41 @@ final class ItemListViewModel: ObservableObject {
     reloadItems()
   }
 
+  /// The grid's reorder, which names the moved items and the one they now sit before (nil: after
+  /// the last loaded one)
+  func reorderItems(ids: [SimpleLibraryItem.ID], before targetID: SimpleLibraryItem.ID?) {
+    guard
+      let (source, destination) = Self.moveOffsets(of: ids, before: targetID, in: items.map(\.id))
+    else { return }
+
+    reorderItems(source: source, destination: destination)
+  }
+
+  /// The offsets the list's `onMove` would give for that move, or nil when it changes nothing: a
+  /// tile dropped back where it was must not turn the folder's sort into Custom
+  static func moveOffsets(
+    of ids: [SimpleLibraryItem.ID],
+    before targetID: SimpleLibraryItem.ID?,
+    in order: [SimpleLibraryItem.ID]
+  ) -> (source: IndexSet, destination: Int)? {
+    let source = IndexSet(ids.compactMap { order.firstIndex(of: $0) })
+    guard !source.isEmpty else { return nil }
+
+    let destination: Int
+    if let targetID {
+      guard let index = order.firstIndex(of: targetID) else { return nil }
+      destination = index
+    } else {
+      destination = order.count
+    }
+
+    var reordered = order
+    reordered.move(fromOffsets: source, toOffset: destination)
+    guard reordered != order else { return nil }
+
+    return (source, destination)
+  }
+
   func handleSelectAll() {
     Task {
       if canLoadMore {
@@ -371,6 +423,7 @@ final class ItemListViewModel: ObservableObject {
       isUnfinished: true
     )
 
+    // loadPlayer's contract is a RELATIVE PATH — a uuid silently no-ops the lookup.
     return nextPlayableItem?.relativePath
   }
 }
@@ -398,15 +451,66 @@ extension ItemListViewModel {
   }
 
   func handleMarkAsFinished(flag: Bool) {
-    selectedItems.forEach {
-      libraryService.markAsFinished(flag: flag, relativePath: $0.relativePath)
-    }
+    /// Bulk path: same per-item semantics and events, one context save
+    libraryService.markAsFinished(
+      flag: flag,
+      relativePaths: selectedItems.map(\.relativePath)
+    )
 
     if let parentFolder = libraryNode.folderRelativePath {
       libraryService.recursiveFolderProgressUpdate(from: parentFolder)
     }
 
     listState.reloadAll()
+    editMode = .inactive
+  }
+
+  /// Marks the selection "did not finish" (or clears it) — triage state separate
+  /// from `isFinished`; an abandoned book keeps its progress for resume
+  func handleMarkAsDidNotFinish(flag: Bool) {
+    /// Bulk path: same per-item semantics, one context save
+    libraryService.markAsDidNotFinish(
+      flag: flag,
+      relativePaths: selectedItems.map(\.relativePath)
+    )
+
+    listState.reloadAll()
+    editMode = .inactive
+  }
+
+  /// Appends the selection at the queue's tail
+  func handleEnqueue() {
+    selectedItems.forEach {
+      listeningQueueService.enqueue($0.relativePath)
+    }
+    editMode = .inactive
+  }
+
+  /// Inserts the selection at the queue's head
+  func handleEnqueueNext() {
+    /// Last-in ends up last of the inserted run, so walk the selection backwards
+    /// to keep its order
+    for item in selectedItems.reversed() {
+      listeningQueueService.enqueueNext(item.relativePath)
+    }
+    editMode = .inactive
+  }
+
+  func isQueued(_ item: SimpleLibraryItem) -> Bool {
+    listeningQueueService.isQueued(relativePath: item.relativePath)
+  }
+
+  /// Whether every item is queued — one fetch for the whole set (a fetch
+  /// per item was the options menu's N+1)
+  func areAllQueued(_ items: [SimpleLibraryItem]) -> Bool {
+    guard !items.isEmpty else { return false }
+    let queued = listeningQueueService.queuedPaths(items.map(\.relativePath))
+    return items.allSatisfy { queued.contains($0.relativePath) }
+  }
+
+  /// Removes the selection from the queue (their positions close up)
+  func handleDequeue() {
+    listeningQueueService.removeAll(selectedItems.map(\.relativePath))
     editMode = .inactive
   }
 
@@ -423,13 +527,10 @@ extension ItemListViewModel {
 
   func handleMoveIntoLibrary() {
     let selectedItemPaths = selectedItems.compactMap({ LibraryItemRef(relativePath: $0.relativePath, uuid: $0.uuid) })
-    let parentFolder = selectedItems.first?.parentFolder
 
     do {
+      // The folder they left is refreshed by the move itself
       try organizer.move(selectedItemPaths, into: nil)
-      if let parentFolder {
-        libraryService.rebuildFolderDetails(parentFolder)
-      }
     } catch {
       loadingState.error = error
     }
@@ -454,6 +555,10 @@ extension ItemListViewModel {
         editMode = .inactive
       } catch {
         loadingState.error = error
+        // A clash is reported after the folder was made and the rest moved into it: the selection
+        // still holds their old paths
+        listState.reloadAll(padding: 1)
+        editMode = .inactive
       }
     }
   }
@@ -694,32 +799,22 @@ extension ItemListViewModel {
 
 // MARK: - Network related handlers
 extension ItemListViewModel {
+  /// `LibraryItemActionHandler` owns this body now — shared with both detail
+  /// view models, which call it through the handler they own
   func startDownload(of item: SimpleLibraryItem) {
-    Task { @MainActor in
-      loadingState.show = true
-
-      do {
-        let fileURL = item.fileURL
-        /// Create backing folder if it does not exist
-        if item.type == .folder || item.type == .bound {
-          try DataManager.createBackingFolderIfNeeded(fileURL)
-        }
-
-        try await syncService.downloadRemoteFiles(for: item)
-        loadingState.show = false
-      } catch {
-        loadingState.show = false
-        loadingState.error = error
-      }
-    }
+    LibraryItemActionHandler.startDownload(
+      of: item,
+      syncService: syncService,
+      loadingState: loadingState
+    )
   }
 
   func cancelDownload(of item: SimpleLibraryItem) {
-    do {
-      try syncService.cancelDownload(of: item)
-    } catch {
-      loadingState.error = error
-    }
+    LibraryItemActionHandler.cancelDownload(
+      of: item,
+      syncService: syncService,
+      loadingState: loadingState
+    )
   }
 
   func handleOffloading(of item: SimpleLibraryItem) {

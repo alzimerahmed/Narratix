@@ -14,25 +14,25 @@ struct ProfileView: View {
   @State private var showLogin = false
   @Environment(\.accountService) private var accountService
   @Environment(\.playerState) private var playerState
+  @Environment(\.listeningStatsService) private var listeningStatsService
+  @Environment(\.playbackHistoryService) private var playbackHistoryService
   @EnvironmentObject private var theme: ThemeViewModel
-
+  
   var body: some View {
     NavigationStack(path: $path) {
       VStack(spacing: 0) {
         Form {
           ProfileCardSectionView(action: showLoginOrAccount)
             .listSectionSpacing(Spacing.S1)
-          ProfileListenedSectionView()
+          ProfileListenedSectionView {
+            path.append(ProfileScreen.stats)
+          }
         }
 
         Spacer()
-
-        if accountService.account.hasSubscription,
-          !accountService.account.id.isEmpty
-        {
+        
+        if !accountService.account.id.isEmpty {
           ProfileSyncTasksSectionView()
-        } else if !accountService.account.hasSubscription {
-          ProfileProCalloutSectionView(action: showLoginOrAccount)
         }
       }
       .miniPlayerSafeAreaInset()
@@ -43,9 +43,17 @@ struct ProfileView: View {
         switch destination {
         case .account:
           AccountView()
-        case .tasks:
-          QueuedSyncTasksView()
+        case .queueTasks:
+          QueuedTasksView()
             .miniPlayerSafeAreaInset()
+        case .stats:
+          ListeningStatsView {
+            ListeningStatsViewModel(
+              statsService: listeningStatsService,
+              playbackHistoryService: playbackHistoryService
+            )
+          }
+          .miniPlayerSafeAreaInset()
         }
       }
       .sheet(isPresented: $showLogin) {

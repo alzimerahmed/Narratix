@@ -19,5 +19,13 @@ struct CoreServices {
   let playerManager: PlayerManager
   let preferencesService: PreferencesSyncService
   let syncService: SyncService
+  let syncQueueService: SyncQueueService
+  let mediaServerChapterService: MediaServerChapterRefreshService
   let watchService: PhoneWatchConnectivityService
+  /// The user-managed Up Next queue (Phase 3a)
+  let listeningQueueService: ListeningQueueService
+  /// Per-session playback history + position restore (Phase 3a)
+  let playbackHistoryService: PlaybackHistoryService
+  /// Profile listening stats: streaks, daily goal, per-book time (Phase 3f)
+  let listeningStatsService: ListeningStatsService
 }

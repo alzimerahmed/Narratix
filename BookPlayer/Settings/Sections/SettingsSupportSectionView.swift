@@ -24,16 +24,12 @@ struct SettingsSupportSectionView: View {
   @State private var isExportingDebugFile = false
   @State private var debugDocument: DebugFileDocument?
 
-  let supportEmail = "support@bookplayer.app"
+  let supportEmail = "alzimerahmed84@gmail.com"
 
   var sendEmail: () -> Void
 
   var body: some View {
     ThemedSection {
-      NavigationLink(value: SettingsScreen.tipjar) {
-        Text("settings_tip_jar_title")
-          .bpFont(.body)
-      }
       Button(action: sendEmail) {
         VStack(alignment: .leading) {
           Text("settings_support_email_title")
@@ -50,18 +46,10 @@ struct SettingsSupportSectionView: View {
 
       debugInfoButton
       Button {
-        let url = URL(string: "https://github.com/TortugaPower/BookPlayer")!
+        let url = URL(string: "https://github.com/alzimerahmed/Narratix")!
         openURL(url)
       } label: {
         Text("settings_support_project_title")
-          .bpFont(.body)
-      }
-      .foregroundStyle(theme.primaryColor)
-      Button {
-        let url = URL(string: "https://discord.gg/RPPyhyMPXW")!
-        openURL(url)
-      } label: {
-        Text("settings_support_discord_title")
           .bpFont(.body)
       }
       .foregroundStyle(theme.primaryColor)
@@ -70,7 +58,7 @@ struct SettingsSupportSectionView: View {
         .bpFont(.subheadline)
         .foregroundStyle(theme.secondaryColor)
     } footer: {
-      Text("BookPlayer \(appVersion) - \(systemVersion)")
+      Text("Narratix \(appVersion) - \(systemVersion)")
         .bpFont(.caption)
         .foregroundStyle(theme.secondaryColor)
     }

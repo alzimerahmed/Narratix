@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # https://github.com/actions/runner-images/tree/main/images/macos
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 27.1
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_27.1.app"
+          xcodebuild -version
+
+      - name: Create Debug.xcconfig
+        run: cp ./BuildConfiguration/Debug.template.xcconfig ./BuildConfiguration/Debug.xcconfig
+
+      - name: Resolve SPM dependencies
+        run: xcodebuild -resolvePackageDependencies
+
+      - name: Build simulator app (unsigned)
+        run: |
+          xcodebuild \
+            -scheme BookPlayer \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath build \
+            build | tail -40
+
+      - name: Package simulator build
+        run: |
+          APP=$(find build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name '*.app' | head -1)
+          ditto -c -k --keepParent "$APP" Narratix-simulator.zip
+          unzip -l Narratix-simulator.zip | head -5
+
+      - name: Run unit tests
+        timeout-minutes: 12
+        env:
+          NSUnbufferedIO: "YES"
+        run: |
+          xcodebuild \
+            -scheme BookPlayer \
+            -configuration Debug \
+            -testPlan "Unit Tests" \
+            -only-testing:BookPlayerTests \
+            -destination "platform=iOS Simulator,name=iPhone 17" \
+            -destination-timeout 120 \
+            test-without-building
+
+      - name: Create GitHub Release with artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Narratix ${{ github.ref_name }}
+          generate_release_notes: true
+          files: Narratix-simulator.zip

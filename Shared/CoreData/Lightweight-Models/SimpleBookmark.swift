@@ -14,7 +14,7 @@ public struct SimpleBookmark: Decodable, Identifiable {
   }
   public let time: Double
   public let note: String?
-  let type: BookmarkType
+  public let type: BookmarkType
   public let relativePath: String
   public let uuid: String
 

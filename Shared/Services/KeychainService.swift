@@ -34,6 +34,8 @@ public enum KeychainKeys: String {
   case audiobookshelfConnection = "audiobookshelf_connection"
   /// Stores Hardcover API access token
   case hardcoverToken = "hardcover_token"
+  /// Stores the WebDAV server connection (WebDAVConnection — URL + credentials)
+  case webdavConnection = "webdav_connection"
 }
 
 public final class KeychainService: KeychainServiceProtocol, Sendable {

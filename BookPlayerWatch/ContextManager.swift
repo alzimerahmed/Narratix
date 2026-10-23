@@ -171,6 +171,146 @@ class ContextManager: ObservableObject, BPLogger {
     )
   }
 
+  // MARK: - Phone library browse + download management (Phase 3f)
+
+  /// Ask the phone for a page of the folder at `path` (nil/empty = library
+  /// root). A nil page reply means the phone couldn't answer — unreachable,
+  /// or its app isn't listening yet.
+  func requestPhoneLibrary(
+    path: String?,
+    offset: Int,
+    completion: @escaping (WatchLibraryPage?) -> Void
+  ) {
+    /// Without an activated session `sendMessageData` silently no-ops — the
+    /// browse screen reads a nil page as "can't reach the phone"
+    guard watchConnectivityService.validReachableSession?.activationState == .activated else {
+      completion(nil)
+      return
+    }
+
+    var request: [String: Any] = [
+      "command": WatchLibraryCommand.requestLibrary,
+      "offset": offset,
+    ]
+    if let path, !path.isEmpty {
+      request["path"] = path
+    }
+
+    guard let data = try? JSONSerialization.data(withJSONObject: request) else {
+      completion(nil)
+      return
+    }
+
+    watchConnectivityService.sendMessageData(data: data) { reply in
+      let page = try? JSONDecoder().decode(WatchLibraryPage.self, from: reply)
+      DispatchQueue.main.async {
+        completion(page)
+      }
+    } errorHandler: { _ in
+      DispatchQueue.main.async {
+        completion(nil)
+      }
+    }
+  }
+
+  /// Ask the phone to start the item's download (cloud or media server).
+  /// `ok` only means the request was accepted — the download itself is
+  /// background work on the phone.
+  func requestPhoneItemDownload(
+    relativePath: String,
+    completion: @escaping (Result<Void, WatchItemCommandError>) -> Void
+  ) {
+    sendItemCommand(
+      command: WatchLibraryCommand.downloadItem,
+      relativePath: relativePath,
+      completion: completion
+    )
+  }
+
+  /// Ask the phone to offload the item's file — only ever called for rows
+  /// whose `canOffload` the phone itself vouched for
+  func requestPhoneItemRemoveDownload(
+    relativePath: String,
+    completion: @escaping (Result<Void, WatchItemCommandError>) -> Void
+  ) {
+    sendItemCommand(
+      command: WatchLibraryCommand.removeDownloadItem,
+      relativePath: relativePath,
+      completion: completion
+    )
+  }
+
+  /// Play a browsed phone item through the same remote-control path a recent
+  /// row uses — the play command goes to the phone, the reply context update
+  /// follows on its own. `isPlaying` is NOT set optimistically: an unreachable
+  /// phone drops the sendMessage silently, and the `.bookPlaying` broadcast
+  /// (the only proof playback started) sets it instead
+  func handlePhoneItemSelected(_ item: WatchLibraryItem) {
+    watchConnectivityService.sendMessage(message: [
+      "command": Command.play.rawValue as AnyObject,
+      "identifier": item.relativePath as AnyObject,
+    ])
+  }
+
+  private func sendItemCommand(
+    command: String,
+    relativePath: String,
+    completion: @escaping (Result<Void, WatchItemCommandError>) -> Void
+  ) {
+    guard watchConnectivityService.validReachableSession?.activationState == .activated else {
+      completion(.failure(.unreachable))
+      return
+    }
+
+    guard
+      let data = try? JSONSerialization.data(withJSONObject: [
+        "command": command,
+        "identifier": relativePath,
+      ])
+    else {
+      completion(.failure(.failed))
+      return
+    }
+
+    watchConnectivityService.sendMessageData(data: data) { reply in
+      let response = try? JSONDecoder().decode(WatchActionResponse.self, from: reply)
+      DispatchQueue.main.async {
+        if response?.ok == true {
+          completion(.success(()))
+        } else {
+          completion(.failure(WatchItemCommandError(code: response?.error)))
+        }
+      }
+    } errorHandler: { _ in
+      DispatchQueue.main.async {
+        completion(.failure(.unreachable))
+      }
+    }
+  }
+
+  /// Remote errors the watch knows how to phrase; anything unrecognized is a
+  /// generic failure
+  enum WatchItemCommandError: Error {
+    case unreachable
+    case notFound
+    case noRemoteCopy
+    case notDownloaded
+    case uploadInProgress
+    case nowPlaying
+    case failed
+
+    init(code: String?) {
+      switch code {
+      case "notFound": self = .notFound
+      case "noRemoteCopy": self = .noRemoteCopy
+      case "notDownloaded": self = .notDownloaded
+      case "uploadInProgress": self = .uploadInProgress
+      case "nowPlaying": self = .nowPlaying
+      default: self = .failed
+      }
+    }
+  }
+
   func parseApplicationContext(_ dictionary: [String: Any]) -> WatchApplicationContext {
     let decoder = JSONDecoder()
 

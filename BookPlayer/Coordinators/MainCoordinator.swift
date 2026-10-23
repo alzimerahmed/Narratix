@@ -29,8 +29,12 @@ class MainCoordinator: NSObject {
   let watchConnectivityService: PhoneWatchConnectivityService
   let jellyfinConnectionService: JellyfinConnectionService
   let audiobookshelfConnectionService: AudiobookShelfConnectionService
+  let syncQueueService: SyncQueueService
   let hardcoverService: HardcoverService
   let preferencesService: PreferencesSyncService
+  let listeningQueueService: ListeningQueueService
+  let playbackHistoryService: PlaybackHistoryService
+  let listeningStatsService: ListeningStatsService
 
   var playerState: PlayerState { AppServices.shared.playerState }
 
@@ -56,8 +60,10 @@ class MainCoordinator: NSObject {
       playerManager: playerManager,
       syncService: syncService,
       playerLoaderService: coreServices.playerLoaderService,
-      preferencesService: coreServices.preferencesService
+      preferencesService: coreServices.preferencesService,
+      chapterRefreshService: coreServices.mediaServerChapterService
     )
+    self.syncQueueService = coreServices.syncQueueService
     self.singleFileDownloadService = SingleFileDownloadService(networkClient: NetworkClient())
     self.watchConnectivityService = coreServices.watchService
     let jellyfinService = JellyfinConnectionService()
@@ -70,6 +76,9 @@ class MainCoordinator: NSObject {
 
     self.hardcoverService = coreServices.hardcoverService
     self.preferencesService = coreServices.preferencesService
+    self.listeningQueueService = coreServices.listeningQueueService
+    self.playbackHistoryService = coreServices.playbackHistoryService
+    self.listeningStatsService = coreServices.listeningStatsService
 
     ThemeManager.shared.libraryService = libraryService
 
@@ -108,6 +117,11 @@ class MainCoordinator: NSObject {
       .environment(\.playerLoaderService, playerLoaderService)
       .environment(\.playbackService, playbackService)
       .environment(\.preferencesService, preferencesService)
+      .environment(\.syncQueueService, syncQueueService)
+      .environment(\.uploadContinuation, AppServices.shared.uploadContinuation)
+      .environment(\.listeningQueueService, listeningQueueService)
+      .environment(\.playbackHistoryService, playbackHistoryService)
+      .environment(\.listeningStatsService, listeningStatsService)
     )
     vc.modalPresentationStyle = .fullScreen
     vc.modalTransitionStyle = .crossDissolve

@@ -10,8 +10,6 @@ import BookPlayerKit
 import SwiftUI
 
 struct SettingsAppearanceSectionView: View {
-  @AppStorage(Constants.UserDefaults.appIcon, store: UserDefaults(suiteName: Constants.ApplicationGroupIdentifier))
-  var appIcon: String = "Default"
   @AppStorage(Constants.UserDefaults.macOSTextScale)
   var textScaleIndex: Double = 0.0  // Default to 1.0x (index 0)
   @State
@@ -41,6 +39,7 @@ struct SettingsAppearanceSectionView: View {
               .foregroundStyle(theme.secondaryColor)
           )
       }
+      .settingsRowBackground(for: .themes)
 
       if ProcessInfo.processInfo.isiOSAppOnMac {
         VStack(alignment: .leading, spacing: Spacing.S1) {
@@ -71,31 +70,23 @@ struct SettingsAppearanceSectionView: View {
           }
         }
       } else {
-        NavigationLink(value: SettingsScreen.icons) {
-          Text("settings_app_icon_title")
-            .bpFont(.body)
-            .badge(
-              Text(appIcon)
-                .foregroundStyle(theme.secondaryColor)
-            )
-        }
-
-        Toggle(isOn: $orientationLock) {
-          Text("settings_lock_orientation_title")
-            .bpFont(.body)
-        }
-        .onChange(of: orientationLock) {
-          if orientationLock {
-            UserDefaults.standard.set(
-              UIDevice.current.orientation.rawValue,
-              forKey: Constants.UserDefaults.orientationLock
-            )
-          } else {
-            UserDefaults.standard.removeObject(forKey: Constants.UserDefaults.orientationLock)
+        /// iPad ignores the lock: apps that support multitasking get every orientation
+        if UIDevice.current.userInterfaceIdiom == .phone {
+          Toggle(isOn: $orientationLock) {
+            Text("settings_lock_orientation_title")
+              .bpFont(.body)
           }
+          .onChange(of: orientationLock) {
+            let window = WindowHelper.activeWindow
 
-          WindowHelper.activeWindow?.rootViewController?
-            .setNeedsUpdateOfSupportedInterfaceOrientations()
+            if orientationLock {
+              OrientationLock.save(window?.windowScene?.effectiveGeometry.interfaceOrientation)
+            } else {
+              OrientationLock.clear()
+            }
+
+            window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+          }
         }
       }
     } header: {

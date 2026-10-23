@@ -19,10 +19,17 @@ struct ItemDetailsView: View {
   @State private var showingImagePicker = false
   /// Flag to show the empty pasteboard alert
   @State private var showingEmptyPasteboardAlert = false
+  /// Flag to show the online cover search
+  @State private var showingCoverSearch = false
 
   @State private var loadingState = LoadingOverlayState()
+  /// Media Servers, presented on top of the editor so its edits stay
+  @State private var showingMediaServers = false
 
   @Environment(\.hardcoverService) private var hardcoverService
+  @Environment(\.jellyfinService) private var jellyfinService
+  @Environment(\.audiobookshelfService) private var audiobookshelfService
+  @Environment(\.listState) private var listState
   @Environment(\.dismiss) private var dismiss
   @EnvironmentObject private var theme: ThemeViewModel
 
@@ -40,12 +47,51 @@ struct ItemDetailsView: View {
         authorPlaceholder: viewModel.authorPlaceholder
       )
 
+      // Series metadata for books and volumes — same gate as the author field
+      // (a plain folder is a container, not a book)
+      if viewModel.showAuthor {
+        ItemDetailsSeriesSectionView(
+          name: $viewModel.seriesName,
+          order: $viewModel.seriesOrder
+        )
+      }
+
       ItemDetailsArtworkSectionView(image: $viewModel.selectedImage) {
         showingArtworkOptions = true
       }
 
-      if let viewModel = viewModel.hardcoverSectionViewModel {
-        ItemDetailsHardcoverSectionView(viewModel: viewModel)
+      // The gate lives HERE: the section renders what it's given, the caller decides presence
+      let mediaServerResources = viewModel.hostedExternalResources
+      if viewModel.hardcoverSectionViewModel != nil || !mediaServerResources.isEmpty {
+        ItemDetailsIntegrationsSectionView(
+          hardcover: viewModel.hardcoverSectionViewModel,
+          mediaServerResources: mediaServerResources,
+          resolvedHosts: viewModel.resolvedExternalHosts,
+          onOpenMediaServers: { showingMediaServers = true }
+        )
+      }
+
+      /// The book-level memo — free-form notes saved with the rest of the form
+      /// (bookmark notes stay the time-anchored kind)
+      Section {
+        ZStack(alignment: .topLeading) {
+          if viewModel.note.isEmpty {
+            Text("note_placeholder")
+              .foregroundStyle(theme.secondaryColor)
+              .padding(.top, Spacing.S2)
+              .padding(.leading, Spacing.S4)
+              .accessibilityHidden(true)
+          }
+          TextEditor(text: $viewModel.note)
+            .frame(minHeight: Spacing.M * 4)
+            .foregroundStyle(theme.primaryColor)
+            .accessibilityLabel(Text("notes_title"))
+            /// What the field is for — the visual placeholder is hidden
+            .accessibilityHint("note_editor_hint")
+        }
+      } header: {
+        Text("notes_title")
+          .foregroundStyle(theme.primaryColor)
       }
 
       ItemDetailsFooterSectionView(
@@ -54,11 +100,29 @@ struct ItemDetailsView: View {
         lastPlayedDate: viewModel.lastPlayedDate
       )
     }
+    .task {
+      await viewModel.load()
+    }
     .onChange(of: viewModel.selectedImage) {
       viewModel.artworkIsUpdated = true
     }
     .sheet(isPresented: $showingImagePicker) {
       ImagePicker(image: $viewModel.selectedImage)
+    }
+    // Registered as a cover like the library's own Media Servers sheet: an import confirmed in
+    // the browser waits for it to close before its placement prompt
+    .sheet(isPresented: $showingMediaServers, onDismiss: {
+      listState.coversOnScreen.remove(.mediaServers)
+    }) {
+      NavigationStack {
+        MediaServersView(
+          jellyfinService: jellyfinService,
+          audiobookshelfService: audiobookshelfService,
+          style: .libraryEntry
+        )
+      }
+      .environment(\.closeMediaServers, CloseMediaServersAction { showingMediaServers = false })
+      .onAppear { listState.coversOnScreen.insert(.mediaServers) }
     }
     .alert(
       "hardcover_remove_confirmation_title",
@@ -92,9 +156,21 @@ struct ItemDetailsView: View {
     .alert("artwork_clipboard_empty_title", isPresented: $showingEmptyPasteboardAlert) {
       Button("ok_button") {}
     }
+    .sheet(isPresented: $showingCoverSearch) {
+      CoverSearchView(
+        query: [viewModel.title, viewModel.author]
+          .filter { !$0.isEmpty }
+          .joined(separator: " ")
+      ) { image in
+        viewModel.selectedImage = image
+      }
+    }
     .confirmationDialog("artwork_options_title", isPresented: $showingArtworkOptions) {
       Button("artwork_photolibrary_title") {
         showingImagePicker = true
+      }
+      Button("artwork_search_online_title") {
+        showingCoverSearch = true
       }
       Button("artwork_clipboard_title") {
         if let image = UIPasteboard.general.image {
@@ -105,7 +181,7 @@ struct ItemDetailsView: View {
       }
       Button("cancel_button", role: .cancel) {}
     }
-    .errorAlert(error: $loadingState.error)
+    .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
     .toolbar {
       ToolbarItem(placement: .cancellationAction) {

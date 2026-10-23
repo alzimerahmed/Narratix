@@ -61,18 +61,24 @@ struct StorageView<Model: StorageViewModelProtocol>: View {
 
         ThemedSection {
           List {
-            ForEach(viewModel.publishedFiles) { file in
-              StorageRowView(
-                item: file,
-                onDeleteTap: {
-                  viewModel.storageAlert = .delete(item: file)
-                  viewModel.showAlert = true
-                },
-                onWarningTap: {
-                  viewModel.storageAlert = .fix(item: file)
-                  viewModel.showAlert = true
-                }
-              )
+            if viewModel.publishedFiles.isEmpty {
+              Text("storage_no_files".localized)
+                .bpFont(.body)
+                .foregroundStyle(theme.secondaryColor)
+            } else {
+              ForEach(viewModel.publishedFiles) { file in
+                StorageRowView(
+                  item: file,
+                  onDeleteTap: {
+                    viewModel.storageAlert = .delete(item: file)
+                    viewModel.showAlert = true
+                  },
+                  onWarningTap: {
+                    viewModel.storageAlert = .fix(item: file)
+                    viewModel.showAlert = true
+                  }
+                )
+              }
             }
           }
         } header: {
@@ -90,6 +96,15 @@ struct StorageView<Model: StorageViewModelProtocol>: View {
             if viewModel.showFixAllButton {
               Button(viewModel.fixButtonTitle) {
                 viewModel.storageAlert = .fixAll
+                viewModel.showAlert = true
+              }
+              .foregroundStyle(theme.linkColor)
+            }
+
+            /// Removes local copies only — library records and cloud copies stay
+            if viewModel.canRemoveDownloads {
+              Button("storage_remove_downloads_button".localized) {
+                viewModel.storageAlert = .removeAll
                 viewModel.showAlert = true
               }
               .foregroundStyle(theme.linkColor)
@@ -143,6 +158,7 @@ struct StorageView_Previews: PreviewProvider {
     var fixProgress: FixProgress? = nil
     var alert: Alert { Alert(title: Text("")) }
     let fixButtonTitle = "Fix all"
+    var canRemoveDownloads: Bool = false
 
     func getTotalFoldersSize() -> String { return "0 Kb" }
     func getArtworkFolderSize() -> String { return "0 Kb" }

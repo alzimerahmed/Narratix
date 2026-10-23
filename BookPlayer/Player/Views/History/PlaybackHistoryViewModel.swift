@@ -1,0 +1,84 @@
+//
+//  PlaybackHistoryViewModel.swift
+//  BookPlayer
+//
+//  Created by Gianni Carlo on 12/5/25.
+//  Copyright © 2025 BookPlayer LLC. All rights reserved.
+//
+//
+
+import BookPlayerKit
+import Combine
+import Foundation
+
+/// Restore flow: load the session's book through the same loader a library row
+/// tap uses, then seek to the position the session was left at. The row's
+/// position is book-time, which is exactly what `jumpTo` takes.
+final class PlaybackHistoryViewModel: PlaybackHistoryView.Model {
+  private let historyService: PlaybackHistoryService
+  private let playerManager: PlayerManagerProtocol
+  private let playerLoaderService: PlayerLoaderService
+  private let loadingState: LoadingOverlayState
+  private var disposeBag = Set<AnyCancellable>()
+
+  init(
+    historyService: PlaybackHistoryService,
+    playerManager: PlayerManagerProtocol,
+    playerLoaderService: PlayerLoaderService,
+    loadingState: LoadingOverlayState
+  ) {
+    self.historyService = historyService
+    self.playerManager = playerManager
+    self.playerLoaderService = playerLoaderService
+    self.loadingState = loadingState
+
+    /// The view's `.task` reloads on open — seeding sessions here fetched
+    /// the whole history twice per sheet
+    super.init(sessions: [])
+
+    /// A session ends while the list is on screen (the panel beside the player
+    /// runs alongside live playback) — refresh instead of going stale
+    historyService.updates
+      .receive(on: DispatchQueue.main)
+      .debounce(for: .milliseconds(300), scheduler: DispatchQueue.main)
+      .sink { [weak self] in
+        guard let self else { return }
+        self.sessions = self.historyService.fetchSessions()
+      }
+      .store(in: &disposeBag)
+  }
+
+  override func reload() {
+    sessions = historyService.fetchSessions()
+  }
+
+  override func handleSelect(_ session: SimplePlaybackSession) {
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      do {
+        try await playerLoaderService.loadPlayer(session.itemRelativePath, autoplay: true)
+        /// `play()` refuses a playhead that sits at the item's duration — a
+        /// session left at a finished book's end restarts it from the top
+        var position = session.position
+        if let currentItem = playerManager.currentItem,
+          currentItem.isFinished,
+          position >= currentItem.duration
+        {
+          position = 0
+        }
+        /// The loader resolves to the stored position — the session's is the
+        /// one the user asked for
+        playerManager.jumpTo(position, recordBookmark: false)
+      } catch {
+        loadingState.error = error
+      }
+    }
+  }
+
+  override func delete(at offsets: IndexSet) {
+    for index in offsets {
+      historyService.deleteSession(id: sessions[index].id)
+    }
+    sessions.remove(atOffsets: offsets)
+  }
+}

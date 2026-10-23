@@ -8,6 +8,10 @@
 
 import Foundation
 
-enum ProfileScreen: String, Hashable {
-  case account, tasks
+enum ProfileScreen: Hashable {
+  case account
+  /// Every queued task, one collapsible section per lane
+  case queueTasks
+  /// Streaks, daily goal, monthly chart and per-book listening time
+  case stats
 }

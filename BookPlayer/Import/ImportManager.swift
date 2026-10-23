@@ -101,6 +101,46 @@ final class ImportManager: ObservableObject {
     self.queue.addOperation(operation)
   }
 
+  /// The outcome of a manual rescan (the library's "Rescan" action):
+  /// `pendingImports` are files waiting on the import screen's confirmation,
+  /// `registeredItems` are orphaned files inside Processed that got their
+  /// library records back (they were dropped there via Files/File Sharing).
+  struct RescanResult {
+    let pendingImports: Int
+    let registeredItems: Int
+    /// The re-registered records themselves — the caller runs the same
+    /// duplicate check on them a fresh import does
+    let registered: [SimpleLibraryItem]
+  }
+
+  /// Manual rescan for files dropped via the Files app or iTunes File Sharing:
+  /// the same Documents/Shared/Inbox sweep `notifyPendingFiles` runs (top level —
+  /// a folder picked up there imports its whole subtree), plus a pass over the
+  /// Processed folder that re-registers files no library record claims.
+  @MainActor
+  @discardableResult
+  public func rescanLibrary() async -> RescanResult {
+    notifyPendingFiles()
+
+    let processedURL = DataManager.getProcessedFolderURL()
+    let topLevel =
+      (try? FileManager.default.contentsOfDirectory(
+        at: processedURL,
+        includingPropertiesForKeys: [.isDirectoryKey],
+        options: .skipsHiddenFiles
+      )) ?? []
+
+    // Top-level entries suffice: a directory is recursed by the service, so
+    // files dropped into an already-registered folder are found too.
+    let registered = await libraryService.registerExistingProcessedItems(at: topLevel)
+
+    return RescanResult(
+      pendingImports: files.value.count,
+      registeredItems: registered.count,
+      registered: registered
+    )
+  }
+
   @MainActor
   public func notifyPendingFiles() {
     // Get reference of all the files located inside the Documents, Shared and Inbox folders

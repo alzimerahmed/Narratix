@@ -14,7 +14,6 @@ class StoryViewerViewModel: ObservableObject {
   enum Routes {
     case showLoader(Bool)
     case showAlert(BPAlertContent)
-    case tipJar(String?)
     case success
     case dismiss
   }
@@ -99,9 +98,5 @@ class StoryViewerViewModel: ObservableObject {
 
   func handleDismiss() {
     onTransition?(.dismiss)
-  }
-
-  func handleTipJar(disclaimer: String?) {
-    onTransition?(.tipJar(disclaimer))
   }
 }

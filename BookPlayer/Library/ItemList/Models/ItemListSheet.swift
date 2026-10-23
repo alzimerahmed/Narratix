@@ -15,6 +15,12 @@ enum ItemListSheet: Identifiable {
   case queuedTasks
   case foldersSelection
   case libraryOptions
+  /// The collections shelf browser (list → detail)
+  case collections
+  /// The "Add to Collection" membership picker for the current selection
+  case collectionPicker
+  /// Browse-by surface (series + authors)
+  case seriesBrowser
 
   var id: String {
     switch self {
@@ -26,6 +32,12 @@ enum ItemListSheet: Identifiable {
       return "foldersSelection"
     case .libraryOptions:
       return "libraryOptions"
+    case .collections:
+      return "collections"
+    case .collectionPicker:
+      return "collectionPicker"
+    case .seriesBrowser:
+      return "seriesBrowser"
     }
   }
 }

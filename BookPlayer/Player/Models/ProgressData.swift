@@ -15,6 +15,9 @@ struct ProgressData: Equatable {
   var maxTime: TimeInterval?
   var sliderValue: Double = 0.0
   var chapterTitle: String = ""
+  /// Chapter ticks for the scrubber: book-level fractions, only when the slider spans the
+  /// whole book (in chapter context they wouldn't map onto the track)
+  var chapterMarkers: [ChapterMarker] = []
 
   var formattedCurrentTime: String {
     return TimeParser.formatTime(self.currentTime)

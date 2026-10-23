@@ -25,24 +25,56 @@ struct ItemListView: View {
   @State var downloadURLInput = ""
   @State private var playingItemParentPath: String?
 
-  @Namespace private var customRotorNamespace
+  @Namespace var customRotorNamespace
   @AccessibilityFocusState private var focus: FocusTarget?
+
+  /// Set from `LibraryOptionsView`: rows, or tiles (cards or covers only)
+  @AppStorage(
+    wrappedValue: LibraryLayout.list,
+    Constants.UserDefaults.libraryLayout,
+    store: UserDefaults(suiteName: Constants.ApplicationGroupIdentifier)
+  )
+  var layout: LibraryLayout
+  /// The narrowest a tile gets, larger with the text size
+  @ScaledMetric(relativeTo: .body) var tileMinimumWidth: CGFloat = 150
+  @ScaledMetric(relativeTo: .body) var coverMinimumWidth: CGFloat = 100
+  /// A cover alone on a wide screen (iPad, iPhone Duo open), which would otherwise fit many small ones
+  @ScaledMetric(relativeTo: .body) var wideCoverMinimumWidth: CGFloat = 140
+  /// The Text Size setting on a Mac, where Dynamic Type (which scales the widths above) stays put
+  @AppStorage(Constants.UserDefaults.macOSTextScale) var macOSTextScaleIndex: Double = 0.0
+  @Environment(\.horizontalSizeClass) var horizontalSizeClass
+  /// Where a fold runs top to bottom across the grid (iPhone Duo half open in landscape, the book
+  /// pose), so its columns leave it in a gap
+  @State var tileGridFold: TileGridFold?
+  /// The tiles' title source, which a cover's menu names it by
+  @AppStorage(
+    wrappedValue: false,
+    Constants.UserDefaults.libraryDisplayTitleSource,
+    store: UserDefaults(suiteName: Constants.ApplicationGroupIdentifier)
+  )
+  var useOriginalFileName: Bool
 
   @Environment(\.libraryService) var libraryService
   @Environment(\.accountService) private var accountService
   @Environment(\.syncService) var syncService
+  @Environment(\.syncQueueService) private var syncQueueService
   @Environment(\.hardcoverService) var hardcoverService
-  @Environment(\.playerLoaderService) private var playerLoaderService
-  @Environment(\.jellyfinService) var jellyfinService
-  @Environment(\.audiobookshelfService) var audiobookshelfService
+  @Environment(\.playerLoaderService) var playerLoaderService
+  /// The collections/series sheet models resolve folders to their next
+  /// unfinished book through this
+  @Environment(\.playbackService) var playbackService
   @Environment(\.preferencesService) var preferencesService
   @Environment(\.listState) var listState
-  @Environment(\.playerState) private var playerState
-  @Environment(\.loadingState) private var loadingState
+  @Environment(\.playerState) var playerState
+  @Environment(\.loadingState) var loadingState
   @Environment(\.importOperationState) private var importOperationState
   @Environment(\.scenePhase) private var scenePhase
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
   @EnvironmentObject private var importManager: ImportManager
   @EnvironmentObject private var theme: ThemeViewModel
+
+  /// A parked task in the sync lane: the blocked-refresh alert says sync is paused
+  @State private var syncLanePaused = false
 
   init(initModel: @escaping () -> ItemListViewModel) {
     self._model = .init(wrappedValue: initModel())
@@ -70,8 +102,35 @@ struct ItemListView: View {
     )
   }
 
+  /// The active sort, under the nav title — the options sheet shows it while open, but a
+  /// folder keeps whatever it was sorted by after the sheet closes
+  private var sortIndicator: String? {
+    switch currentLocation {
+    case .unresolved:
+      return nil
+    case .libraryRoot, .folder:
+      let sortName: String
+      switch preferencesService.effectiveSort(forLocation: currentLocation) {
+      case .automatic(.metadataTitle): sortName = "title_button".localized
+      case .automatic(.fileName): sortName = "sort_filename_button".localized
+      case .automatic(.mostRecent): sortName = "sort_most_recent_button".localized
+      case .custom: sortName = "sleeptimer_option_custom".localized
+      }
+      return String(format: "sort_subtitle_format".localized, sortName)
+    }
+  }
+
   var body: some View {
-    contentView
+    Group {
+      if let sortIndicator {
+        contentView
+          .navigationTitle(model.navigationTitle)
+          .navigationSubtitle(sortIndicator)
+      } else {
+        contentView
+          .navigationTitle(model.navigationTitle)
+      }
+    }
       .accessibilityFocused($focus, equals: .primary)
       .toolbar {
         mainToolbar()
@@ -79,7 +138,6 @@ struct ItemListView: View {
       .miniPlayerSafeAreaInset()
       .listStyle(.plain)
       .applyListStyle(with: theme, background: theme.systemBackgroundColor)
-      .navigationTitle(model.navigationTitle)
       .sheet(item: $activeSheet) { sheet in
         sheetContent(for: sheet)
       }
@@ -187,26 +245,34 @@ struct ItemListView: View {
         EmptyListView(node: model.libraryNode) {
           activeConfirmationDialog = .addOptions
         }
+        .acceptsDroppedFiles()
       } else {
         ScrollViewReader { scrollView in
-          List(selection: $model.selectedSetItems) {
-            ForEach(model.filteredResults, id: \.id) { item in
-              rowView(item)
-                .accessibilityRotorEntry(id: item.id, in: customRotorNamespace)
-                .moveDisabled(model.isFiltering)
-            }
-            .onMove { source, destination in
-              model.reorderItems(source: source, destination: destination)
-            }
+          Group {
+            if layout != .list {
+              tileGrid
+            } else {
+              List(selection: $model.selectedSetItems) {
+                ForEach(model.filteredResults, id: \.id) { item in
+                  rowView(item)
+                    .accessibilityRotorEntry(id: item.id, in: customRotorNamespace)
+                    .moveDisabled(model.isFiltering)
+                }
+                .onMove { source, destination in
+                  model.reorderItems(source: source, destination: destination)
+                }
 
-            if model.canLoadMore {
-              loadMoreView()
-            }
-          }
-          .macContextMenu(forSelectionType: SimpleLibraryItem.ID.self) { itemIDs in
-            let _ = { model.selectedSetItems = itemIDs }()
-            if !model.selectedItems.isEmpty {
-              contextMenuContent()
+                if model.canLoadMore {
+                  loadMoreView()
+                }
+              }
+              .macContextMenu(forSelectionType: SimpleLibraryItem.ID.self) { itemIDs in
+                let _ = { model.selectedSetItems = itemIDs }()
+                if !model.selectedItems.isEmpty {
+                  contextMenuContent(for: model.selectedItems)
+                }
+              }
+              .acceptsDroppedFiles()
             }
           }
           .overlay {
@@ -238,12 +304,23 @@ struct ItemListView: View {
             do {
               try await model.refreshListState()
             } catch {
-              self.activeAlert = .queuedTasks
+              self.activeAlert = .queuedTasks(paused: syncLanePaused)
             }
           }
           .environment(\.playingItemParentPath, playingItemParentPath)
           .environment(\.libraryNode, model.libraryNode)
         }
+      }
+    }
+    // Once while the list is up: `observeQueueCounts()` is a new publisher on every call, so
+    // `.onReceive` subscribed again (and took a replayed snapshot) on every render
+    .task {
+      for await counts in syncQueueService.observeQueueCounts().values {
+        // Blocked too: an account-level pause from an upload holds this lane with none of its
+        // own tasks parked
+        syncLanePaused = counts.isBlocked(TaskQueueKey.sync)
+          || counts.isUserPaused(TaskQueueKey.sync)
+          || counts.pausedCount(in: TaskQueueKey.sync) > 0
       }
     }
     .onReceive(
@@ -327,34 +404,33 @@ struct ItemListView: View {
       } else {
         BookView(item: item) {
           handleArtworkTap(for: item)
+        } resumeTap: {
+          resumeItem(item)
         }
         .onTapGesture {
-          switch syncService.getDownloadState(for: item) {
-          case .downloading:
-            cancelDownload(of: item.id)
-          case .downloaded, .notDownloaded:
-            loadPlayer(with: item.relativePath)
-          }
+          handleTap(on: item)
         }
         .accessibilityAction {
           guard !model.editMode.isEditing else {
-            if model.selectedSetItems.contains(item.id) {
-              model.selectedSetItems.remove(item.id)
-            } else {
-              model.selectedSetItems.insert(item.id)
-            }
+            toggleSelection(of: item)
             return
           }
 
-          switch syncService.getDownloadState(for: item) {
-          case .downloading:
-            cancelDownload(of: item.id)
-          case .downloaded, .notDownloaded:
-            loadPlayer(with: item.relativePath)
-          }
+          handleTap(on: item)
+        }
+        // Resume without the player opening, the same as the row's play button —
+        // and gated like it: nothing to continue on a book never started or
+        // already finished
+        .accessibilityAction(named: "voiceover_continue_playback_title") {
+          guard !model.editMode.isEditing,
+                item.percentCompleted > 0,
+                !item.isFinished else { return }
+          resumeItem(item)
         }
       }
     }
+    /// For the release-check UI tests: the row's label includes its progress, so they find it by path
+    .accessibilityIdentifier("library.row.\(item.relativePath)")
     .onAppear {
       Task {
         await model.prefetchIfNeeded(for: item)
@@ -371,7 +447,6 @@ struct ItemListView: View {
         model.selectedSetItems = [item.id]
         activeAlert = .delete
       }
-      .tint(.red)
     }
     .listRowBackground(theme.systemBackgroundColor)
     .allowsHitTesting(!model.editMode.isEditing)
@@ -410,14 +485,25 @@ struct ItemListView: View {
 
   @ViewBuilder
   func addFilesOptions() -> some View {
-    Button("import_button", systemImage: "waveform") {
+    Button("import_button", systemImage: "square.and.arrow.down") {
       showDocumentPicker = true
     }
     Button("download_from_url_title", systemImage: "link") {
       activeAlert = .downloadURL("")
     }
+    Button("transfer_title", systemImage: "laptopcomputer.and.arrow.down") {
+      listState.activeLibrarySheet = .transferFromComputer
+    }
     Button("media_servers_title".localized, systemImage: "server.rack") {
-      listState.activeIntegrationSheet = .mediaServers
+      listState.activeLibrarySheet = .mediaServers
+    }
+    Button("webdav_title".localized, systemImage: "externaldrive.connected.to.line.below") {
+      listState.activeLibrarySheet = .webdav
+    }
+    /// Files dropped into Documents (or straight into the library folder) via
+    /// the Files app or iTunes File Sharing: picks them up like the watchers do
+    Button("rescan_library_title", systemImage: "arrow.clockwise") {
+      rescanLibrary()
     }
     Button("create_playlist_button", systemImage: "folder.badge.plus") {
       /// Clean up just in case due to how List(selection:) works under the hood
@@ -462,35 +548,30 @@ struct ItemListView: View {
   /// `ToolbarSpacer(.fixed, ...)` render as one shared capsule. Without the
   /// fixed spacer (or with `.flexible`), each item gets its own pill — which is
   /// what the cascading `.tint(theme.linkColor)` from `LibraryRootView` was
-  /// producing previously. On iOS 18 we fall back to the legacy
-  /// `ToolbarItemGroup` layout since `ToolbarSpacer` isn't available.
+  /// producing previously.
   @ToolbarContentBuilder
   private func regularToolbarItems() -> some ToolbarContent {
-    if #available(iOS 26.0, *) {
-      if importOperationState.isOperationActive {
-        ToolbarItem(placement: .topBarTrailing) {
-          importOperationButton
-        }
-        ToolbarSpacer(.fixed, placement: .topBarTrailing)
-      }
-
+    if importOperationState.isOperationActive {
       ToolbarItem(placement: .topBarTrailing) {
-        libraryOptionsButton
+        importOperationButton
       }
-
       ToolbarSpacer(.fixed, placement: .topBarTrailing)
+    }
 
-      ToolbarItem(placement: .topBarTrailing) {
-        ellipsisMenu
-      }
-    } else {
-      ToolbarItemGroup(placement: .confirmationAction) {
-        if importOperationState.isOperationActive {
-          importOperationButton
-        }
-        libraryOptionsButton
-        ellipsisMenu
-      }
+    ToolbarItem(placement: .topBarTrailing) {
+      listeningFilterMenu
+    }
+
+    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+    ToolbarItem(placement: .topBarTrailing) {
+      libraryOptionsButton
+    }
+
+    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+
+    ToolbarItem(placement: .topBarTrailing) {
+      ellipsisMenu
     }
   }
 
@@ -500,10 +581,42 @@ struct ItemListView: View {
       Text(importOperationState.processingTitle)
     } label: {
       Image(systemName: "square.and.arrow.down")
-        .symbolEffect(.pulse.wholeSymbol, options: .repeating)
+        .symbolEffect(.pulse.wholeSymbol, options: .repeating, isActive: !reduceMotion)
         .foregroundStyle(theme.linkColor)
         .accessibilityLabel("import_preparing_title")
     }
+  }
+
+  /// Listening-state triage (New/Started/Finished/DNF). The filled icon marks an
+  /// active filter so the state is visible after the menu closes
+  @ViewBuilder
+  private var listeningFilterMenu: some View {
+    Menu {
+      ForEach(ItemListeningFilter.allCases) { filter in
+        Button {
+          model.listeningFilter = filter
+        } label: {
+          Label {
+            Text(filter.title)
+          } icon: {
+            if model.listeningFilter == filter {
+              Image(systemName: "checkmark")
+            }
+          }
+        }
+        .accessibilityAddTraits(model.listeningFilter == filter ? .isSelected : [])
+      }
+    } label: {
+      Label(
+        "filter_title",
+        systemImage: model.listeningFilter == .all
+          ? "line.3.horizontal.decrease.circle"
+          : "line.3.horizontal.decrease.circle.fill"
+      )
+    }
+    .accessibilityLabel("filter_title".localized)
+    /// The active filter — the checkmark is visual-only otherwise
+    .accessibilityValue(model.listeningFilter.titleString)
   }
 
   @ViewBuilder
@@ -527,6 +640,21 @@ struct ItemListView: View {
         } label: {
           Label("select_title".localized, systemImage: "checkmark.circle")
         }
+      }
+
+      ThemedSection {
+        Button {
+          activeSheet = .collections
+        } label: {
+          Label("collections_title", systemImage: "square.stack")
+        }
+        Button {
+          activeSheet = .seriesBrowser
+        } label: {
+          Label("browse_title", systemImage: "books.vertical")
+        }
+      } header: {
+        Text("browse_section_title")
       }
 
       ThemedSection {
@@ -616,6 +744,43 @@ struct ItemListView: View {
     }
   }
 
+  /// A book's tap: play it and open the player, or offer to cancel its download
+  func handleTap(on item: SimpleLibraryItem) {
+    switch syncService.getDownloadState(for: item) {
+    case .downloading:
+      cancelDownload(of: item.id)
+    case .downloaded, .notDownloaded:
+      loadPlayer(with: item.relativePath)
+    }
+  }
+
+  /// The row's resume: play where the book left off WITHOUT opening the player — the mini
+  /// player picks it up. A not-downloaded book starts its download instead
+  func resumeItem(_ item: SimpleLibraryItem) {
+    switch syncService.getDownloadState(for: item) {
+    case .notDownloaded:
+      model.startDownload(of: item)
+    case .downloading:
+      cancelDownload(of: item.id)
+    case .downloaded:
+      Task {
+        do {
+          try await playerLoaderService.loadPlayer(item.relativePath, autoplay: true)
+        } catch {
+          loadingState.error = error
+        }
+      }
+    }
+  }
+
+  func toggleSelection(of item: SimpleLibraryItem) {
+    if model.selectedSetItems.contains(item.id) {
+      model.selectedSetItems.remove(item.id)
+    } else {
+      model.selectedSetItems.insert(item.id)
+    }
+  }
+
   func cancelDownload(of relativePath: String) {
     model.selectedSetItems = [relativePath]
     if let item = model.selectedItems.first {
@@ -630,6 +795,50 @@ struct ItemListView: View {
         playerState.showPlayerBinding.wrappedValue = true
       } catch {
         loadingState.error = error
+      }
+    }
+  }
+
+  /// "Rescan library": pending files take over through `observeFiles` → the
+  /// import screen; the alert reports only what the Processed pass registered,
+  /// since a pending import already explains itself
+  private func rescanLibrary() {
+    Task { @MainActor in
+      importOperationState.isOperationActive = true
+      importOperationState.processingTitle = "rescan_in_progress_title".localized
+
+      let result = await importManager.rescanLibrary()
+
+      importOperationState.isOperationActive = false
+      importOperationState.processingTitle = ""
+
+      if result.registeredItems > 0 {
+        listState.reloadAll(padding: result.registeredItems)
+      }
+
+      /// Re-registered orphans take the same duplicate gate a fresh import
+      /// does — a title+duration collision must not silently double-register
+      var duplicatesQueued = false
+      if !result.registered.isEmpty {
+        let matches = ImportDuplicateDetector.findDuplicates(
+          of: result.registered,
+          libraryService: libraryService
+        )
+        if !matches.isEmpty {
+          duplicatesQueued = true
+          importOperationState.pendingDuplicates.append(
+            PendingDuplicateImport(
+              items: result.registered,
+              matches: matches,
+              node: .root,
+              suggestedFolderName: nil
+            )
+          )
+        }
+      }
+
+      if result.pendingImports == 0, !duplicatesQueued {
+        activeAlert = .rescanResult(registered: result.registeredItems)
       }
     }
   }
@@ -659,52 +868,70 @@ extension ItemListView {
 
   @ViewBuilder
   func itemOptionsDialog() -> some View {
-    detailsOption(forMenu: false)
-    moveOption(forMenu: false)
-    shareOption(forMenu: false)
-    jumpToStartOption(forMenu: false)
-    markFinishedOption(forMenu: false)
-    boundBooksOption(forMenu: false)
-    downloadOption(forMenu: false)
-    deleteOption(forMenu: false)
+    let items = model.selectedItems
+    detailsOption(for: items, forMenu: false)
+    moveOption(for: items, forMenu: false)
+    shareOption(for: items, forMenu: false)
+    jumpToStartOption(for: items, forMenu: false)
+    markFinishedOption(for: items, forMenu: false)
+    markDidNotFinishOption(for: items, forMenu: false)
+    queueOptions(for: items, forMenu: false)
+    collectionsOption(for: items, forMenu: false)
+    boundBooksOption(for: items, forMenu: false)
+    downloadOption(for: items, forMenu: false)
+    deleteOption(for: items, forMenu: false)
   }
 
   /// Menu version with reversed order (Menu displays first item at bottom)
   @ViewBuilder
   func itemOptionsMenu() -> some View {
-    deleteOption(forMenu: true)
-    downloadOption(forMenu: true)
-    boundBooksOption(forMenu: true)
-    markFinishedOption(forMenu: true)
-    jumpToStartOption(forMenu: true)
-    shareOption(forMenu: true)
-    moveOption(forMenu: true)
-    detailsOption(forMenu: true)
+    let items = model.selectedItems
+    deleteOption(for: items, forMenu: true)
+    downloadOption(for: items, forMenu: true)
+    boundBooksOption(for: items, forMenu: true)
+    collectionsOption(for: items, forMenu: true)
+    queueOptions(for: items, forMenu: true)
+    markDidNotFinishOption(for: items, forMenu: true)
+    markFinishedOption(for: items, forMenu: true)
+    jumpToStartOption(for: items, forMenu: true)
+    shareOption(for: items, forMenu: true)
+    moveOption(for: items, forMenu: true)
+    detailsOption(for: items, forMenu: true)
   }
 
-  // MARK: - Context Menu (macOS right-click)
+  // MARK: - Context Menu (a tile's long press, and right-click on macOS)
 
+  /// For `items`, which a tile's long press hasn't selected: each option selects them before it
+  /// acts, since the actions and the alerts they open work on the selection
   @ViewBuilder
-  func contextMenuContent() -> some View {
-    detailsOption(forMenu: false)
-    moveOption(forMenu: false)
-    shareOption(forMenu: false)
-    jumpToStartOption(forMenu: false)
-    markFinishedOption(forMenu: false)
-    boundBooksOption(forMenu: false)
-    downloadOption(forMenu: false)
+  func contextMenuContent(for items: [SimpleLibraryItem]) -> some View {
+    detailsOption(for: items, forMenu: false)
+    moveOption(for: items, forMenu: false)
+    shareOption(for: items, forMenu: false)
+    jumpToStartOption(for: items, forMenu: false)
+    markFinishedOption(for: items, forMenu: false)
+    markDidNotFinishOption(for: items, forMenu: false)
+    queueOptions(for: items, forMenu: false)
+    collectionsOption(for: items, forMenu: false)
+    boundBooksOption(for: items, forMenu: false)
+    downloadOption(for: items, forMenu: false)
     Divider()
-    deleteOption(forMenu: false)
+    deleteOption(for: items, forMenu: false)
+  }
+
+  private func select(_ items: [SimpleLibraryItem]) {
+    model.selectedSetItems = Set(items.map(\.id))
   }
 
   // MARK: - Individual Option Builders
 
   @ViewBuilder
-  private func detailsOption(forMenu: Bool) -> some View {
-    let item = model.selectedItems.first
-    let isSingle = model.selectedItems.count == 1
+  private func detailsOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let item = items.first
+    let isSingle = items.count == 1
 
     Button {
+      select(items)
       activeSheet = .itemDetails(item!)
     } label: {
       Label("details_title", systemImage: "square.and.pencil")
@@ -714,8 +941,9 @@ extension ItemListView {
   }
 
   @ViewBuilder
-  private func moveOption(forMenu: Bool) -> some View {
+  private func moveOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
     Button {
+      select(items)
       activeAlert = .moveOptions
     } label: {
       Label("move_title", systemImage: "folder")
@@ -724,9 +952,9 @@ extension ItemListView {
   }
 
   @ViewBuilder
-  private func shareOption(forMenu: Bool) -> some View {
-    let item = model.selectedItems.first
-    let isSingle = model.selectedItems.count == 1
+  private func shareOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let item = items.first
+    let isSingle = items.count == 1
 
     if isSingle, let item {
       ShareLink(
@@ -743,8 +971,9 @@ extension ItemListView {
   }
 
   @ViewBuilder
-  private func jumpToStartOption(forMenu: Bool) -> some View {
+  private func jumpToStartOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
     Button {
+      select(items)
       model.handleResetPlaybackPosition()
     } label: {
       Label("jump_start_title", systemImage: "backward.end")
@@ -753,8 +982,8 @@ extension ItemListView {
   }
 
   @ViewBuilder
-  private func markFinishedOption(forMenu: Bool) -> some View {
-    let areAllFinished = model.selectedItems.allSatisfy { $0.isFinished }
+  private func markFinishedOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let areAllFinished = items.allSatisfy { $0.isFinished }
     let markTitle =
       areAllFinished
       ? "mark_unfinished_title".localized
@@ -762,6 +991,7 @@ extension ItemListView {
     let markIcon = areAllFinished ? "circle" : "checkmark.circle"
 
     Button {
+      select(items)
       model.handleMarkAsFinished(flag: !areAllFinished)
     } label: {
       Label(markTitle, systemImage: markIcon)
@@ -769,26 +999,97 @@ extension ItemListView {
     .menuTint(theme.primaryColor, enabled: forMenu)
   }
 
+  /// "Did not finish" triage — a flag distinct from finished (an abandoned book
+  /// keeps its progress). Toggles when everything selected is already DNF
   @ViewBuilder
-  private func boundBooksOption(forMenu: Bool) -> some View {
-    let item = model.selectedItems.first
-    let isSingle = model.selectedItems.count == 1
-    let allAreBound = model.selectedItems.allSatisfy { $0.type == .bound }
-    let multipleBooks = model.selectedItems.count > 1 && model.selectedItems.allSatisfy { $0.type == .book }
+  private func markDidNotFinishOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let areAllDidNotFinish = items.allSatisfy { $0.didNotFinish }
+    let markTitle =
+      areAllDidNotFinish
+      ? "clear_did_not_finish_title".localized
+      : "mark_did_not_finish_title".localized
+    let markIcon = areAllDidNotFinish ? "flag" : "flag.slash"
+
+    Button {
+      select(items)
+      model.handleMarkAsDidNotFinish(flag: !areAllDidNotFinish)
+    } label: {
+      Label(markTitle, systemImage: markIcon)
+    }
+    .menuTint(theme.primaryColor, enabled: forMenu)
+  }
+
+  /// Up Next queueing — Play Next inserts at the head, Add to Queue at the tail;
+  /// a fully-queued selection offers removal instead
+  @ViewBuilder
+  private func queueOptions(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    /// One fetch for the whole set — a per-item check re-ran a Core Data
+    /// fetch for every selected row each time this menu built
+    let allQueued = model.areAllQueued(items)
+
+    if allQueued {
+      Button {
+        select(items)
+        model.handleDequeue()
+      } label: {
+        Label("queue_remove_title", systemImage: "text.badge.minus")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+    } else {
+      Button {
+        select(items)
+        model.handleEnqueueNext()
+      } label: {
+        Label("queue_play_next_title", systemImage: "text.insert")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+
+      Button {
+        select(items)
+        model.handleEnqueue()
+      } label: {
+        Label("queue_add_title", systemImage: "text.append")
+      }
+      .menuTint(theme.primaryColor, enabled: forMenu)
+    }
+  }
+
+  /// Cross-cutting shelves: the picker toggles membership for the whole
+  /// selection — a collection checked for all selected removes them, any
+  /// other adds the missing ones
+  @ViewBuilder
+  private func collectionsOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    Button {
+      select(items)
+      activeSheet = .collectionPicker
+    } label: {
+      Label("collection_picker_title", systemImage: "square.stack")
+    }
+    .menuTint(theme.primaryColor, enabled: forMenu)
+  }
+
+  @ViewBuilder
+  private func boundBooksOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let item = items.first
+    let isSingle = items.count == 1
+    let allAreBound = items.allSatisfy { $0.type == .bound }
+    let multipleBooks = items.count > 1 && items.allSatisfy { $0.type == .book }
     let singleFolder = isSingle && (item?.type == .folder)
     let canCreateBound = multipleBooks || singleFolder
 
     if allAreBound {
       Button {
-        model.updateFolders(model.selectedItems, type: .folder)
+        select(items)
+        model.updateFolders(items, type: .folder)
       } label: {
         Label("bound_books_undo_alert_title", systemImage: "rectangle.stack.badge.minus")
       }
       .menuTint(theme.primaryColor, enabled: forMenu)
     } else {
       Button {
+        select(items)
         if isSingle {
-          model.updateFolders(model.selectedItems, type: .bound)
+          model.updateFolders(items, type: .bound)
         } else {
           folderInput.prepareForBound(title: item?.title)
           folderNameRequest = FolderNameRequest(folderInput)
@@ -802,14 +1103,18 @@ extension ItemListView {
   }
 
   @ViewBuilder
-  private func downloadOption(forMenu: Bool) -> some View {
-    let item = model.selectedItems.first
-    let isSingle = model.selectedItems.count == 1
+  private func downloadOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
+    let item = items.first
+    let isSingle = items.count == 1
 
-    if let item, syncService.isActive {
+    /// Media-server items get the same option without cloud sync: their remote
+    /// copy lives on the server, and `getDownloadState` accounts for the link
+    if let item,
+      syncService.isActive || item.externalResources?.streamingResource != nil {
       switch syncService.getDownloadState(for: item) {
       case .notDownloaded:
         Button {
+          select(items)
           model.startDownload(of: item)
         } label: {
           Label("download_title", systemImage: "arrow.down.circle")
@@ -818,6 +1123,7 @@ extension ItemListView {
         .disabled(!isSingle)
       case .downloading:
         Button {
+          select(items)
           activeAlert = .cancelDownload(item)
         } label: {
           Label("cancel_download_title", systemImage: "xmark.circle")
@@ -825,26 +1131,36 @@ extension ItemListView {
         .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
         .disabled(!isSingle)
       case .downloaded:
-        Button {
-          Task {
-            if await syncService.hasUploadTask(for: item.relativePath) {
-              activeAlert = .warningOffload(item)
-            } else {
-              model.handleOffloading(of: item)
+        /// `.downloaded` only proves the file is local — `canOffload`'s
+        /// remote-copy evidence decides whether removing it is safe, so a
+        /// synced-but-never-uploaded item offers no offload
+        if syncService.canOffload(item) {
+          Button {
+            select(items)
+            Task {
+              /// Prefix match: a folder/bound item's uploads carry the child
+              /// paths, so an exact path check would offload over a running
+              /// child upload
+              if await syncService.hasUploadTask(matchingPrefix: item.relativePath) {
+                activeAlert = .warningOffload(item)
+              } else {
+                model.handleOffloading(of: item)
+              }
             }
+          } label: {
+            Label("remove_downloaded_file_title", systemImage: "icloud.slash")
           }
-        } label: {
-          Label("remove_downloaded_file_title", systemImage: "icloud.slash")
+          .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
+          .disabled(!isSingle)
         }
-        .menuTint(theme.primaryColor.opacity(!isSingle ? 0.3 : 1.0), enabled: forMenu)
-        .disabled(!isSingle)
       }
     }
   }
 
   @ViewBuilder
-  private func deleteOption(forMenu: Bool) -> some View {
+  private func deleteOption(for items: [SimpleLibraryItem], forMenu: Bool) -> some View {
     Button(role: .destructive) {
+      select(items)
       activeAlert = .delete
     } label: {
       Label("delete_button", systemImage: "trash")

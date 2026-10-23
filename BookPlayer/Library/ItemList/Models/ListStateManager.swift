@@ -22,18 +22,24 @@ final class ListStateManager {
   public var isSearching = false
   public var isEditing = false
 
-  /// Integration sheet presented at MainView level for state preservation.
-  /// MediaServersView is the unified entry point — per-integration libraries are
-  /// pushed on top of it as sub-sheets when the user taps a server row.
-  enum IntegrationSheet: String, Identifiable {
+  /// A sheet over the library, presented at MainView level for state preservation.
+  /// `mediaServers`: MediaServersView is the unified entry point — per-integration libraries
+  /// are pushed on top of it as sub-sheets when the user taps a server row.
+  /// `transferFromComputer`: the add menu's upload from a computer's browser (not an integration).
+  /// `webdav`: the add menu's import from a WebDAV server (not an integration either).
+  enum LibrarySheet: String, Identifiable {
     case mediaServers
+    case transferFromComputer
+    case webdav
     var id: String { rawValue }
   }
-  var activeIntegrationSheet: IntegrationSheet?
+  var activeLibrarySheet: LibrarySheet?
 
   /// What can cover the library from the main view.
   enum Cover: Hashable {
     case mediaServers
+    case transferFromComputer
+    case webdav
     case player
   }
 

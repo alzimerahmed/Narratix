@@ -11,13 +11,17 @@ import Foundation
 
 /// Represents all possible alert types in ItemListView
 enum ItemListAlert: Identifiable, Equatable {
-  case queuedTasks
+  /// A refresh is blocked by queued sync tasks; `paused` when one of them is parked and
+  /// needs the user (Retry or Report) rather than just time
+  case queuedTasks(paused: Bool)
   case moveOptions
   case delete
   case cancelDownload(SimpleLibraryItem)
   case warningOffload(SimpleLibraryItem)
   case downloadURL(String)
-  
+  /// Manual rescan outcome — how many orphaned files got their records back
+  case rescanResult(registered: Int)
+
   var id: String {
     switch self {
     case .queuedTasks:
@@ -32,6 +36,8 @@ enum ItemListAlert: Identifiable, Equatable {
       return "warningOffload-\(item.id)"
     case .downloadURL:
       return "downloadURL"
+    case .rescanResult:
+      return "rescanResult"
     }
   }
   

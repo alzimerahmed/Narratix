@@ -41,14 +41,32 @@ struct ImportPlacementModel {
 
   /// "Existing folder". Nothing happens when the folder is gone (a sync pull deleted it while the
   /// prompt waited): moving into its old path would leave the items' paths pointing nowhere.
+  /// The folder is remembered — the next prompt offers it as "Last folder".
   func move(_ placement: ImportPlacement, into folder: SimpleLibraryItem) throws {
     guard let destination = libraryService.getItemRefs(forUuids: [folder.uuid]).first else { return }
 
     try organizer.move(items(of: placement), into: destination)
+    UserDefaults.standard.set(folder.uuid, forKey: Constants.UserDefaults.lastImportPlacementFolder)
+  }
+
+  /// The folder the last prompt placed an import into — by uuid, so it still resolves after a
+  /// sync move. Nil once it doesn't (deleted, or turned into a volume, which a serial importer
+  /// wouldn't reuse), and for a placeholder uuid that can never resolve
+  func lastPlacementFolder() -> SimpleLibraryItem? {
+    guard
+      let uuid = UserDefaults.standard.string(forKey: Constants.UserDefaults.lastImportPlacementFolder),
+      Constants.isRealUuid(uuid),
+      let ref = libraryService.getItemRefs(forUuids: [uuid]).first,
+      let folder = libraryService.getSimpleItem(with: ref.relativePath),
+      folder.type == .folder
+    else { return nil }
+    return folder
   }
 
   /// "New folder", or "Create a volume" for an import of books: a new one holding them, in the
   /// folder they were imported into, wherever it is now. Nothing happens when that folder is gone.
+  /// A created folder becomes the remembered "Last folder"; a volume doesn't (an import can't
+  /// be placed inside one later)
   func createFolder(titled title: String, for placement: ImportPlacement, type: SimpleItemType) async throws {
     let parentPath: String?
     if placement.node.folderRelativePath != nil {
@@ -58,12 +76,15 @@ struct ImportPlacementModel {
       parentPath = nil
     }
 
-    try await organizer.createFolder(
+    let folder = try await organizer.createFolder(
       titled: title,
       inside: parentPath,
       holding: items(of: placement),
       type: type
     )
+    if type == .folder, let uuid = folder?.uuid {
+      UserDefaults.standard.set(uuid, forKey: Constants.UserDefaults.lastImportPlacementFolder)
+    }
   }
 
   /// "Create a volume" for an import that was one folder: that folder becomes the volume
@@ -165,23 +186,39 @@ struct ImportPlacementPrompt: ViewModifier {
         }
       }
       .onChange(of: gate) { old, new in
-        if old.isImportScreenShown, !new.isImportScreenShown {
-          clearBeforeTheNextImport()
+        let importScreenClosed = old.isImportScreenShown && !new.isImportScreenShown
+        let coverClosed = old.isCovered && !new.isCovered
+        guard importScreenClosed || coverClosed, !isIdle else {
+          presentIfPossible()
+          return
         }
-        presentIfPossible()
+
+        clearBeforeTheNextImport()
+        if importScreenClosed {
+          presentIfPossible()
+        } else {
+          // What a cover's close clears never showed, so nothing is closing: the next prompt goes
+          // a pass later, or SwiftUI would take it for the cleared one's contents changing. A
+          // stream's prompt is usually waiting by then (it's ready before the browser has gone)
+          Task { @MainActor in presentIfPossible() }
+        }
       }
   }
 
-  /// Every import is confirmed on the import screen, so this runs before each import's prompt
-  /// comes. An alert doesn't report appearing: one iOS dropped (presented under something the list
-  /// showed) still counts as on screen, and would block every later prompt. One that really is on
-  /// screen, with the import screen opened over it, closes.
+  /// Every import is confirmed over the library, files on the import screen and streams in the
+  /// media-server browser, so this runs before each import's prompt comes: when the import
+  /// screen or anything covering the library closes. An alert doesn't report appearing: one iOS
+  /// dropped (presented under something the list showed) still counts as on screen, and would
+  /// block every later prompt. A cover never appears over one that really is on screen: UIKit
+  /// presents one thing at a time from the library's presenter, so a cover asked for meanwhile
+  /// (a watch or widget play action) is refused. The import screen can, from another app, and
+  /// that prompt closes.
   ///
-  /// Rare, with two imports processing at once: an earlier import's prompt can be waiting when
-  /// this clears one. Set in the same update, SwiftUI takes it for the cleared one's contents
-  /// changing, so if that one was dropped this doesn't show either (and is cleared at the next
-  /// close). Set a pass later, it would be dropped instead whenever the cleared one really showed
-  /// and is still closing.
+  /// Rare at the import screen's close, with two imports processing at once: an earlier import's
+  /// prompt can be waiting when this clears one. Set in the same update, SwiftUI takes it for the
+  /// cleared one's contents changing, so if that one was dropped this doesn't show either (and is
+  /// cleared at the next close). Set a pass later, it would be dropped instead whenever the
+  /// cleared one really showed and is still closing.
   private func clearBeforeTheNextImport() {
     options = nil
     nameRequest = nil
@@ -216,6 +253,20 @@ struct ImportPlacementPrompt: ViewModifier {
     Button("library_title") {
       if hasParentFolder {
         perform(on: placement) { try model.moveToLibrary(placement) }
+      }
+    }
+
+    /// The last folder the prompt placed an import into. Skipped when it IS the folder the
+    /// import landed in ("Current playlist" covers that), one of the imported items, or
+    /// inside one of them — a folder can't move into itself or its own descendant
+    if let lastFolder = model.lastPlacementFolder(),
+       lastFolder.uuid != placement.node.uuid,
+       !placement.itemUuids.contains(lastFolder.uuid),
+       !model.items(of: placement).contains(where: {
+         lastFolder.relativePath.hasPrefix($0.relativePath + "/")
+       }) {
+      Button(String(format: "import_last_folder_button".localized, lastFolder.title)) {
+        perform(on: placement) { try model.move(placement, into: lastFolder) }
       }
     }
 
@@ -256,10 +307,11 @@ struct ImportPlacementPrompt: ViewModifier {
       Task { @MainActor in
         do {
           try await model.createFolder(titled: title, for: placement, type: type)
-          listState.reloadAll(padding: 1)
         } catch {
           loadingState.error = error
         }
+        // A clash is reported after the folder was made and the rest moved into it
+        listState.reloadAll(padding: 1)
       }
     }
     .disabled(folderName.isEmpty)

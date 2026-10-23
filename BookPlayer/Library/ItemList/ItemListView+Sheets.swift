@@ -17,11 +17,20 @@ extension ItemListView {
     case .itemDetails(let item):
       itemDetailsSheet(for: item)
     case .queuedTasks:
-      QueuedSyncTasksView()
+      // Own stack so the title and the info button show inside the sheet
+      NavigationStack {
+        QueuedTasksView()
+      }
     case .foldersSelection:
       foldersSelectionSheet()
     case .libraryOptions:
       libraryOptionsSheet()
+    case .collections:
+      collectionsSheet()
+    case .collectionPicker:
+      collectionPickerSheet()
+    case .seriesBrowser:
+      seriesBrowserSheet()
     }
   }
 
@@ -71,6 +80,55 @@ extension ItemListView {
   private func foldersSelectionSheet() -> some View {
     ItemListSelectionView(items: model.getAvailableFolders()) { folder in
       model.handleMoveIntoFolder(folder)
+    }
+  }
+
+  /// The collections browser — own stack so the title/toolbar/detail push
+  /// live inside the sheet
+  @ViewBuilder
+  private func collectionsSheet() -> some View {
+    NavigationStack {
+      CollectionListView {
+        CollectionListViewModel(
+          libraryService: libraryService,
+          playbackService: playbackService,
+          playerLoaderService: playerLoaderService,
+          syncService: syncService,
+          playerState: playerState,
+          loadingState: loadingState
+        )
+      }
+    }
+  }
+
+  /// The selection's membership picker — captures the selected items when the
+  /// sheet opens (clearing edit mode afterwards can't lose them)
+  @ViewBuilder
+  private func collectionPickerSheet() -> some View {
+    NavigationStack {
+      CollectionPickerView {
+        CollectionPickerViewModel(
+          libraryService: libraryService,
+          items: model.selectedItems
+        )
+      }
+    }
+  }
+
+  /// Browse by series / author — own stack like the collections sheet
+  @ViewBuilder
+  private func seriesBrowserSheet() -> some View {
+    NavigationStack {
+      SeriesBrowseView {
+        SeriesBrowseViewModel(
+          libraryService: libraryService,
+          playbackService: playbackService,
+          playerLoaderService: playerLoaderService,
+          syncService: syncService,
+          playerState: playerState,
+          loadingState: loadingState
+        )
+      }
     }
   }
 }

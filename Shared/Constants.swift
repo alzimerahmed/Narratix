@@ -15,6 +15,12 @@ public enum Constants {
     public static let syncTasksQueue = "userSyncTasksQueue"
     public static let lastSyncTimestamp = "lastSyncTimestamp"
     public static let hasScheduledLibraryContents = "hasScheduledLibraryContents"
+    /// When the missing-items pass last completed (the weekly run)
+    public static let missingItemsPassLastRun = "missingItemsPassLastRun"
+    /// The account became PRO: the next pass runs right away and starts the continued task
+    public static let missingItemsPassPending = "missingItemsPassPending"
+    /// The tier the last account update reported, to notice LITE → PRO
+    public static let lastKnownProAccess = "lastKnownProAccess"
 
     /// Armed when a book finishes playing; consumed on the next review-prompt evaluation
     public static let pendingReviewPrompt = "userPendingReviewPrompt"
@@ -34,6 +40,10 @@ public enum Constants {
     public static let smartRewindEnabled = "userSettingsSmartRewind"
     public static let smartRewindMaxInterval = "userSettingsSmartRewindMaxInterval"
     public static let boostVolumeEnabled = "userSettingsBoostVolume"
+    /// Selected EQ preset (EQPreset raw value); nil/unknown reads as `.off`
+    public static let equalizerPreset = "userSettingsEqualizerPreset"
+    /// Presence-band emphasis stacked on the EQ preset — iOS playback only
+    public static let voiceBoostEnabled = "userSettingsVoiceBoostEnabled"
     public static let globalSpeedEnabled = "userSettingsGlobalSpeed"
     public static let seekProgressBarEnabled = "userSettingsSeekProgressBar"
     public static let autoplayEnabled = "userSettingsAutoplay"
@@ -120,8 +130,28 @@ public enum Constants {
     /// Library tab display style: title source (false = parsed title, true = original filename)
     public static let libraryDisplayTitleSource = "library_display:title_source"
 
+    /// Import placement prompt: uuid of the folder the last prompt moved an import into
+    /// (device-local — the "Last folder" shortcut reads it back)
+    public static let lastImportPlacementFolder = "importPlacement:lastFolder"
+
+    /// Queued Tasks: lanes the user paused (device-local — a pause isn't synced)
+    public static let pausedSyncLanes = "syncQueue:pausedLanes"
+
+    /// Transfer from Computer: the first-run help tip only shows once
+    public static let transferTipSeen = "transfer:tipSeen"
+
+    /// Listening stats: daily goal in minutes; 0 = no goal (device-local — a
+    /// preference, not library data, so it lives in standard UserDefaults)
+    public static let dailyGoalMinutes = "listeningStats:dailyGoalMinutes"
+
     /// Prefix used to enumerate / sync library display preferences
     public static let libraryDisplayPrefix = "library_display:"
+
+    /// Library tab layout: a `LibraryLayout` raw value (list, grid of cards, or covers)
+    public static let libraryLayout = "library_layout:style"
+
+    /// Prefix used to enumerate / sync the library layout preference
+    public static let libraryLayoutPrefix = "library_layout:"
 
     /// JSON-encoded `[String: ISO-8601-Date]` of synced-pref keys awaiting server flush
     public static let userPreferencesDirty = "userPreferences.dirty"

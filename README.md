@@ -1,149 +1,120 @@
-[![BookPlayer - A wonderful player for your M4B/M4A/MP3 based audiobooks.](./.github/readme-header@2x.png)](https://itunes.apple.com/us/app/bookplayer-audio-book-player/id1138219998?ls=1&mt=8)
+# Narratix — Audiobook Player for iOS & watchOS
 
-<p align="center">
-    <a href="https://itunes.apple.com/us/app/bookplayer-audio-book-player/id1138219998?ls=1&amp;mt=8">
-        <img src="./.github/app-store-badge.svg" alt="Download on the App Store">
-    </a>
-</p>
+<div align="center">
 
-[![Five screenshots of BookPlayer on iPhone, iPad and Apple Watch. Showing the Player, Import options, Cloud Sync, the Library and playback features](./.github/readme-screenshots@2x.png)](https://itunes.apple.com/us/app/bookplayer-audio-book-player/id1138219998?ls=1&mt=8)
+<img src="Narratix-icon.jpg" alt="Narratix" width="560">
 
-Please visit our [Wiki](https://github.com/TortugaPower/BookPlayer/wiki) for our
-[FAQ](https://github.com/TortugaPower/BookPlayer/wiki/FAQ) and
-[guides](https://github.com/TortugaPower/BookPlayer/wiki/Developer-Guide) on how to add new themes and icons to the app.
+[![Platform](https://img.shields.io/badge/platform-iOS%2026%20%7C%20watchOS%2010-blue?logo=apple)](https://github.com/alzimerahmed/Narratix)
+[![Language](https://img.shields.io/badge/language-Swift-orange?logo=swift)](https://github.com/alzimerahmed/Narratix)
+[![Framework](https://img.shields.io/badge/framework-SwiftUI%20%2B%20UIKit-green?logo=swift)](https://github.com/alzimerahmed/Narratix)
+[![CI](https://github.com/alzimerahmed/Narratix/actions/workflows/ci.yml/badge.svg)](https://github.com/alzimerahmed/Narratix/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-GPL--3.0-lightgrey)](LICENSE)
+
+*Your books, narrated your way — an offline-first audiobook player for iPhone, iPad, Apple Watch, and CarPlay.*
+
+[Download](https://github.com/alzimerahmed/Narratix/releases) • [Features](#features) • [Building](#building)
+
+</div>
+
+---
 
 ## Features
 
-### Import
+| | |
+|---|---|
+| **Import** | AirDrop, Files, iTunes File Sharing, zip archives, share extension, WebDAV, or your own Jellyfin / AudiobookShelf server |
+| **Listen** | Chapters, playback speed presets, smart rewind, volume boost + EQ (voice boost), sleep timer, lock-screen & headset controls |
+| **Manage** | Folders & bound books, collections & tags, series browsing, bookmarks with notes, drag & drop sorting, per-book notes |
+| **Continue** | Playback history, position restore, up-next queue, auto-bookmark on pause/sleep, DNF/finished triage |
+| **Track** | Reading stats v2 — streaks, goals, graphs; Hardcover reading-progress sync |
+| **Sync** | Cloud library sync with S3 multipart uploads, standalone Apple Watch playback, storage management with library rescan |
+| **Access** | VoiceOver, Dynamic Type, dark mode + themes, 24 languages, Siri & App Intents, CarPlay |
 
-- Using [AirDrop](https://support.apple.com/en-us/HT204144#receive) from your Mac or iOS device
-- From [Files](https://support.apple.com/en-us/ht206481) and other apps on your device
-- Via [File Sharing](https://support.apple.com/en-us/HT201301) in iTunes on your Mac or PC
-- Download audiobooks from your own [AudiobookShelf](https://www.audiobookshelf.org) or [Jellyfin](https://jellyfin.org) server
-- Zip archives are supported and can be turned into playlists automatically
+## Screenshots
 
-### Manage
+Coming soon — device-frame captures will be added as the UI settles post-rebrand.
 
-- Maintain and see progress of your books
-- Mark books as finished
-- Drag & Drop to sort your library
-- Create folders
-  - Automatically play items in turn
-  - Play the first unfinished file by tapping on the playlist artwork
-  - Move files to playlists from the library or import them directly
-- Automatically track your library on [Hardcover](https://hardcover.app)
+## Tech Stack
 
-### Listen
+| Layer | Technology |
+|---|---|
+| Language | Swift 5 (Xcode 27.1 toolchain) |
+| UI | UIKit coordinators + SwiftUI MVVM |
+| Platforms | iOS 26.0, watchOS 10.0 |
+| Persistence | CoreData (library, staged migrations v1–v14) + SwiftData (sync queue) |
+| Audio | AVFoundation (AVAudioSession, MTAudioProcessingTap EQ pipeline) |
+| Networking | JellyfinAPI, AudiobookShelf, WebDAV, Hardcover, S3 multipart |
+| Subscriptions | RevenueCat (account tiers) |
+| Observability | Sentry |
+| Tooling | SwiftLint, SwiftFormat, Sourcery, GitHub Actions CI |
 
-- Control audio playback from the lock screen or the control center
-- Play and navigate books with Chapters
-- Jump to start of the current book
-- Change playback speed
-- Smart rewind
-- Volume Boost
-- Support for remote events from headset buttons and the lock screen
-- Sleep timer with adjustable duration
-- Support for VoiceOver
-- Dark mode for night owls
+## Project Structure
 
-### BookPlayer Pro
+```
+BookPlayer.xcodeproj          9 native targets (app, watch, widgets, extensions, tests)
+├── BookPlayer/               iOS app source (Player, Library, Settings, Profile, Import…)
+│   ├── Jellyfin/             Media-server integrations (Jellyfin, AudiobookShelf, Hardcover)
+│   └── *.lproj/              24 translated locales
+├── BookPlayerWatch/          watchOS app
+├── BookPlayerWidgets/        Home-screen + lock-screen widgets
+├── BookPlayerShareExtension/ Share-sheet import
+├── Shared/                   Code compiled into both iOS + watchOS frameworks
+│   ├── CoreData/             Library store (App Group container, staged migrations)
+│   ├── SwiftData/            Sync-task queue store (ModelActor repository)
+│   └── Services/             Account, sync engine, library service
+├── BuildConfiguration/       xcconfig build settings (secrets via template)
+└── ci_scripts/               Xcode Cloud post-clone hooks
+```
 
-- Cloud sync
-- Stand-alone playback on your Apple Watch
-- Support Open Source development
-- Additional color themes
-- Select from alternative App Icons
+## Building
 
-### Upcoming features
+Requires **Xcode 27.1** (iOS 26 / watchOS 10 SDKs).
 
-See [our Roadmap on GitHub](https://github.com/orgs/TortugaPower/projects/1) for details.
+```bash
+cp BuildConfiguration/Debug.template.xcconfig BuildConfiguration/Debug.xcconfig
+# fill in the BP_* values, then:
+xcodebuild -resolvePackageDependencies
+open BookPlayer.xcodeproj
+```
 
-### Supported locales & Languages
+<details>
+<summary>CI & verification</summary>
 
-- English
-- Czech (Petr Kabrna)
-- German ([@pichfl](https://github.com/pichfl), Fabian Schalle)
-- Russian ([@Nibelungc](https://github.com/Nibelungc), Andrey Kozlov, [@carcade](https://github.com/carcade) & Eugene
-  Newfield)
-- Spanish ([@GianniCarlo](https://github.com/GianniCarlo))
-- Swedish ([@hypeitinc](https://github.com/hypeitinc))
-- Chinese Simplified ([@wangqj](https://twitter.com/wangqj))
-- Danish (Carl Houmøller)
-- Dutch (Miguel De Pelsmaeker)
-- French (Christophe Vergne)
-- Romanian (Alexandru Hamuraru)
-- Turkish (Selçuk Onuk)
-- Italian (Alessio Franceschi)
-- Ukranian (Oleh)
-- Slovak (Peter Skladaný)
-- Portuguese (Vitor Jacinto)
-- Polish (Konrad Kwapisz)
-- Hungarian (Gábor Sári)
-- Arabic (John Hamo & Monther Qandeel & Kayan Auwaisheer)
-- Finnish ([@akirataguchi115](https://github.com/akirataguchi115))
-- Greek (Stelios Platsis)
-- Catalan (Josep)
-- Japanese ([@watr](https://github.com/watr))
+CI (`.github/workflows/ci.yml`) builds and runs `BookPlayerTests` on every push to `main`/`develop` and PRs to `develop`. The workspace is edit-only on non-macOS machines — all builds and tests run on GitHub Actions; release builds come from Xcode Cloud via `ci_scripts/`.
+
+</details>
+
+## Usage
+
+1. Launch Narratix and grant library access.
+2. Import audiobooks — drag files in, share them from another app, or connect a Jellyfin/AudiobookShelf server from **Profile → Media servers**.
+3. Tap a book to resume exactly where you left off; chapters, speed, and sleep timer live in the player.
+
+## FAQ / Troubleshooting
+
+**Why do builds need an xcconfig?** — Secrets (Sentry DSN, API domain, RevenueCat key) are injected at build time via `BP_*` build settings; the tracked `Release.xcconfig` ships with `replace.me` placeholders and `Debug.xcconfig` is never committed.
+
+**Where did the Tip Jar / Plus upsell go?** — Removed. All features (themes, app icons, streaming, sync surfaces) are freely available in Narratix.
 
 ## Contributing
 
-Pull requests and ideas are always welcomed. Please
-[open an issue](https://github.com/TortugaPower/BookPlayer/issues/new?assignees=&labels=bug&template=bug.md) if you have any suggestions or found a bug.
-👍 See our [Contribution Guidelines](./CONTRIBUTING.md) for details, and our [Setup Guide](https://github.com/TortugaPower/BookPlayer/wiki/Developer-Guide#setting-up-the-project) for setting up your local environment.
+Fork → branch (`feature/…` or `fix/…`) → PR into `develop`. Conventional Commits (`type(scope): description`) are enforced; CI must be green before merge.
 
-If you enjoy BookPlayer, we would be glad if you consider writing a review on the
-[App Store.](https://itunes.apple.com/us/app/bookplayer-audio-book-player/id1138219998?ls=1&mt=8)
+## Roadmap
 
-### Maintainers
+- [x] Playback history, queue, auto-bookmarks, DNF triage, per-book notes
+- [x] Collections/tags, series browsing
+- [x] WebDAV import, storage management, cover-art fetch
+- [x] EQ + voice boost
+- [x] Stats v2, watch library browse
+- [ ] Read-along (EPUB + on-device transcription)
+- [ ] CarPlay sleep-timer presets
+- [ ] Lock-screen Live Activity
 
-- [@GianniCarlo](https://github.com/GianniCarlo) - Original Idea & Creation
-- [@pichfl](https://github.com/pichfl) - UI Design & Artwork
+## Changelog
 
-### Contributors
-
-- [@bryanrezende](https://github.com/bryanrezende) - Smart rewind
-- [@e7mac](https://github.com/e7mac) - Speed control, Autoplay
-- [@gpambrozio](https://github.com/gpambrozio) - Volume Boost
-- [@vab9](https://github.com/vab9) - AirDrop Support
-- [@atomicguy](https://github.com/atomicguy) - Zip Support
-- [@ryantstone](https://github.com/ryantstone) - VoiceOver Support
-- [@lysanntranvouez](https://github.com/lysanntranvouez) - Jellyfin Support
-- [@jeremygrenier](https://github.com/jeremygrenier) - Hardcover Support, Jellyfin multi-file & folder download support
-
-A full list of all contributors can be found
-[on GitHub.](https://github.com/GianniCarlo/Audiobook-Player/graphs/contributors)
-
-### Community
-
-[Join us on our Discord server](https://discord.gg/MjCUXgU) if you want to contribute or talk to other people using
-BookPlayer. Bugs and feature requests belong in the **#bugs-and-feedback** forum channel there, or in
-[a GitHub issue](#contributing) — please don't report them in the chat channels. The maintainers drop by once in a
-while, but a chat is not a bugtracker.
-
-## Dependencies
-
-Managed with the [Swift Package Manager](https://swift.org/package-manager/)
-
-- [DeviceKit](https://github.com/dennisweissmann/DeviceKit) for device information used in support requests
-- [DirectoryWatcher](https://github.com/GianniCarlo/DirectoryWatcher) for events on the document's folder
-- [JellyfinAPI](https://github.com/jellyfin/jellyfin-sdk-swift) for communicating with Jellyfin servers
-- [Kingfisher](https://github.com/onevcat/Kingfisher) for contributors' profile pictures
-- [MarqueeLabel](https://github.com/cbpowell/MarqueeLabel) for scrolling labels
-- [RevenueCat](https://github.com/RevenueCat/purchases-ios) for managing in-app purchases
-- [Sentry](https://github.com/getsentry/sentry-cocoa) for crash reporting
-- [Sweetercolor](https://github.com/jathu/sweetercolor) for handling artwork colors
-- [Themeable](https://github.com/GianniCarlo/Themeable) for custom app themes
-- [ZipArchive](https://github.com/ZipArchive/ZipArchive) for zip files
-
-Included in this repository
-
-- [BlurHashDecode](https://github.com/woltapp/blurhash/blob/712a47f946b98c30097eb1ada086ea00b18681ec/Swift/BlurHashDecode.swift) for displaying placeholder images from Jellyfin servers
-
-Managed with [Homebrew](https://brew.sh)
-
-- [SwiftLint](https://github.com/realm/SwiftLint)
-- [Sourcery](https://github.com/krzysztofzablocki/Sourcery)
+See [Releases](https://github.com/alzimerahmed/Narratix/releases).
 
 ## License
 
-Licensed under [GNU GPL v. 3.0](https://opensource.org/licenses/GPL-3.0). See `LICENSE` for details.
+GPL-3.0 — see `LICENSE`. Narratix is a fork of [BookPlayer](https://github.com/TortugaPower/BookPlayer); upstream copyright is preserved per the license.

@@ -32,3 +32,45 @@ enum ItemListSearchScope: String, CaseIterable, Identifiable {
     }
   }
 }
+
+/// The library's listening-state triage filter (New / Started / Finished / DNF).
+/// `.all` means no state restriction — the list's default.
+enum ItemListeningFilter: String, CaseIterable, Identifiable {
+  var id: Self { self }
+
+  case all, new, started, finished, didNotFinish
+
+  var title: LocalizedStringKey {
+    switch self {
+    case .all: "filter_all_title"
+    case .new: "filter_new_title"
+    case .started: "filter_started_title"
+    case .finished: "filter_finished_title"
+    case .didNotFinish: "filter_did_not_finish_title"
+    }
+  }
+
+  /// The spoken form of `title` — a `LocalizedStringKey` can't hand its
+  /// resolved string back out for `accessibilityValue`
+  var titleString: String {
+    switch self {
+    case .all: "filter_all_title".localized
+    case .new: "filter_new_title".localized
+    case .started: "filter_started_title".localized
+    case .finished: "filter_finished_title".localized
+    case .didNotFinish: "filter_did_not_finish_title".localized
+    }
+  }
+
+  /// Maps to the state predicate used by `LibraryService.filterContents`.
+  /// `nil` means no state restriction (all items).
+  var listeningState: ListeningState? {
+    switch self {
+    case .all: nil
+    case .new: .notStarted
+    case .started: .inProgress
+    case .finished: .finished
+    case .didNotFinish: .didNotFinish
+    }
+  }
+}
