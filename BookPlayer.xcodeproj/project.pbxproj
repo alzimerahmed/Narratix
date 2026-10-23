@@ -2571,7 +2571,6 @@
 		41A1B106226E9DCA00EA0400 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				56AC45C580EED027394A645B /* MediaServerProvider+Icon.swift */,
 				5126F120258E9F18009965DC /* URL+BookPlayer.swift */,
 				4160A08E23F2DBD40039166B /* String+BookPlayer.swift */,
 				C30B085E209654E3003F325B /* UIColor+BookPlayer.swift */,
@@ -4083,6 +4082,7 @@
 				63AE5A8C2E4C59FE002531B8 /* AppHostingViewController.swift */,
 				63D561342E5A214400615522 /* SimpleLibraryItem+SwiftUI.swift */,
 				0D374B2BE024447797E25881 /* NSManagedObjectContext+LibraryItem.swift */,
+				56AC45C580EED027394A645B /* MediaServerProvider+Icon.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
