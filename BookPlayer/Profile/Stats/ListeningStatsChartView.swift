@@ -78,7 +78,9 @@ private struct StatsChartDescriptor: AXChartDescriptorRepresentable {
       title: "minutes".localized,
       range: 0...(minutes.max() ?? 0),
       gridlinePositions: []
-    )
+    ) { value in
+      VoiceOverService.secondsToMinutes(value * 60)
+    }
     let series = AXDataSeriesDescriptor(
       name: "minutes".localized,
       isContinuous: false,
