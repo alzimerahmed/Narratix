@@ -339,6 +339,11 @@ public class SyncJobScheduler: JobSchedulerProtocol, BPLogger {
       try await tasksRepository.storeTask(parameters: parameters)
     } catch {
       Self.logger.error("Failed to persist task \(error): \(parameters.description)")
+      ErrorReporter.report(
+        title: "Sync task persistence failed",
+        error: error,
+        tags: ["queue": TaskQueueKey.sync]
+      )
     }
   }
 
