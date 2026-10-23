@@ -164,8 +164,7 @@ class WidgetUtils {
   }
 
   class func getAppIconName() -> String {
-    return UserDefaults(suiteName: Constants.ApplicationGroupIdentifier)?.string(forKey: Constants.UserDefaults.appIcon)
-      ?? "Default"
+    return "Default"
   }
 
   class func getWidgetActionURL(with bookIdentifier: String?, autoplay: Bool, timerSeconds: Double?) -> URL {

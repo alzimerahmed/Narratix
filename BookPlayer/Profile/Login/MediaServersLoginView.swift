@@ -20,7 +20,6 @@ struct MediaServersLoginView: View {
   @Environment(\.accountService) private var accountService
 
   @State private var loadingState = LoadingOverlayState()
-  @State private var showCompleteAccount = false
   @State private var showPasskeyRegistration = false
 
   var body: some View {
@@ -63,7 +62,7 @@ struct MediaServersLoginView: View {
           .padding(.bottom, Spacing.S)
         } else {
           PrimaryButton(text: "continue_title".localized) {
-            showCompleteAccount = true
+            dismiss()
           }
           .padding(.horizontal)
           .padding(.bottom, Spacing.S)
@@ -92,14 +91,6 @@ struct MediaServersLoginView: View {
         .accessibilityLabel("close_title")
       }
     }
-    .sheet(isPresented: $showCompleteAccount) {
-      NavigationStack {
-        CompleteAccountView(subType: .lite) {
-          dismiss()
-        }
-      }
-      .presentationDetents([.medium])
-    }
     .sheet(isPresented: $showPasskeyRegistration) {
       PasskeyRegistrationView { hasSubscription in
         showPasskeyRegistration = false
@@ -109,11 +100,9 @@ struct MediaServersLoginView: View {
   }
 
   private func handleSignInResult(hasSubscription: Bool) {
-    if hasSubscription {
-      dismiss()
-    } else {
-      showCompleteAccount = true
-    }
+    /// Everything is unlocked by default now, so there is no paywall to complete:
+    /// any successful sign-in ends the flow
+    dismiss()
   }
 }
 

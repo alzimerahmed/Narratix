@@ -29,20 +29,17 @@ struct StoryActionView: View {
   }
   var onSubscription: (PricingModel) -> Void
   var onDismiss: () -> Void
-  var onTipJar: (String?) -> Void
 
   init(
     action: Binding<StoryActionType>,
     onSubscription: @escaping (PricingModel) -> Void,
-    onDismiss: @escaping () -> Void,
-    onTipJar: @escaping (String?) -> Void
+    onDismiss: @escaping () -> Void
   ) {
     self._action = action
     self.selected = action.wrappedValue.defaultOption
     self.sliderValue = action.wrappedValue.defaultOption.price
     self.onSubscription = onSubscription
     self.onDismiss = onDismiss
-    self.onTipJar = onTipJar
   }
 
   var body: some View {
@@ -150,20 +147,6 @@ struct StoryActionView: View {
         )
         .padding([.top], Spacing.S5)
       }
-      if let tipJar = action.tipJar {
-        Button(
-          action: {
-            onTipJar(action.tipJarDisclaimer)
-          },
-          label: {
-            Text(tipJar)
-              .underline()
-              .bpFont(.body)
-              .foregroundStyle(.white)
-          }
-        )
-        .padding([.top], Spacing.S5)
-      }
     }
   }
 }
@@ -185,8 +168,7 @@ struct StoryActionView: View {
         )
       ),
       onSubscription: { option in print(option.title) },
-      onDismiss: {},
-      onTipJar: { _ in }
+      onDismiss: {}
     )
   }
 }

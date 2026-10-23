@@ -21,8 +21,6 @@ struct SettingsView: View {
   @Environment(\.horizontalSizeClass) private var horizontalSizeClass
   @State var showMailModal = false
   @State var showMailUnavailableModal = false
-  @State var showLogin = false
-  @State var showCompleteAccount = false
   @State var loadingState = LoadingOverlayState()
 
   @Environment(\.listState) private var listState
@@ -44,9 +42,6 @@ struct SettingsView: View {
       /// A list rather than a form: its selection is what the links set, which highlights the
       /// screen shown beside it
       List(selection: $selection) {
-        if accountService.accessLevel == .free {
-          SettingsProBannerSectionView(showPro: showPro)
-        }
         SettingsAppearanceSectionView()
         SettingsPlaybackSectionView()
         SettingsStorageSectionView(accessLevel: accountService.accessLevel)
@@ -113,15 +108,6 @@ struct SettingsView: View {
     } message: {
       Text(debugInfoDescription)
     }
-    .sheet(isPresented: $showLogin) {
-      NavigationStack {
-        LoginView()
-      }
-    }
-    .sheet(isPresented: $showCompleteAccount) {
-      SettingsCompleteAccountView()
-        .presentationDetents([.medium])
-    }
     .foregroundStyle(theme.primaryColor)
     .tint(theme.linkColor)
   }
@@ -131,8 +117,6 @@ struct SettingsView: View {
     switch destination {
     case .themes:
       view = AnyView(SettingsThemesView())
-    case .icons:
-      view = AnyView(SettingsAppIconsView())
     case .controls:
       view = AnyView(SettingsPlayerControlsView())
     case .autoplay:
@@ -174,8 +158,6 @@ struct SettingsView: View {
           viewModel: HardcoverSettingsViewModel(hardcoverService: hardcoverService)
         )
       )
-    case .tipjar:
-      view = AnyView(SettingsTipJarView())
     case .credits:
       view = AnyView(CreditsView())
     default:
@@ -185,14 +167,6 @@ struct SettingsView: View {
     return
       view
       .miniPlayerSafeAreaInset()
-  }
-
-  private func showPro() {
-    if accountService.getAccountId() != nil {
-      showCompleteAccount = true
-    } else {
-      showLogin = true
-    }
   }
 
   // MARK: - Email utils

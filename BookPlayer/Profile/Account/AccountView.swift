@@ -13,7 +13,6 @@ struct AccountView: View {
   @State private var showDeleteAlert: Bool = false
   @State private var accountDeletedMessage: String = ""
   @State private var showAccountDeletedAlert: Bool = false
-  @State private var showCompleteAccount: Bool = false
   @State private var loadingState = LoadingOverlayState()
 
   @Environment(\.accountService) private var accountService
@@ -22,13 +21,6 @@ struct AccountView: View {
 
   var body: some View {
     Form {
-      if !accountService.account.hasSubscription {
-        AccountPerksSectionView {
-          showCompleteAccount = true
-        }
-      } else if !ProcessInfo.processInfo.isiOSAppOnMac {
-        AccountManageProSectionView()
-      }
       AccountTermsConditionsSectionView()
       AccountPasskeySectionView()
       AccountLogoutSectionView()
@@ -56,10 +48,6 @@ struct AccountView: View {
       Button("ok_button") {
         dismiss()
       }
-    }
-    .sheet(isPresented: $showCompleteAccount) {
-      SettingsCompleteAccountView()
-        .presentationDetents([.medium])
     }
   }
 

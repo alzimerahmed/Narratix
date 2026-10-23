@@ -31,12 +31,8 @@ struct ProfileView: View {
 
         Spacer()
         
-        if accountService.account.hasSubscription,
-          !accountService.account.id.isEmpty
-        {
+        if !accountService.account.id.isEmpty {
           ProfileSyncTasksSectionView()
-        } else if !accountService.account.hasSubscription {
-          ProfileProCalloutSectionView(action: showLoginOrAccount)
         }
       }
       .miniPlayerSafeAreaInset()

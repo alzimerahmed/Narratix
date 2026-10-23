@@ -10,8 +10,6 @@ import BookPlayerKit
 import SwiftUI
 
 struct SettingsAppearanceSectionView: View {
-  @AppStorage(Constants.UserDefaults.appIcon, store: UserDefaults(suiteName: Constants.ApplicationGroupIdentifier))
-  var appIcon: String = "Default"
   @AppStorage(Constants.UserDefaults.macOSTextScale)
   var textScaleIndex: Double = 0.0  // Default to 1.0x (index 0)
   @State
@@ -72,16 +70,6 @@ struct SettingsAppearanceSectionView: View {
           }
         }
       } else {
-        NavigationLink(value: SettingsScreen.icons) {
-          Text("settings_app_icon_title")
-            .bpFont(.body)
-            .badge(
-              Text(appIcon)
-                .foregroundStyle(theme.secondaryColor)
-            )
-        }
-        .settingsRowBackground(for: .icons)
-
         /// iPad ignores the lock: apps that support multitasking get every orientation
         if UIDevice.current.userInterfaceIdiom == .phone {
           Toggle(isOn: $orientationLock) {

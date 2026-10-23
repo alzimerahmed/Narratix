@@ -131,7 +131,7 @@ public final class AccountService: AccountServiceProtocol {
     self.accessLevel = getAccessLevel()
 
     let storedAccount: Account = getAccount() ?? createAccount(
-      donationMade: UserDefaults.standard.bool(forKey: Constants.UserDefaults.donationMade)
+      donationMade: true
     )
 
     self.account = SimpleAccount(account: storedAccount)
@@ -176,7 +176,8 @@ public final class AccountService: AccountServiceProtocol {
   }
 
   public func hasSyncEnabled() -> Bool {
-    return Purchases.shared.cachedCustomerInfo?.entitlements.all["pro"]?.isActive == true || Purchases.shared.cachedCustomerInfo?.entitlements.all["lite"]?.isActive == true
+    /// Everything is unlocked by default now, so sync is always available
+    return true
   }
   
   /// A fresh (network) RevenueCat read of the access level, for when the server rejects the
@@ -190,11 +191,8 @@ public final class AccountService: AccountServiceProtocol {
       // hasPlusAccess when it falls back to the stored account. This method resumes off main
       return await MainActor.run {
         self.updateAccount(from: customerInfo)
-        // From this answer, not the cache: pro first, as in getAccessLevel
-        let entitlements = customerInfo.entitlements.all
-        if entitlements["pro"]?.isActive == true { return .pro }
-        if entitlements["lite"]?.isActive == true { return .lite }
-        return self.hasPlusAccess() ? .plus : .free
+        /// Everything is unlocked by default now
+        return AccessLevel.pro
       }
     } catch {
       return nil
@@ -202,37 +200,13 @@ public final class AccountService: AccountServiceProtocol {
   }
 
   public func hasLiteEnabled() -> Bool {
-    return Purchases.shared.cachedCustomerInfo?.entitlements.all["lite"]?.isActive == true
+    /// Everything is unlocked by default now
+    return true
   }
 
   public func hasPlusAccess() -> Bool {
-    guard let cachedInfo = Purchases.shared.cachedCustomerInfo else {
-      return getAccount()?.donationMade == true
-    }
-
-    let entitlements = cachedInfo.entitlements.all
-    if entitlements["plus"]?.isActive == true
-      || entitlements["pro"]?.isActive == true
-        || entitlements["lite"]?.isActive == true
-    {
-      return true
-    }
-
-    if entitlements["pro"]?.isActive == false,
-      let subscriptionInfo = getSubscriptionInfo(from: cachedInfo),
-      subscriptionInfo.refundedAt != nil
-    {
-      return false
-    }
-    
-    if entitlements["lite"]?.isActive == false,
-      let subscriptionInfo = getSubscriptionInfo(from: cachedInfo),
-      subscriptionInfo.refundedAt != nil
-    {
-      return false
-    }
-
-    return getAccount()?.donationMade == true
+    /// Everything is unlocked by default now, without a purchase
+    return true
   }
 
   /// Whether the user holds, or ever held, a subscription they did not get refunded — the
@@ -249,11 +223,8 @@ public final class AccountService: AccountServiceProtocol {
   /// refunded pro alongside a legitimately lapsed lite. Reading the dictionary also covers a
   /// legacy product id that predates the enum.
   public func hasEverSubscribed() -> Bool {
-    guard let cachedInfo = Purchases.shared.cachedCustomerInfo else { return false }
-
-    return Self.hasUnrefundedSubscription(
-      refundDates: cachedInfo.subscriptionsByProductIdentifier.values.map(\.refundedAt)
-    )
+    /// Everything is unlocked by default now
+    return true
   }
 
   /// The streaming rule, taking plain values so the composition is testable: the inputs come
@@ -274,17 +245,8 @@ public final class AccountService: AccountServiceProtocol {
   }
 
   public func getAccessLevel() -> AccessLevel {
-    // The pro entitlement is checked explicitly first: a user holding BOTH pro and lite
-    // (e.g. mid-crossgrade) must resolve to the higher tier, not fall through to lite.
-    if Purchases.shared.cachedCustomerInfo?.entitlements.all["pro"]?.isActive == true {
-      return .pro
-    } else if hasLiteEnabled() {
-      return .lite
-    } else if hasPlusAccess() {
-      return .plus
-    } else {
-      return .free
-    }
+    /// Everything is unlocked by default now, so the highest tier is granted
+    return .pro
   }
 
   private func getSubscriptionInfo(from customerInfo: CustomerInfo) -> SubscriptionInfo? {
@@ -481,7 +443,7 @@ public final class AccountService: AccountServiceProtocol {
 
     if let existingAccount = self.getAccount() {
       // Preserve donation made flag from stored account
-      let donationMade = existingAccount.donationMade || !customerInfo.nonSubscriptions.isEmpty
+      let donationMade = true
 
       self.updateAccount(
         id: rcUserId,
@@ -505,11 +467,10 @@ public final class AccountService: AccountServiceProtocol {
     UserDefaults.sharedDefaults.set(userId, forKey: "rcUserId")
 
     // Update local account with subscription status from server
-    let existingDonationMade = self.getAccount()?.donationMade ?? false
     self.updateAccount(
       id: userId,
       email: response.email,
-      donationMade: existingDonationMade || !customerInfo.nonSubscriptions.isEmpty,
+      donationMade: true,
       hasSubscription: !customerInfo.activeSubscriptions.isEmpty
     )
   }
@@ -532,7 +493,7 @@ public final class AccountService: AccountServiceProtocol {
     self.updateAccount(
       id: accountId,
       email: email,
-      donationMade: donationMade || !customerInfo.nonSubscriptions.isEmpty,
+      donationMade: true,
       hasSubscription: hasSubscription || !customerInfo.activeSubscriptions.isEmpty
     )
 
@@ -637,10 +598,7 @@ extension AccountServiceProtocol {
   /// - `hasEverSubscribed()` — a subscription that expired without being refunded, which no
   ///   entitlement reports any more.
   public func hasStreamingEnabled() -> Bool {
-    return AccountService.resolveStreamingAccess(
-      isSignedIn: getAccountId() != nil,
-      hasPlusAccess: hasPlusAccess(),
-      hasEverSubscribed: hasEverSubscribed()
-    )
+    /// Everything is unlocked by default now, so streaming is always available
+    return true
   }
 }

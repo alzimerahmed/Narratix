@@ -12,7 +12,6 @@ import SwiftUI
 
 struct LoginView: View {
   @State private var loadingState = LoadingOverlayState()
-  @State private var showCompleteAccount = false
   @State private var showPasskeyRegistration = false
   
   @EnvironmentObject private var theme: ThemeViewModel
@@ -65,14 +64,6 @@ struct LoginView: View {
     .navigationBarTitleDisplayMode(.inline)
     .errorAlert(error: loadingState.errorBinding)
     .loadingOverlay(loadingState.show)
-    .sheet(isPresented: $showCompleteAccount) {
-      NavigationStack {
-        CompleteAccountView {
-          dismiss()
-        }
-      }
-      .presentationDetents([.medium])
-    }
     .sheet(isPresented: $showPasskeyRegistration) {
       PasskeyRegistrationView { hasSubscription in
         showPasskeyRegistration = false
@@ -92,11 +83,9 @@ struct LoginView: View {
   }
 
   private func handleSignInResult(hasSubscription: Bool) {
-    if hasSubscription {
-      dismiss()
-    } else {
-      showCompleteAccount = true
-    }
+    /// Everything is unlocked by default now, so there is no paywall to complete:
+    /// any successful sign-in ends the flow
+    dismiss()
   }
 }
 

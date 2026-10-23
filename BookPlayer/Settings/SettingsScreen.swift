@@ -10,12 +10,11 @@ import Foundation
 import SwiftUI
 
 enum SettingsScreen: String, Hashable {
-  case themes, icons
+  case themes
   case controls, autoplay, autolock
   case storage, syncbackup, backup
   case shortcuts
   case mediaServers, hardcover
-  case tipjar
   case credits
 }
 

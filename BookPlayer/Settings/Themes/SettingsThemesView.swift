@@ -92,7 +92,6 @@ struct SettingsThemesView: View {
     .background(theme.systemBackgroundColor)
     .navigationTitle("themes_title")
     .navigationBarTitleDisplayMode(.inline)
-    .unlocksWithTipJar()
   }
 
   func handleSystemModeUpdate() {

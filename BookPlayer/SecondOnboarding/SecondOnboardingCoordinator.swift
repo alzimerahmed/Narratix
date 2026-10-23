@@ -56,22 +56,14 @@ class SecondOnboardingCoordinator: Coordinator {
         anonymousId: anonymousId,
         onboardingId: data.onboardingId,
         stories: stories,
-        onlyTipJar: false,
         accountService: accountService,
         eventsService: eventsService
       )
       coordinator.start()
     case .tips:
-      let coordinator = SupportFlowCoordinator(
-        flow: flow,
-        anonymousId: anonymousId,
-        onboardingId: data.onboardingId,
-        stories: stories,
-        onlyTipJar: true,
-        accountService: accountService,
-        eventsService: eventsService
-      )
-      coordinator.start()
+      /// The tips-only onboarding presented the Tip Jar, which no longer exists:
+      /// everything is unlocked by default, so there is nothing to show
+      break
     }
   }
 

@@ -80,8 +80,8 @@ final class SecondOnboardingCoordinatorTests: XCTestCase {
     XCTAssertEqual(action.dismiss, "Not now")
   }
 
-  /// The `support_paywall` and tips onboardings (most of them on the server) send no options: only the PRO
-  /// default, with the tip jar.
+  /// The `support_paywall` onboarding (most of them on the server) sends no options: only the PRO
+  /// default. The tip-jar fields are part of the server contract but nothing consumes them anymore.
   private var paywallWithoutOptions: [StoryResponseModel] {
     [
       StoryResponseModel(
@@ -92,9 +92,7 @@ final class SecondOnboardingCoordinatorTests: XCTestCase {
         action: StoryActionResponseModel(
           options: [],
           defaultOption: pro.id,
-          button: "Continue for $4.99 / month",
-          tipJar: "or open the tip jar",
-          tipJarDisclaimer: "Disclaimer"
+          button: "Continue for $4.99 / month"
         )
       )
     ]
@@ -112,8 +110,6 @@ final class SecondOnboardingCoordinatorTests: XCTestCase {
     XCTAssertEqual(requestedIds, [[pro.id]])
     XCTAssertEqual(action.options, [])
     XCTAssertEqual(action.defaultOption, pro)
-    XCTAssertEqual(action.tipJar, "or open the tip jar")
-    XCTAssertEqual(action.tipJarDisclaimer, "Disclaimer")
   }
 
   func testPaywallWithoutOptionsSkipsTheOnboardingWithoutTheDefaultPrice() async {
