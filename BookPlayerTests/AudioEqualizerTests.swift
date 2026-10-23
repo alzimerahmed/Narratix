@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 /// Value-type coverage for the EQ half that needs no audio hardware: preset →

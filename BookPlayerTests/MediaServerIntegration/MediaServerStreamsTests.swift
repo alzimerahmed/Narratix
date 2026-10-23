@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 /// Mirrors the Android app's `AudiobookshelfStreamFilesTest` and the naming half of

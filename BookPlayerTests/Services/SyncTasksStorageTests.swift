@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 final class SyncTasksRepositoryTests: XCTestCase {

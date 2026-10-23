@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 
 /// The multistatus parser normalizes namespace prefixes, resolves hrefs against
 /// the listed directory, skips the collection's own entry, and keeps names

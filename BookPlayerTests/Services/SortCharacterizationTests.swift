@@ -14,7 +14,7 @@
 //  store, so the sync paths' background-context writes are production-faithful.
 //
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 import CoreData
 import XCTest

@@ -11,7 +11,7 @@ import AppKit
 
 import Combine
 import BookPlayerKit
-@testable import Narratix
+@testable import BookPlayer
 class LibraryServiceProtocolMock: LibraryServiceProtocol {
     var metadataUpdatePublisher: AnyPublisher<[String: Any], Never> {
         get { return underlyingMetadataUpdatePublisher }

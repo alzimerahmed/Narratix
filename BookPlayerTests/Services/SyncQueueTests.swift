@@ -10,7 +10,7 @@ import Foundation
 import SwiftData
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 /// First dedicated coverage for the sync-queue engine: task persistence

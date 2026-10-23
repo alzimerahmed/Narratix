@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 /// The backup round trip: export serializes the library's metadata, restore

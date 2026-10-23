@@ -6,7 +6,7 @@
 //
 
 import AuthenticationServices
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 import XCTest
 

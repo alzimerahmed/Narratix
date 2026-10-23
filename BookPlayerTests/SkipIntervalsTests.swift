@@ -7,7 +7,7 @@
 
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 
 /// The custom skip-interval field's parser: lenient input (comma decimals, whitespace),
 /// out-of-range numbers clamped to the field's 1 s–1 h range, blanks and non-numbers

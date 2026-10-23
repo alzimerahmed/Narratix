@@ -7,7 +7,7 @@
 
 import AVFoundation
 import CoreData
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 import XCTest
 

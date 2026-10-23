@@ -17,7 +17,7 @@
 //  production-faithful. Call `tearDown()` from the test's `tearDown`.
 //
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 import CoreData
 import Foundation

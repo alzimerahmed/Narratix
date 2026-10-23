@@ -6,7 +6,7 @@
 //  Copyright © 2024 BookPlayer LLC. All rights reserved.
 //
 
-import Narratix
+import BookPlayer
 import UIKit
 
 class MockCoordinatorPresentationFlow: BPCoordinatorPresentationFlow {

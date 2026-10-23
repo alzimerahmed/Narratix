@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 /// The missing-items pass (bookplayer-api docs/multipart-uploads.md): the first sync's

@@ -10,7 +10,7 @@ import Combine
 import Foundation
 import XCTest
 
-@testable import Narratix
+@testable import BookPlayer
 @testable import BookPlayerKit
 
 private final class FakeContinuedTask: ContinuedUploadTask {
