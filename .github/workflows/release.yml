@@ -33,7 +33,7 @@ jobs:
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath build \
-            build | tail -40
+            build-for-testing | tail -40
 
       - name: Package simulator build
         run: |
