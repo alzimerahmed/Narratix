@@ -33,7 +33,7 @@ jobs:
             -configuration Debug \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath build \
-            build | tail -40
+            build-for-testing | tail -40
 
       - name: Package simulator build
         run: |
@@ -53,6 +53,7 @@ jobs:
             -only-testing:BookPlayerTests \
             -destination "platform=iOS Simulator,name=iPhone 17" \
             -destination-timeout 120 \
+            -derivedDataPath build \
             test-without-building
 
       - name: Create GitHub Release with artifacts
