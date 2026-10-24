@@ -53,6 +53,7 @@ jobs:
             -only-testing:BookPlayerTests \
             -destination "platform=iOS Simulator,name=iPhone 17" \
             -destination-timeout 120 \
+            -derivedDataPath build \
             test-without-building
 
       - name: Create GitHub Release with artifacts
