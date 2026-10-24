@@ -420,7 +420,7 @@ final class LibraryBackupService: BPLogger {
 
   /// Match an item's live path by uuid first (survives renames), path second
   /// (survives re-import on a fresh install)
-  private func self.resolvePath(uuid: String, path: String) -> String? {
+  private func resolvePath(uuid: String, path: String) -> String? {
     if let byUuid = self.libraryService.getSimpleItem(for: uuid) {
       return byUuid.relativePath
     }
