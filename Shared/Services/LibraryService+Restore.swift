@@ -18,6 +18,15 @@ import Foundation
 /// The merge rules mirror what the restore's per-field calls did: progress
 /// and terminal flags only move forward, a blank detail never overwrites.
 extension LibraryService {
+  /// Run a block on the viewContext's own queue — the store's managed objects
+  /// are main-queue confined, so callers on a cooperative thread hop instead
+  /// of racing main-thread context work
+  public func performOnContext<T>(
+    _ block: @escaping () throws -> T
+  ) async rethrows -> T {
+    try await dataManager.getContext().perform(block)
+  }
+
   /// A backup record's writable fields, as a value type so the app-layer
   /// backup service hands no managed objects — and none of its own types —
   /// across the framework boundary

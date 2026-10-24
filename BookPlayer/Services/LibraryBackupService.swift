@@ -141,8 +141,7 @@ final class LibraryBackupService: BPLogger {
     /// Reads below go through the main-queue-confined viewContext — this
     /// method runs on a cooperative thread, so they hop onto the context's
     /// queue instead of racing main-thread work
-    let context = libraryService.dataManager.getContext()
-    let items = await context.perform {
+    let items = await libraryService.performOnContext {
       libraryService.filterContents(
         at: nil, query: nil, scope: nil, limit: nil, offset: nil
       ) ?? []
@@ -171,7 +170,7 @@ final class LibraryBackupService: BPLogger {
       }
     }
 
-    let collections = await context.perform {
+    let collections = await libraryService.performOnContext {
       libraryService.fetchCollections().map { collection in
         /// Membership reads as paths; uuids go alongside so a renamed item still
         /// matches on restore
@@ -191,7 +190,7 @@ final class LibraryBackupService: BPLogger {
       app: Self.appName,
       appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
       library: .init(
-        lastPlayedPath: await context.perform { libraryService.getLibraryLastItem()?.relativePath },
+        lastPlayedPath: await libraryService.performOnContext { libraryService.getLibraryLastItem()?.relativePath },
         items: items.map(Self.itemRecord),
         bookmarks: bookmarks,
         collections: collections
@@ -299,15 +298,13 @@ final class LibraryBackupService: BPLogger {
     /// Every fetch and write below goes through the main-queue-confined
     /// viewContext — this method runs on a cooperative thread, so each record
     /// hops onto the context's queue instead of racing main-thread work
-    let context = libraryService.dataManager.getContext()
-
     for record in backup.library.items {
       /// One fetch + direct field writes per record, inside
       /// `applyRestoredState`: the batch emits no sync events (a restore is
       /// local state replay, not new intent for the server) and saves once —
       /// the per-field path cost a save and an `.update` job per field. Each
       /// hop also yields the queue, so a big restore keeps the UI breathing
-      let applied = await context.perform {
+      let applied = await libraryService.performOnContext {
         libraryService.applyRestoredState(
           uuid: record.uuid,
           relativePath: record.relativePath,
@@ -336,7 +333,7 @@ final class LibraryBackupService: BPLogger {
         skipped.append(record.itemPath)
         continue
       }
-      let created = await context.perform {
+      let created = await libraryService.performOnContext {
         libraryService.applyRestoredBookmark(
           at: record.time,
           type: type,
@@ -353,7 +350,7 @@ final class LibraryBackupService: BPLogger {
     for record in backup.library.collections {
       /// Membership resolves to live paths — a member the library doesn't
       /// have just doesn't attach
-      let memberPaths = await context.perform {
+      let memberPaths = await libraryService.performOnContext {
         zip(record.itemUuids, record.itemPaths).compactMap { uuid, path in
           resolvePath(uuid: uuid, path: path)
         }
@@ -363,7 +360,7 @@ final class LibraryBackupService: BPLogger {
         continue
       }
       /// Same-titled/uuid collection → merge, never duplicate
-      let restored = await context.perform {
+      let restored = await libraryService.performOnContext {
         libraryService.applyRestoredCollection(
           uuid: record.uuid,
           title: record.title,
@@ -376,7 +373,7 @@ final class LibraryBackupService: BPLogger {
     }
 
     /// The whole batch's one save — every write above left the context dirty
-    await context.perform {
+    await libraryService.performOnContext {
       if let lastPath = backup.library.lastPlayedPath,
         libraryService.getSimpleItem(with: lastPath) != nil {
         libraryService.setLibraryLastBook(with: lastPath)
