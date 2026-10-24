@@ -141,8 +141,8 @@ final class LibraryBackupService: BPLogger {
     /// Reads below go through the main-queue-confined viewContext — this
     /// method runs on a cooperative thread, so they hop onto the context's
     /// queue instead of racing main-thread work
-    let items = await libraryService.performOnContext {
-      libraryService.filterContents(
+    let items = await self.libraryService.performOnContext {
+      self.libraryService.filterContents(
         at: nil, query: nil, scope: nil, limit: nil, offset: nil
       ) ?? []
     }
@@ -153,7 +153,7 @@ final class LibraryBackupService: BPLogger {
     /// the export's dominant cost on big libraries, and it ran on the caller's
     /// actor; the grouped read happens on the store's background context
     let bookmarkedPaths = items.filter { $0.type != .folder }.map(\.relativePath)
-    let bookmarksByItem = await libraryService.getBookmarks(forItemsAt: bookmarkedPaths)
+    let bookmarksByItem = await self.libraryService.getBookmarks(forItemsAt: bookmarkedPaths)
 
     var bookmarks = [LibraryBackup.Bookmark]()
     for item in items where item.type != .folder {
@@ -170,11 +170,11 @@ final class LibraryBackupService: BPLogger {
       }
     }
 
-    let collections = await libraryService.performOnContext {
-      libraryService.fetchCollections().map { collection in
+    let collections = await self.libraryService.performOnContext {
+      self.libraryService.fetchCollections().map { collection in
         /// Membership reads as paths; uuids go alongside so a renamed item still
         /// matches on restore
-        let members = libraryService.fetchCollectionItems(uuid: collection.uuid)
+        let members = self.libraryService.fetchCollectionItems(uuid: collection.uuid)
         return LibraryBackup.Collection(
           uuid: collection.uuid,
           title: collection.title,
@@ -190,7 +190,7 @@ final class LibraryBackupService: BPLogger {
       app: Self.appName,
       appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
       library: .init(
-        lastPlayedPath: await libraryService.performOnContext { libraryService.getLibraryLastItem()?.relativePath },
+        lastPlayedPath: await self.libraryService.performOnContext { self.libraryService.getLibraryLastItem()?.relativePath },
         items: items.map(Self.itemRecord),
         bookmarks: bookmarks,
         collections: collections
@@ -304,8 +304,8 @@ final class LibraryBackupService: BPLogger {
       /// local state replay, not new intent for the server) and saves once —
       /// the per-field path cost a save and an `.update` job per field. Each
       /// hop also yields the queue, so a big restore keeps the UI breathing
-      let applied = await libraryService.performOnContext {
-        libraryService.applyRestoredState(
+      let applied = await self.libraryService.performOnContext {
+        self.libraryService.applyRestoredState(
           uuid: record.uuid,
           relativePath: record.relativePath,
           state: .init(
@@ -333,8 +333,8 @@ final class LibraryBackupService: BPLogger {
         skipped.append(record.itemPath)
         continue
       }
-      let created = await libraryService.performOnContext {
-        libraryService.applyRestoredBookmark(
+      let created = await self.libraryService.performOnContext {
+        self.libraryService.applyRestoredBookmark(
           at: record.time,
           type: type,
           note: record.note,
@@ -350,9 +350,9 @@ final class LibraryBackupService: BPLogger {
     for record in backup.library.collections {
       /// Membership resolves to live paths — a member the library doesn't
       /// have just doesn't attach
-      let memberPaths = await libraryService.performOnContext {
+      let memberPaths = await self.libraryService.performOnContext {
         zip(record.itemUuids, record.itemPaths).compactMap { uuid, path in
-          resolvePath(uuid: uuid, path: path)
+          self.resolvePath(uuid: uuid, path: path)
         }
       }
       guard !memberPaths.isEmpty else {
@@ -360,8 +360,8 @@ final class LibraryBackupService: BPLogger {
         continue
       }
       /// Same-titled/uuid collection → merge, never duplicate
-      let restored = await libraryService.performOnContext {
-        libraryService.applyRestoredCollection(
+      let restored = await self.libraryService.performOnContext {
+        self.libraryService.applyRestoredCollection(
           uuid: record.uuid,
           title: record.title,
           memberPaths: memberPaths
@@ -373,12 +373,12 @@ final class LibraryBackupService: BPLogger {
     }
 
     /// The whole batch's one save — every write above left the context dirty
-    await libraryService.performOnContext {
+    await self.libraryService.performOnContext {
       if let lastPath = backup.library.lastPlayedPath,
-        libraryService.getSimpleItem(with: lastPath) != nil {
-        libraryService.setLibraryLastBook(with: lastPath)
+        self.libraryService.getSimpleItem(with: lastPath) != nil {
+        self.libraryService.setLibraryLastBook(with: lastPath)
       }
-      libraryService.saveRestoreBatch()
+      self.libraryService.saveRestoreBatch()
     }
 
     return LibraryRestoreReport(
@@ -420,10 +420,10 @@ final class LibraryBackupService: BPLogger {
 
   /// Match an item's live path by uuid first (survives renames), path second
   /// (survives re-import on a fresh install)
-  private func resolvePath(uuid: String, path: String) -> String? {
-    if let byUuid = libraryService.getSimpleItem(for: uuid) {
+  private func self.resolvePath(uuid: String, path: String) -> String? {
+    if let byUuid = self.libraryService.getSimpleItem(for: uuid) {
       return byUuid.relativePath
     }
-    return libraryService.getSimpleItem(with: path) != nil ? path : nil
+    return self.libraryService.getSimpleItem(with: path) != nil ? path : nil
   }
 }
